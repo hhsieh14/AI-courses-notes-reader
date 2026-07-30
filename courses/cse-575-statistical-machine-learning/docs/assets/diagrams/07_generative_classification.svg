@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Generative classification overview</title>
+  <desc id="desc">Comparison of discriminative and generative learning, Bayes rule, Gaussian discriminant boundaries, and Naive Bayes factorization.</desc>
+  <rect width="1200" height="700" fill="#ffffff"/>
+
+  <text x="45" y="55" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#1f2937">Discriminative learning</text>
+  <rect x="55" y="95" width="160" height="72" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="3"/>
+  <text x="135" y="140" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#1e3a8a">input x</text>
+  <line x1="215" y1="131" x2="315" y2="131" stroke="#111827" stroke-width="4"/>
+  <polygon points="315,131 296,120 296,142" fill="#111827"/>
+  <rect x="325" y="95" width="210" height="72" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="3"/>
+  <text x="430" y="125" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#5b21b6">model p(y | x)</text>
+  <text x="430" y="151" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#5b21b6">posterior directly</text>
+
+  <text x="650" y="55" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#1f2937">Generative learning</text>
+  <rect x="665" y="90" width="165" height="72" rx="14" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+  <text x="747" y="120" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#166534">p(x | y)</text>
+  <text x="747" y="146" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#166534">class likelihood</text>
+  <rect x="665" y="185" width="165" height="72" rx="14" fill="#ffedd5" stroke="#ea580c" stroke-width="3"/>
+  <text x="747" y="215" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#9a3412">p(y)</text>
+  <text x="747" y="241" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#9a3412">class prior</text>
+  <line x1="830" y1="126" x2="925" y2="166" stroke="#111827" stroke-width="4"/>
+  <line x1="830" y1="221" x2="925" y2="181" stroke="#111827" stroke-width="4"/>
+  <polygon points="925,166 905,156 910,178" fill="#111827"/>
+  <polygon points="925,181 910,169 905,191" fill="#111827"/>
+  <rect x="935" y="130" width="215" height="88" rx="14" fill="#f3f4f6" stroke="#374151" stroke-width="3"/>
+  <text x="1042" y="166" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#111827">Bayes' rule</text>
+  <text x="1042" y="196" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#111827">p(y | x)</text>
+
+  <line x1="40" y1="300" x2="1160" y2="300" stroke="#d1d5db" stroke-width="2"/>
+
+  <text x="45" y="350" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="700" fill="#1f2937">Gaussian discriminant analysis</text>
+  <text x="60" y="393" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#374151">Shared covariance: LDA</text>
+  <ellipse cx="210" cy="500" rx="115" ry="72" fill="#dbeafe" fill-opacity="0.7" stroke="#2563eb" stroke-width="3"/>
+  <ellipse cx="430" cy="455" rx="115" ry="72" fill="#fee2e2" fill-opacity="0.7" stroke="#dc2626" stroke-width="3"/>
+  <circle cx="200" cy="505" r="7" fill="#1d4ed8"/><circle cx="230" cy="475" r="7" fill="#1d4ed8"/><circle cx="176" cy="525" r="7" fill="#1d4ed8"/>
+  <circle cx="410" cy="465" r="7" fill="#b91c1c"/><circle cx="445" cy="430" r="7" fill="#b91c1c"/><circle cx="465" cy="478" r="7" fill="#b91c1c"/>
+  <line x1="315" y1="385" x2="335" y2="575" stroke="#7c3aed" stroke-width="5"/>
+  <text x="330" y="604" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#6d28d9">linear boundary</text>
+
+  <text x="650" y="393" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#374151">Class-specific covariance: QDA</text>
+  <ellipse cx="790" cy="500" rx="130" ry="62" fill="#dbeafe" fill-opacity="0.7" stroke="#2563eb" stroke-width="3" transform="rotate(-18 790 500)"/>
+  <ellipse cx="1010" cy="455" rx="82" ry="120" fill="#fee2e2" fill-opacity="0.7" stroke="#dc2626" stroke-width="3" transform="rotate(22 1010 455)"/>
+  <circle cx="760" cy="510" r="7" fill="#1d4ed8"/><circle cx="810" cy="470" r="7" fill="#1d4ed8"/><circle cx="835" cy="520" r="7" fill="#1d4ed8"/>
+  <circle cx="990" cy="440" r="7" fill="#b91c1c"/><circle cx="1030" cy="405" r="7" fill="#b91c1c"/><circle cx="1045" cy="485" r="7" fill="#b91c1c"/>
+  <path d="M875 365 C920 400 920 455 895 500 C870 545 905 585 965 610" fill="none" stroke="#7c3aed" stroke-width="5"/>
+  <text x="930" y="645" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#6d28d9">quadratic boundary</text>
+
+  <rect x="185" y="625" width="830" height="48" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="600" y="656" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#166534">Naive Bayes score: p(y) multiplied by the product of p(x_i | y)</text>
+</svg>

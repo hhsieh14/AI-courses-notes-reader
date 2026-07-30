@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
+  <title id="title">K-nearest-neighbor classification and regression intuition</title>
+  <desc id="desc">Three panels show neighbor voting, a jagged small-k boundary compared with a smoother large-k boundary, and a KNN regression curve becoming smoother as k increases.</desc>
+  <rect width="1200" height="390" fill="#ffffff"/>
+  <style>
+    .panel { fill:#fbfcfe; stroke:#c8d0da; stroke-width:2; rx:14; }
+    .axis { stroke:#39424e; stroke-width:2; }
+    .label { font-family:Arial, sans-serif; fill:#20262e; font-size:18px; }
+    .small { font-family:Arial, sans-serif; fill:#4b5563; font-size:15px; }
+    .blue { fill:#4a90d9; stroke:#245a8d; stroke-width:1.5; }
+    .red { fill:#e4685d; stroke:#963d35; stroke-width:1.5; }
+    .query { fill:#f5c451; stroke:#8b6d16; stroke-width:2.5; }
+    .boundary { fill:none; stroke:#6b4f9b; stroke-width:4; }
+    .smooth { fill:none; stroke:#23856d; stroke-width:4; }
+    .thin { fill:none; stroke:#697586; stroke-width:2; stroke-dasharray:7 6; }
+  </style>
+
+  <rect class="panel" x="18" y="18" width="368" height="354"/>
+  <text class="label" x="38" y="50">1. Local neighbor vote</text>
+  <line class="axis" x1="62" y1="318" x2="350" y2="318"/>
+  <line class="axis" x1="62" y1="318" x2="62" y2="78"/>
+  <circle class="blue" cx="108" cy="258" r="10"/><circle class="blue" cx="142" cy="225" r="10"/>
+  <circle class="blue" cx="180" cy="270" r="10"/><circle class="blue" cx="215" cy="230" r="10"/>
+  <circle class="red" cx="258" cy="126" r="10"/><circle class="red" cx="290" cy="172" r="10"/>
+  <circle class="red" cx="323" cy="112" r="10"/><circle class="red" cx="270" cy="224" r="10"/>
+  <circle class="blue" cx="222" cy="171" r="10"/><circle class="red" cx="201" cy="137" r="10"/>
+  <circle class="query" cx="231" cy="202" r="12"/>
+  <circle class="thin" cx="231" cy="202" r="49"/>
+  <text class="small" x="196" y="342">query uses nearby labels</text>
+
+  <rect class="panel" x="416" y="18" width="368" height="354"/>
+  <text class="label" x="436" y="50">2. k controls flexibility</text>
+  <line class="axis" x1="452" y1="318" x2="748" y2="318"/>
+  <line class="axis" x1="452" y1="318" x2="452" y2="78"/>
+  <circle class="blue" cx="486" cy="270" r="9"/><circle class="blue" cx="526" cy="242" r="9"/>
+  <circle class="blue" cx="575" cy="277" r="9"/><circle class="blue" cx="617" cy="236" r="9"/>
+  <circle class="red" cx="527" cy="121" r="9"/><circle class="red" cx="570" cy="154" r="9"/>
+  <circle class="red" cx="623" cy="116" r="9"/><circle class="red" cx="689" cy="157" r="9"/>
+  <circle class="red" cx="662" cy="223" r="9"/><circle class="blue" cx="706" cy="267" r="9"/>
+  <path class="boundary" d="M457 122 C500 139 474 195 526 188 C568 181 531 238 588 218 C632 202 617 263 670 244 C713 229 706 287 746 297"/>
+  <path class="smooth" d="M458 171 C529 174 575 192 622 214 C667 235 707 249 746 257"/>
+  <text class="small" x="470" y="342">jagged: small k</text>
+  <text class="small" x="628" y="342">smooth: larger k</text>
+
+  <rect class="panel" x="814" y="18" width="368" height="354"/>
+  <text class="label" x="834" y="50">3. Regression averages targets</text>
+  <line class="axis" x1="850" y1="318" x2="1147" y2="318"/>
+  <line class="axis" x1="850" y1="318" x2="850" y2="78"/>
+  <circle class="red" cx="875" cy="250" r="7"/><circle class="red" cx="907" cy="207" r="7"/>
+  <circle class="red" cx="944" cy="149" r="7"/><circle class="red" cx="980" cy="121" r="7"/>
+  <circle class="red" cx="1014" cy="142" r="7"/><circle class="red" cx="1047" cy="185" r="7"/>
+  <circle class="red" cx="1080" cy="235" r="7"/><circle class="red" cx="1118" cy="277" r="7"/>
+  <path class="boundary" d="M857 250 L891 250 L891 207 L925 207 L925 149 L962 149 L962 121 L997 121 L997 142 L1031 142 L1031 185 L1064 185 L1064 235 L1098 235 L1098 277 L1141 277"/>
+  <path class="smooth" d="M857 246 C897 218 925 164 969 140 C1011 116 1051 183 1080 224 C1101 253 1121 271 1141 280"/>
+  <text class="small" x="865" y="342">small k: local steps</text>
+  <text class="small" x="1015" y="342">larger k: smoother</text>
+</svg>

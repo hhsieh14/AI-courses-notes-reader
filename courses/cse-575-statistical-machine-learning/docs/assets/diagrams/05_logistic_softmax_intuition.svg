@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Logistic regression and softmax intuition</title>
+  <desc id="desc">Three panels show a sigmoid mapping a linear score to a probability, a linear decision boundary in two dimensions, and softmax normalizing three class scores.</desc>
+  <rect width="1200" height="420" fill="#ffffff"/>
+  <style>
+    .panel { fill:#fbfcfe; stroke:#c8d0da; stroke-width:2; rx:14; }
+    .axis { stroke:#39424e; stroke-width:2; }
+    .grid { stroke:#d9dee6; stroke-width:1; }
+    .label { font-family:Arial, sans-serif; fill:#20262e; font-size:18px; }
+    .small { font-family:Arial, sans-serif; fill:#4b5563; font-size:15px; }
+    .formula { font-family:Arial, sans-serif; fill:#20262e; font-size:17px; font-style:italic; }
+    .blue { fill:#4a90d9; stroke:#245a8d; stroke-width:1.5; }
+    .red { fill:#e4685d; stroke:#963d35; stroke-width:1.5; }
+    .purple { fill:#8b6fc2; stroke:#5e438e; stroke-width:1.5; }
+    .curve { fill:none; stroke:#23856d; stroke-width:4; }
+    .boundary { fill:none; stroke:#6b4f9b; stroke-width:4; }
+    .dash { fill:none; stroke:#697586; stroke-width:2; stroke-dasharray:7 6; }
+    .bar1 { fill:#4a90d9; }
+    .bar2 { fill:#e4685d; }
+    .bar3 { fill:#8b6fc2; }
+    .arrow { stroke:#39424e; stroke-width:2.2; marker-end:url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <polygon points="0 0, 9 3.5, 0 7" fill="#39424e"/>
+    </marker>
+  </defs>
+
+  <rect class="panel" x="18" y="18" width="368" height="384"/>
+  <text class="label" x="38" y="50">1. Score to probability</text>
+  <line class="axis" x1="62" y1="322" x2="350" y2="322"/>
+  <line class="axis" x1="206" y1="337" x2="206" y2="84"/>
+  <line class="dash" x1="62" y1="203" x2="350" y2="203"/>
+  <path class="curve" d="M68 316 C108 314 137 305 158 278 C181 250 190 222 206 203 C222 184 231 156 254 128 C275 102 306 91 344 88"/>
+  <text class="small" x="44" y="208">0.5</text>
+  <text class="small" x="198" y="355">0</text>
+  <text class="small" x="70" y="346">negative score</text>
+  <text class="small" x="252" y="346">positive score</text>
+  <text class="formula" x="92" y="379">p(y=1|x) = 1 / (1 + e^-z)</text>
+
+  <rect class="panel" x="416" y="18" width="368" height="384"/>
+  <text class="label" x="436" y="50">2. Linear decision boundary</text>
+  <line class="axis" x1="454" y1="330" x2="748" y2="330"/>
+  <line class="axis" x1="454" y1="330" x2="454" y2="82"/>
+  <path class="boundary" d="M470 112 L730 302"/>
+  <circle class="blue" cx="492" cy="275" r="9"/><circle class="blue" cx="520" cy="246" r="9"/>
+  <circle class="blue" cx="548" cy="288" r="9"/><circle class="blue" cx="578" cy="252" r="9"/>
+  <circle class="blue" cx="610" cy="300" r="9"/><circle class="blue" cx="638" cy="272" r="9"/>
+  <circle class="red" cx="548" cy="132" r="9"/><circle class="red" cx="585" cy="158" r="9"/>
+  <circle class="red" cx="620" cy="126" r="9"/><circle class="red" cx="659" cy="176" r="9"/>
+  <circle class="red" cx="692" cy="142" r="9"/><circle class="red" cx="714" cy="210" r="9"/>
+  <text class="small" x="484" y="96">class 1 side</text>
+  <text class="small" x="640" y="318">class 0 side</text>
+  <text class="formula" x="493" y="374">theta^T x = 0 gives p = 0.5</text>
+
+  <rect class="panel" x="814" y="18" width="368" height="384"/>
+  <text class="label" x="834" y="50">3. Softmax normalizes scores</text>
+  <text class="small" x="840" y="82">linear scores</text>
+  <line class="axis" x1="848" y1="224" x2="982" y2="224"/>
+  <rect class="bar1" x="860" y="164" width="28" height="60"/>
+  <rect class="bar2" x="904" y="110" width="28" height="114"/>
+  <rect class="bar3" x="948" y="188" width="28" height="36"/>
+  <text class="small" x="865" y="244">s1</text><text class="small" x="909" y="244">s2</text><text class="small" x="953" y="244">s3</text>
+  <line class="arrow" x1="992" y1="171" x2="1045" y2="171"/>
+  <text class="small" x="995" y="151">exp + divide</text>
+  <text class="small" x="1038" y="82">probabilities</text>
+  <line class="axis" x1="1040" y1="224" x2="1152" y2="224"/>
+  <rect class="bar1" x="1050" y="195" width="24" height="29"/>
+  <rect class="bar2" x="1087" y="122" width="24" height="102"/>
+  <rect class="bar3" x="1124" y="207" width="24" height="17"/>
+  <text class="small" x="1047" y="244">p1</text><text class="small" x="1084" y="244">p2</text><text class="small" x="1121" y="244">p3</text>
+  <text class="formula" x="835" y="286">p_j = exp(s_j) / sum_r exp(s_r)</text>
+  <text class="small" x="850" y="320">all probabilities are positive</text>
+  <text class="small" x="850" y="348">and their sum is exactly one</text>
+  <text class="small" x="850" y="378">largest score remains largest probability</text>
+</svg>

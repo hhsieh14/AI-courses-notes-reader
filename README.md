@@ -1,8 +1,11 @@
-# Course Notes
+# My Favorite Course Notes
+
+I transformed my personal notes with some course materials into this repo using AI tools. These are my 3 favorite courses during my master study at ASU.
 
 A lightweight, reader-focused collection of reconstructed machine-learning course notes.
 
 This repository contains only the material needed for reading and studying: chapters, study guides, notation references, discussion questions, and diagrams. Source PDFs, transformation logs, templates, validation scripts, generated websites, and repository-maintenance files are intentionally excluded.
+
 
 ## Courses
 

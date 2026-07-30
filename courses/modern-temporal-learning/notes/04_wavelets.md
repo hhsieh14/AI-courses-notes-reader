@@ -365,8 +365,6 @@ The family illustrations show that wavelets differ in:
 *Redrawn course diagram — Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics.*
 
 
-*Original course figure: [page-22 source grid](../assets/original_figures/p022_wavelet_families.png)*
-
 **Source:** CSE598MTL.pdf, p. 22
 
 ---
@@ -666,7 +664,6 @@ The slide notes:
 *Redrawn course diagram — Wavelet pyramid with repeated decomposition of the approximation branch.*
 
 
-*[Open the original course figure](../assets/original_figures/p027_wavelet_pyramid.png)*
 **Source:** CSE598MTL.pdf, p. 27
 
 ---
@@ -975,9 +972,9 @@ This captures an important design tradeoff:
 |---|---|
 | Sharper time localization | Shorter support, such as db2 |
 | Suppress higher-degree polynomial background | More vanishing moments, such as higher db $K$ |
-![db2 and db7 plateau-detail comparison](../assets/original_figures/p031_plateau_detection_db2_db7.png)
+![db2 and db7 plateau-detail comparison](../assets/clean_diagrams/plateau_wavelet_localization.png)
 
-*Source figure — db2 and db7 plateau-detail comparison.*
+*Redrawn course diagram — Short-support wavelets localize plateau boundaries more sharply than longer-support wavelets.*
 
 **Source:** CSE598MTL.pdf, p. 31
 

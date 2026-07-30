@@ -45,9 +45,9 @@ inconsistent substitutions. This appendix therefore separates:
 ---
 
 ## 2. Handwritten stationarity recap
-![Full handwritten stationarity page](../assets/original_figures/p101_handwritten_stationarity.png)
+![Full handwritten stationarity page](../assets/clean_diagrams/stationarity_recap.png)
 
-*Source figure — Full handwritten stationarity page.*
+*Redrawn appendix diagram — Strict stationarity, weak stationarity, IID assumptions, and sampling-rate intuition.*
 
 The page begins:
 
@@ -198,9 +198,9 @@ Page 102 is blank and contains no academic content.
 ---
 
 ## 8. Covariance exercise: source setup
-![Full handwritten covariance exercise](../assets/original_figures/p103_handwritten_covariance_exercise.png)
+![Full handwritten covariance exercise](../assets/clean_diagrams/first_difference_covariance.png)
 
-*Source figure — Full handwritten covariance exercise.*
+*Redrawn appendix diagram — First differencing separates process innovations and observation-noise covariance.*
 
 The page is labeled:
 

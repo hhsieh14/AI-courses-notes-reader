@@ -21,18 +21,18 @@ not be simplified.
 *Redrawn course diagram — Wavelet pyramid with repeated decomposition of the approximation branch.*
 
 
-![db2 and db7 plateau-detail comparison](../assets/original_figures/p031_plateau_detection_db2_db7.png)
+![db2 and db7 plateau-detail comparison](../assets/clean_diagrams/plateau_wavelet_localization.png)
 
-*Source figure — db2 and db7 plateau-detail comparison.*
+*Redrawn course diagram — Short-support wavelets localize plateau boundaries more sharply than longer-support wavelets.*
 
 
 ## PCA, Bias-Variance, and Regularization
 
 [Open chapter](../notes/05_pca_and_regularization.md)
 
-![Correlated data and PCA directions from the course page](../assets/original_figures/p035_pca_correlated_axes.png)
+![Correlated data and PCA directions from the course page](../assets/clean_diagrams/pca_coordinate_rotation.png)
 
-*Source figure — Correlated data and PCA directions from the course page.*
+*Redrawn course diagram — PCA rotates correlated observations onto orthogonal directions ordered by variance.*
 
 
 ![Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions](../assets/clean_diagrams/mahalanobis_geometry.png)
@@ -49,9 +49,9 @@ not be simplified.
 
 [Open chapter](../notes/06_markov_models_hmm_and_em.md)
 
-![Hidden-state and observed-sequence example from the course page](../assets/original_figures/p047_hmm_hidden_observed_series.png)
+![Hidden-state and observed-sequence example from the course page](../assets/clean_diagrams/hmm_hidden_observed_sequences.png)
 
-*Source figure — Hidden-state and observed-sequence example from the course page.*
+*Redrawn course diagram — A piecewise latent state sequence generates noisy observations through the emission model.*
 
 
 ![Soft responsibilities preserve uncertainty, while K-means makes one hard assignment](../assets/clean_diagrams/em_soft_vs_hard_assignments.png)
@@ -63,9 +63,9 @@ not be simplified.
 
 [Open chapter](../notes/07_neural_network_foundations.md)
 
-![Multilayer feed-forward network from the course page](../assets/original_figures/p057_multilayer_network_architecture.png)
+![Multilayer feed-forward network from the course page](../assets/clean_diagrams/feedforward_depth_width.png)
 
-*Source figure — Multilayer feed-forward network from the course page.*
+*Redrawn course diagram — Network width counts units within a layer, while depth counts successive transformations.*
 
 
 ## RNNs, Stateful Training, LSTMs, GRUs, and Encoder-Decoder Models
@@ -77,19 +77,19 @@ not be simplified.
 *Redrawn course diagram — Random, expanding-window, and sliding-window temporal validation.*
 
 
-![Basic and stacked RNN architectures from the course page](../assets/original_figures/p071_rnn_architectures.png)
+![Basic and stacked RNN architectures from the course page](../assets/clean_diagrams/rnn_basic_and_stacked.png)
 
-*Source figure — Basic and stacked RNN architectures from the course page.*
-
-
-![LSTM cell diagrams from the course page](../assets/original_figures/p074_lstm_cell_diagrams.png)
-
-*Source figure — LSTM cell diagrams from the course page.*
+*Redrawn course diagram — Stacked RNNs combine recurrent state propagation through time with vertical depth.*
 
 
-![Encoder-decoder sequence and forecast diagrams from the course page](../assets/original_figures/p078_encoder_decoder_forecast.png)
+![LSTM cell diagrams from the course page](../assets/clean_diagrams/lstm_memory_gates.png)
 
-*Source figure — Encoder-decoder sequence and forecast diagrams from the course page.*
+*Redrawn course diagram — Forget, input, candidate, and output gates regulate the LSTM cell-state pathway.*
+
+
+![Encoder-decoder sequence and forecast diagrams from the course page](../assets/clean_diagrams/encoder_decoder_sequence_forecast.png)
+
+*Redrawn course diagram — Encoder-decoder models map an input sequence to a target sequence or forecast horizon.*
 
 
 ## Temporal Convolutional Networks
@@ -115,9 +115,9 @@ not be simplified.
 *Redrawn course diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.*
 
 
-![Projection-head comparison from the course page](../assets/original_figures/p090_projection_head_results.png)
+![Projection-head comparison from the course page](../assets/clean_diagrams/projection_head_design.png)
 
-*Source figure — Projection-head comparison from the course page.*
+*Redrawn course diagram — Projection heads shape the contrastive objective while the encoder representation is retained downstream.*
 
 
 ## Transformers and Temporal Applications
@@ -139,27 +139,27 @@ not be simplified.
 *Redrawn course diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.*
 
 
-![Residual learning block from the course page](../assets/original_figures/p099_residual_learning_block.png)
+![Residual learning block from the course page](../assets/clean_diagrams/residual_learning_block.png)
 
-*Source figure — Residual learning block from the course page.*
+*Redrawn course diagram — A residual block adds the learned correction $F(x)$ to the identity path $x$.*
 
 
-![Taxonomy of transformer methods for time-series modeling](../assets/original_figures/p100_time_series_transformer_taxonomy.png)
+![Taxonomy of transformer methods for time-series modeling](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
 
-*Source figure — Taxonomy of transformer methods for time-series modeling.*
+*Redrawn course diagram — Time-series transformers vary in representation, attention, architecture, and application.*
 
 
 ## Handwritten Appendix: Stationarity and Covariance Exercise
 
 [Open chapter](../notes/12_handwritten_appendix.md)
 
-![Full handwritten stationarity page](../assets/original_figures/p101_handwritten_stationarity.png)
+![Full handwritten stationarity page](../assets/clean_diagrams/stationarity_recap.png)
 
-*Source figure — Full handwritten stationarity page.*
+*Redrawn appendix diagram — Strict stationarity, weak stationarity, IID assumptions, and sampling-rate intuition.*
 
 
-![Full handwritten covariance exercise](../assets/original_figures/p103_handwritten_covariance_exercise.png)
+![Full handwritten covariance exercise](../assets/clean_diagrams/first_difference_covariance.png)
 
-*Source figure — Full handwritten covariance exercise.*
+*Redrawn appendix diagram — First differencing separates process innovations and observation-noise covariance.*
 
 

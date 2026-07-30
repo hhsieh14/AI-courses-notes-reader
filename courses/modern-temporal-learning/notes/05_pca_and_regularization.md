@@ -365,9 +365,9 @@ The correlated-data plot shows two new perpendicular axes:
 
 - one aligned with the long direction of the data cloud;
 - one aligned with the short direction.
-![Correlated data and PCA directions from the course page](../assets/original_figures/p035_pca_correlated_axes.png)
+![Correlated data and PCA directions from the course page](../assets/clean_diagrams/pca_coordinate_rotation.png)
 
-*Source figure — Correlated data and PCA directions from the course page.*
+*Redrawn course diagram — PCA rotates correlated observations onto orthogonal directions ordered by variance.*
 
 The first direction captures most of the variation. The second captures
 the remaining orthogonal variation.
@@ -594,8 +594,6 @@ $M$ dimensions.
 
 *Redrawn course diagram — Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions.*
 
-
-*Original course figure: [page-37 contour source crop](../assets/original_figures/p037_mahalanobis_contours.png)*
 
 A direction with lower variance receives a larger penalty for the same
 absolute displacement.
@@ -1191,7 +1189,6 @@ The plotted coefficient paths show:
 *Redrawn course diagram — Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero.*
 
 
-*Original course figure: [page-43 coefficient-path source crop](../assets/original_figures/p043_ridge_lasso_paths.png)*
 | Property | Ridge | Lasso |
 |---|---|---|
 | Penalty | $L_2$ squared norm | $L_1$ norm |

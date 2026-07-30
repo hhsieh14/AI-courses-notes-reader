@@ -273,9 +273,9 @@ f^{(1)}(\mathbf{x})
 \right)
 \right).
 ```
-![Multilayer feed-forward network from the course page](../assets/original_figures/p057_multilayer_network_architecture.png)
+![Multilayer feed-forward network from the course page](../assets/clean_diagrams/feedforward_depth_width.png)
 
-*Source figure — Multilayer feed-forward network from the course page.*
+*Redrawn course diagram — Network width counts units within a layer, while depth counts successive transformations.*
 
 The diagram distinguishes:
 

@@ -549,8 +549,6 @@ between the original and reconstructed time series.
 *Redrawn course diagram — Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation.*
 
 
-*Original course figure: [page-86 architecture and ECG example](../assets/original_figures/p086_temporal_autoencoder_example.png)*
-
 **Source:** CSE598MTL.pdf, p. 86
 
 ---
@@ -753,8 +751,6 @@ pairs, while mismatched sources are negative pairs.
 *Redrawn course diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.*
 
 
-*Original course figure: [page-88 pairing and slowness crop](../assets/original_figures/p088_contrastive_pairing_slowness.png) · [page-89 encoder and head crop](../assets/original_figures/p089_contrastive_encoder_head.png)*
-
 **Source:** CSE598MTL.pdf, p. 88
 
 ---
@@ -872,7 +868,6 @@ For one positive pair:
 
 the other transformed instances in the minibatch are treated as
 negatives.
-*Original course figure: [page-89 encoder/head source crop](../assets/original_figures/p089_contrastive_encoder_head.png)*
 
 **Source:** CSE598MTL.pdf, p. 89
 
@@ -1096,9 +1091,9 @@ It compares:
 - no projection;
 - linear projection;
 - nonlinear projection.
-![Projection-head comparison from the course page](../assets/original_figures/p090_projection_head_results.png)
+![Projection-head comparison from the course page](../assets/clean_diagrams/projection_head_design.png)
 
-*Source figure — Projection-head comparison from the course page.*
+*Redrawn course diagram — Projection heads shape the contrastive objective while the encoder representation is retained downstream.*
 
 The page's conclusion is that the projection-head choice can affect
 downstream representation quality.

@@ -185,8 +185,6 @@ depth.
 *Redrawn course diagram — Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization.*
 
 
-*Original course figure: [page-93 original architecture](../assets/original_figures/p093_transformer_architecture.png)*
-
 The architecture includes:
 
 ### Encoder side
@@ -426,8 +424,6 @@ on different linguistic relationships.
 
 *Redrawn course diagram — Sentence-level attention interpretation and parallel multi-head query-key-value projections.*
 
-
-*Original course figure: [page-94 attention and multi-head crop](../assets/original_figures/p094_multihead_attention_example.png)*
 
 **Source:** CSE598MTL.pdf, p. 94
 
@@ -714,8 +710,6 @@ The encoder-decoder attention attends to the final encoder-stack outputs.
 
 *Redrawn course diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.*
 
-
-*Original course figure: [page-96 decoder source crop](../assets/original_figures/p096_decoder_block_and_operation.png)*
 
 **Source:** CSE598MTL.pdf, p. 96
 
@@ -1095,9 +1089,9 @@ and returning:
 ```math
 \mathcal{F}(\mathbf{x})+\mathbf{x}.
 ```
-![Residual learning block from the course page](../assets/original_figures/p099_residual_learning_block.png)
+![Residual learning block from the course page](../assets/clean_diagrams/residual_learning_block.png)
 
-*Source figure — Residual learning block from the course page.*
+*Redrawn course diagram — A residual block adds the learned correction $F(x)$ to the identity path $x$.*
 
 **Source:** CSE598MTL.pdf, p. 99
 
@@ -1190,9 +1184,9 @@ The application branch further includes examples such as:
 - time-series forecasting;
 - spatial-temporal forecasting;
 - event forecasting.
-![Taxonomy of transformer methods for time-series modeling](../assets/original_figures/p100_time_series_transformer_taxonomy.png)
+![Taxonomy of transformer methods for time-series modeling](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
 
-*Source figure — Taxonomy of transformer methods for time-series modeling.*
+*Redrawn course diagram — Time-series transformers vary in representation, attention, architecture, and application.*
 
 **Source:** CSE598MTL.pdf, p. 100
 

@@ -395,9 +395,9 @@ for its emission probability
 
 The course figure shows a hidden state sequence and a noisy observed
 sequence generated from it.
-![Hidden-state and observed-sequence example from the course page](../assets/original_figures/p047_hmm_hidden_observed_series.png)
+![Hidden-state and observed-sequence example from the course page](../assets/clean_diagrams/hmm_hidden_observed_sequences.png)
 
-*Source figure — Hidden-state and observed-sequence example from the course page.*
+*Redrawn course diagram — A piecewise latent state sequence generates noisy observations through the emission model.*
 
 The main inference interest listed is an estimate of the current hidden
 state.
@@ -1132,7 +1132,6 @@ nearest-center decisions.
 *Redrawn course diagram — Soft responsibilities preserve uncertainty, while K-means makes one hard assignment.*
 
 
-*[Open the original course figure](../assets/original_figures/p053_em_soft_assignments.png)*
 The slide also notes that, for Gaussian components, the responsibility
 formula uses a covariance-adjusted or Mahalanobis-distance form.
 

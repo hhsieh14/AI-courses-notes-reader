@@ -240,7 +240,6 @@ The page therefore displays blocked alternatives.
 *Redrawn course diagram — Random, expanding-window, and sliding-window temporal validation.*
 
 
-*[Open the original course figure](../assets/original_figures/p067_blocked_cross_validation.png)*
 The upper figure contrasts approaches labeled approximately as:
 
 - cross-validation;
@@ -747,9 +746,9 @@ The page states:
 
 Lower layers may learn more primitive features, while deeper layers
 integrate those features.
-![Basic and stacked RNN architectures from the course page](../assets/original_figures/p071_rnn_architectures.png)
+![Basic and stacked RNN architectures from the course page](../assets/clean_diagrams/rnn_basic_and_stacked.png)
 
-*Source figure — Basic and stacked RNN architectures from the course page.*
+*Redrawn course diagram — Stacked RNNs combine recurrent state propagation through time with vertical depth.*
 
 The slide notes that architecture selection remains a work in progress,
 similar to other deep-network design choices.
@@ -1110,9 +1109,9 @@ The page labels:
 
 The inner structure is more complex than a basic RNN, even though the
 external network use is similar.
-![LSTM cell diagrams from the course page](../assets/original_figures/p074_lstm_cell_diagrams.png)
+![LSTM cell diagrams from the course page](../assets/clean_diagrams/lstm_memory_gates.png)
 
-*Source figure — LSTM cell diagrams from the course page.*
+*Redrawn course diagram — Forget, input, candidate, and output gates regulate the LSTM cell-state pathway.*
 
 **Source:** CSE598MTL.pdf, p. 74
 
@@ -1549,9 +1548,9 @@ The encoder reads the input sequence and produces an internal
 representation.
 
 The decoder uses that representation to produce an output sequence.
-![Encoder-decoder sequence and forecast diagrams from the course page](../assets/original_figures/p078_encoder_decoder_forecast.png)
+![Encoder-decoder sequence and forecast diagrams from the course page](../assets/clean_diagrams/encoder_decoder_sequence_forecast.png)
 
-*Source figure — Encoder-decoder sequence and forecast diagrams from the course page.*
+*Redrawn course diagram — Encoder-decoder models map an input sequence to a target sequence or forecast horizon.*
 
 **Source:** CSE598MTL.pdf, p. 78
 

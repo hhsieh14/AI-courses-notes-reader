@@ -274,8 +274,6 @@ of the input history.
 *Redrawn course diagram — TCN causality, exponentially increasing dilation, and residual-block structure.*
 
 
-*Original course figure: [causal stack](../assets/original_figures/p080_causal_convolution_stack.png) · [dilated stack](../assets/original_figures/p081_dilated_causal_convolution.png) · [residual block](../assets/original_figures/p082_tcn_residual_block.png)*
-
 The page labels:
 
 - input layer;
@@ -451,7 +449,6 @@ A dilation stack:
 ---
 
 ## 15. Dilated causal stack
-*Original course figure: [page-81 dilated-stack crop](../assets/original_figures/p081_dilated_causal_convolution.png)*
 
 The diagram shows successive hidden layers using increasing dilation.
 
@@ -559,7 +556,6 @@ The block output adds:
 
 - the transformed branch;
 - the identity or projected input.
-*Original course figure: [page-82 residual-block crop](../assets/original_figures/p082_tcn_residual_block.png)*
 
 **Source:** CSE598MTL.pdf, p. 82
 

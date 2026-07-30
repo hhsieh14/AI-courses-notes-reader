@@ -19,3 +19,16 @@ Open a course above and follow its chapter links. Equations use GitHub-compatibl
 ## Scope
 
 These notes reconstruct and organize course material for study. Added explanations are labeled where applicable, and source-derived claims remain distinguishable from clarification or interpretation.
+
+## Disclaimer
+
+These are independent study notes created for personal learning and
+educational reference. They are not official course materials and are not
+affiliated with, authorized by, or endorsed by Arizona State University or
+the course instructors.
+
+The explanations, organization, and redrawn diagrams reflect the author's
+own understanding and interpretation. Course names and source citations are
+included only to identify the subjects and materials studied. All rights to
+referenced courses, books, papers, and other third-party materials remain
+with their respective owners.

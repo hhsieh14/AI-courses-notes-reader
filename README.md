@@ -1,4 +1,4 @@
-# Course Notes
+# My Favorite AI Course Notes
 
 A lightweight, reader-focused collection of reconstructed machine-learning course notes.
 

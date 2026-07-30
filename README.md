@@ -19,3 +19,11 @@ Open a course above and follow its chapter links. Equations use GitHub-compatibl
 ## Scope
 
 These notes reconstruct and organize course material for study. Added explanations are labeled where applicable, and source-derived claims remain distinguishable from clarification or interpretation.
+
+## Disclaimer
+
+These are independent study notes created for educational purposes and are
+not official course materials. Course names are included only to identify the
+subjects studied. The explanations, organization, and redrawn diagrams are the
+author's own interpretations. Rights to any referenced books, papers, courses,
+and original instructional materials remain with their respective owners.

@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="760" viewBox="0 0 1360 760">
+  <style>
+    .title { font: 700 26px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .panel-title { font: 700 19px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .label { font: 700 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#374151; }
+    .small { font: 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#4b5563; }
+    .panel { fill:#ffffff; stroke:#d1d5db; stroke-width:1.5; rx:16; }
+    .segment { fill:#dbeafe; stroke:#2563eb; stroke-width:1.5; rx:8; }
+    .positive { fill:#dcfce7; stroke:#16a34a; stroke-width:1.6; rx:10; }
+    .negative { fill:#fee2e2; stroke:#dc2626; stroke-width:1.6; rx:10; }
+    .encoder { fill:#ede9fe; stroke:#7c3aed; stroke-width:1.8; rx:12; }
+    .head { fill:#fef3c7; stroke:#d97706; stroke-width:1.8; rx:12; }
+    .latent { fill:#f8fafc; stroke:#64748b; stroke-width:1.5; rx:10; }
+    .loss { fill:#ffedd5; stroke:#ea580c; stroke-width:1.8; rx:12; }
+    .arrow { stroke:#64748b; stroke-width:1.9; fill:none; marker-end:url(#arrow); }
+    .same { stroke:#16a34a; stroke-width:2.4; fill:none; }
+    .different { stroke:#dc2626; stroke-width:2; fill:none; stroke-dasharray:7 6; }
+    .series { stroke:#2563eb; stroke-width:2.5; fill:none; }
+    .highlight { fill:#bfdbfe; fill-opacity:.7; stroke:#2563eb; stroke-width:1.3; }
+    .far { fill:#fecaca; fill-opacity:.65; stroke:#dc2626; stroke-width:1.3; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect width="1360" height="760" fill="#f8fafc"/>
+  <text x="680" y="38" text-anchor="middle" class="title">Contrastive learning for temporal representations</text>
+
+  <!-- Panel A -->
+  <g transform="translate(25,70)">
+    <rect class="panel" x="0" y="0" width="635" height="625"/>
+    <text x="318" y="32" text-anchor="middle" class="panel-title">A. Construct positive and negative pairs</text>
+
+    <text x="45" y="80" class="label">temporal slowness assumption</text>
+    <line x1="55" y1="200" x2="585" y2="200" stroke="#94a3b8" stroke-width="1.2"/>
+    <polyline class="series" points="60,168 100,150 140,162 180,118 220,125 260,105 300,132 340,122 380,155 420,148 460,105 500,115 540,88 580,100"/>
+
+    <rect class="highlight" x="155" y="92" width="115" height="100" rx="10"/>
+    <rect class="highlight" x="235" y="78" width="115" height="114" rx="10"/>
+    <rect class="far" x="470" y="72" width="105" height="120" rx="10"/>
+
+    <text x="212" y="222" text-anchor="middle" class="small">query segment</text>
+    <text x="292" y="244" text-anchor="middle" class="small">nearby positive</text>
+    <text x="522" y="222" text-anchor="middle" class="small">distant negative</text>
+
+    <rect class="positive" x="55" y="285" width="240" height="82"/>
+    <text x="175" y="313" text-anchor="middle" class="label">positive pair</text>
+    <text x="175" y="338" text-anchor="middle" class="small">nearby segments, two augmentations,</text>
+    <text x="175" y="357" text-anchor="middle" class="small">or two sensors observing the same event</text>
+
+    <rect class="negative" x="340" y="285" width="240" height="82"/>
+    <text x="460" y="313" text-anchor="middle" class="label">negative pair</text>
+    <text x="460" y="338" text-anchor="middle" class="small">different instance or mismatched event</text>
+    <text x="460" y="357" text-anchor="middle" class="small">subject to false-negative risk</text>
+
+    <text x="45" y="422" class="label">example augmented views</text>
+    <rect class="segment" x="70" y="450" width="180" height="55"/>
+    <text x="160" y="474" text-anchor="middle" class="label">view 1: xᵢ</text>
+    <text x="160" y="494" text-anchor="middle" class="small">crop / noise / sensor A</text>
+
+    <rect class="segment" x="350" y="450" width="180" height="55"/>
+    <text x="440" y="474" text-anchor="middle" class="label">view 2: xⱼ</text>
+    <text x="440" y="494" text-anchor="middle" class="small">crop / noise / sensor B</text>
+
+    <path class="same" d="M250,477 C285,445 315,445 350,477"/>
+    <text x="300" y="432" text-anchor="middle" class="small">same underlying instance</text>
+
+    <rect class="positive" x="155" y="545" width="320" height="50"/>
+    <text x="315" y="576" text-anchor="middle" class="label">the pair rule defines the invariance learned</text>
+  </g>
+
+  <!-- Panel B -->
+  <g transform="translate(685,70)">
+    <rect class="panel" x="0" y="0" width="650" height="625"/>
+    <text x="325" y="32" text-anchor="middle" class="panel-title">B. Encode views and optimize similarity</text>
+
+    <!-- Two branches -->
+    <rect class="segment" x="45" y="92" width="120" height="52"/>
+    <text x="105" y="123" text-anchor="middle" class="label">view xᵢ</text>
+
+    <rect class="segment" x="45" y="405" width="120" height="52"/>
+    <text x="105" y="436" text-anchor="middle" class="label">view xⱼ</text>
+
+    <rect class="encoder" x="225" y="82" width="145" height="72"/>
+    <text x="297" y="111" text-anchor="middle" class="label">shared encoder f</text>
+    <text x="297" y="135" text-anchor="middle" class="small">ResNet / RNN / TCN</text>
+
+    <rect class="encoder" x="225" y="395" width="145" height="72"/>
+    <text x="297" y="424" text-anchor="middle" class="label">shared encoder f</text>
+    <text x="297" y="448" text-anchor="middle" class="small">same trained weights</text>
+
+    <rect class="latent" x="425" y="92" width="95" height="52"/>
+    <text x="472" y="115" text-anchor="middle" class="label">hᵢ</text>
+    <text x="472" y="135" text-anchor="middle" class="small">representation</text>
+
+    <rect class="latent" x="425" y="405" width="95" height="52"/>
+    <text x="472" y="428" text-anchor="middle" class="label">hⱼ</text>
+    <text x="472" y="448" text-anchor="middle" class="small">representation</text>
+
+    <rect class="head" x="555" y="92" width="70" height="52"/>
+    <text x="590" y="115" text-anchor="middle" class="label">g</text>
+    <text x="590" y="135" text-anchor="middle" class="small">head</text>
+
+    <rect class="head" x="555" y="405" width="70" height="52"/>
+    <text x="590" y="428" text-anchor="middle" class="label">g</text>
+    <text x="590" y="448" text-anchor="middle" class="small">head</text>
+
+    <rect class="loss" x="500" y="230" width="125" height="100"/>
+    <text x="562" y="258" text-anchor="middle" class="label">contrastive loss</text>
+    <text x="562" y="282" text-anchor="middle" class="small">increase positive</text>
+    <text x="562" y="301" text-anchor="middle" class="small">similarity; decrease</text>
+    <text x="562" y="320" text-anchor="middle" class="small">negative similarity</text>
+
+    <line class="arrow" x1="165" y1="118" x2="221" y2="118"/>
+    <line class="arrow" x1="370" y1="118" x2="421" y2="118"/>
+    <line class="arrow" x1="520" y1="118" x2="551" y2="118"/>
+
+    <line class="arrow" x1="165" y1="431" x2="221" y2="431"/>
+    <line class="arrow" x1="370" y1="431" x2="421" y2="431"/>
+    <line class="arrow" x1="520" y1="431" x2="551" y2="431"/>
+
+    <path class="arrow" d="M625,118 C645,118 645,246 625,260"/>
+    <path class="arrow" d="M625,431 C645,431 645,318 625,304"/>
+
+    <text x="45" y="520" class="label">after pretraining</text>
+    <rect class="positive" x="45" y="545" width="535" height="48"/>
+    <text x="312" y="574" text-anchor="middle" class="label">discard projection head g; retain encoder representation h</text>
+
+    <text x="290" y="200" text-anchor="middle" class="small">encoder output h should remain useful for downstream tasks</text>
+    <text x="290" y="368" text-anchor="middle" class="small">projection output z is the space optimized by contrastive loss</text>
+  </g>
+</svg>

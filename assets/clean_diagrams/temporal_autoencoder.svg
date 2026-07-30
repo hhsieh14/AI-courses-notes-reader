@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="570" viewBox="0 0 1280 570">
+  <style>
+    .title { font: 700 26px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .subtitle { font: 600 16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#475569; }
+    .label { font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .small { font: 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#4b5563; }
+    .panel { fill:#ffffff; stroke:#d1d5db; stroke-width:1.5; rx:16; }
+    .input { fill:#dbeafe; stroke:#2563eb; stroke-width:1.5; rx:8; }
+    .encoder { fill:#dcfce7; stroke:#16a34a; stroke-width:1.8; rx:12; }
+    .latent { fill:#fef3c7; stroke:#d97706; stroke-width:2; rx:14; }
+    .decoder { fill:#ede9fe; stroke:#7c3aed; stroke-width:1.8; rx:12; }
+    .output { fill:#ffedd5; stroke:#ea580c; stroke-width:1.5; rx:8; }
+    .arrow { stroke:#64748b; stroke-width:2; fill:none; marker-end:url(#arrow); }
+    .recur1 { stroke:#16a34a; stroke-width:1.8; fill:none; marker-end:url(#arrowGreen); }
+    .recur2 { stroke:#7c3aed; stroke-width:1.8; fill:none; marker-end:url(#arrowPurple); }
+    .loss { fill:#fef2f2; stroke:#dc2626; stroke-width:1.5; rx:12; }
+    .reuse { fill:#f0fdf4; stroke:#16a34a; stroke-width:1.3; rx:12; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="570" fill="#f8fafc"/>
+  <text x="640" y="38" text-anchor="middle" class="title">Temporal autoencoder</text>
+  <text x="640" y="64" text-anchor="middle" class="subtitle">Compress a whole sequence into a bottleneck representation, then reconstruct it.</text>
+
+  <rect class="panel" x="30" y="90" width="1220" height="420"/>
+
+  <!-- Input sequence -->
+  <text x="145" y="130" text-anchor="middle" class="label">input sequence</text>
+  <g>
+    <rect class="input" x="65" y="170" width="55" height="38"/><text x="92" y="194" text-anchor="middle" class="small">x₁</text>
+    <rect class="input" x="125" y="150" width="55" height="38"/><text x="152" y="174" text-anchor="middle" class="small">x₂</text>
+    <rect class="input" x="185" y="182" width="55" height="38"/><text x="212" y="206" text-anchor="middle" class="small">x₃</text>
+    <rect class="input" x="245" y="138" width="55" height="38"/><text x="272" y="162" text-anchor="middle" class="small">x₄</text>
+  </g>
+
+  <!-- Encoder -->
+  <text x="400" y="130" text-anchor="middle" class="label">recurrent encoder</text>
+  <rect class="encoder" x="335" y="155" width="130" height="58"/>
+  <text x="400" y="180" text-anchor="middle" class="label">RNN / LSTM</text>
+  <text x="400" y="201" text-anchor="middle" class="small">processes x₁ … xₜ</text>
+  <line class="arrow" x1="300" y1="175" x2="331" y2="181"/>
+
+  <rect class="encoder" x="335" y="245" width="130" height="58"/>
+  <text x="400" y="270" text-anchor="middle" class="label">stacked layer</text>
+  <text x="400" y="291" text-anchor="middle" class="small">optional depth</text>
+  <line class="arrow" x1="400" y1="213" x2="400" y2="241"/>
+
+  <!-- Latent -->
+  <rect class="latent" x="545" y="205" width="175" height="100"/>
+  <text x="632" y="238" text-anchor="middle" class="label">bottleneck h</text>
+  <text x="632" y="263" text-anchor="middle" class="small">low-dimensional</text>
+  <text x="632" y="285" text-anchor="middle" class="small">sequence representation</text>
+  <line class="arrow" x1="465" y1="274" x2="541" y2="255"/>
+
+  <!-- Decoder -->
+  <text x="850" y="130" text-anchor="middle" class="label">recurrent decoder</text>
+  <rect class="decoder" x="785" y="155" width="130" height="58"/>
+  <text x="850" y="180" text-anchor="middle" class="label">RNN / LSTM</text>
+  <text x="850" y="201" text-anchor="middle" class="small">expands h through time</text>
+
+  <rect class="decoder" x="785" y="245" width="130" height="58"/>
+  <text x="850" y="270" text-anchor="middle" class="label">stacked layer</text>
+  <text x="850" y="291" text-anchor="middle" class="small">optional depth</text>
+
+  <line class="arrow" x1="720" y1="255" x2="781" y2="184"/>
+  <line class="arrow" x1="850" y1="213" x2="850" y2="241"/>
+
+  <!-- Reconstruction -->
+  <text x="1080" y="130" text-anchor="middle" class="label">reconstruction</text>
+  <g>
+    <rect class="output" x="950" y="170" width="60" height="38"/><text x="980" y="194" text-anchor="middle" class="small">x̂₁</text>
+    <rect class="output" x="1015" y="150" width="60" height="38"/><text x="1045" y="174" text-anchor="middle" class="small">x̂₂</text>
+    <rect class="output" x="1080" y="182" width="60" height="38"/><text x="1110" y="206" text-anchor="middle" class="small">x̂₃</text>
+    <rect class="output" x="1145" y="138" width="60" height="38"/><text x="1175" y="162" text-anchor="middle" class="small">x̂₄</text>
+  </g>
+  <line class="arrow" x1="915" y1="184" x2="946" y2="184"/>
+
+  <!-- Loss -->
+  <rect class="loss" x="950" y="290" width="255" height="76"/>
+  <text x="1077" y="318" text-anchor="middle" class="label">reconstruction loss</text>
+  <text x="1077" y="343" text-anchor="middle" class="small">MSE, SSE, or MAE between x and x̂</text>
+  <path class="arrow" d="M1100,220 C1100,250 1080,260 1080,286"/>
+
+  <!-- Reuse -->
+  <rect class="reuse" x="470" y="385" width="325" height="82"/>
+  <text x="632" y="414" text-anchor="middle" class="label">after pretraining</text>
+  <text x="632" y="439" text-anchor="middle" class="small">discard decoder; retain h for clustering,</text>
+  <text x="632" y="459" text-anchor="middle" class="small">classification, or anomaly detection</text>
+  <line class="arrow" x1="632" y1="305" x2="632" y2="381"/>
+
+  <text x="200" y="422" text-anchor="middle" class="small">The representation summarizes</text>
+  <text x="200" y="443" text-anchor="middle" class="small">the entire temporal instance.</text>
+</svg>

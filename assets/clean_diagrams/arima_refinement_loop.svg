@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260">
+  <style>
+    .title { font: 700 24px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .box { fill:#fff; stroke:#94a3b8; stroke-width:1.6; rx:14; }
+    .text { font: 600 16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .small { font: 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#475569; }
+    .arrow { stroke:#2563eb; stroke-width:2.5; fill:none; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="260" fill="#f8fafc"/>
+  <text x="600" y="34" text-anchor="middle" class="title">A practical ARIMA refinement loop</text>
+
+  <g transform="translate(30,75)">
+    <rect class="box" x="0" y="0" width="160" height="88"/>
+    <text x="80" y="35" text-anchor="middle" class="text">Plot the series</text>
+    <text x="80" y="60" text-anchor="middle" class="small">trend? seasonality?</text>
+
+    <rect class="box" x="205" y="0" width="160" height="88"/>
+    <text x="285" y="35" text-anchor="middle" class="text">Difference if needed</text>
+    <text x="285" y="60" text-anchor="middle" class="small">regular or seasonal</text>
+
+    <rect class="box" x="410" y="0" width="160" height="88"/>
+    <text x="490" y="35" text-anchor="middle" class="text">Inspect ACF / PACF</text>
+    <text x="490" y="60" text-anchor="middle" class="small">candidate p and q</text>
+
+    <rect class="box" x="615" y="0" width="160" height="88"/>
+    <text x="695" y="35" text-anchor="middle" class="text">Fit a candidate</text>
+    <text x="695" y="60" text-anchor="middle" class="small">ARIMA or SARIMAX</text>
+
+    <rect class="box" x="820" y="0" width="160" height="88"/>
+    <text x="900" y="35" text-anchor="middle" class="text">Check residuals</text>
+    <text x="900" y="60" text-anchor="middle" class="small">bias, ACF, Q-Q plot</text>
+
+    <rect class="box" x="1025" y="0" width="145" height="88"/>
+    <text x="1097" y="35" text-anchor="middle" class="text">Refine</text>
+    <text x="1097" y="60" text-anchor="middle" class="small">repeat if structured</text>
+
+    <path class="arrow" d="M160,44 L200,44"/>
+    <path class="arrow" d="M365,44 L405,44"/>
+    <path class="arrow" d="M570,44 L610,44"/>
+    <path class="arrow" d="M775,44 L815,44"/>
+    <path class="arrow" d="M980,44 L1020,44"/>
+    <path class="arrow" d="M1098,92 C1098,145 740,155 695,95"/>
+  </g>
+</svg>

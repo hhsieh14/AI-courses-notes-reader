@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="680" viewBox="0 0 1320 680">
+  <style>
+    .title { font: 700 26px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .subtitle { font: 600 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#475569; }
+    .panel-title { font: 700 19px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .label { font: 700 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#374151; }
+    .small { font: 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#4b5563; }
+    .panel { fill:#ffffff; stroke:#d1d5db; stroke-width:1.5; rx:16; }
+    .axis { stroke:#94a3b8; stroke-width:1.3; }
+    .circle { stroke:#2563eb; stroke-width:2; fill:none; opacity:.85; }
+    .ellipse { stroke:#7c3aed; stroke-width:2; fill:none; opacity:.85; }
+    .major { stroke:#16a34a; stroke-width:2.1; fill:none; marker-end:url(#arrowGreen); }
+    .minor { stroke:#dc2626; stroke-width:2.1; fill:none; marker-end:url(#arrowRed); }
+    .pointA { fill:#16a34a; stroke:#ffffff; stroke-width:2; }
+    .pointB { fill:#dc2626; stroke:#ffffff; stroke-width:2; }
+    .mean { fill:#111827; }
+    .note { fill:#f8fafc; stroke:#cbd5e1; stroke-width:1.2; rx:12; }
+  </style>
+  <defs>
+    <marker id="arrowGreen" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1320" height="680" fill="#f8fafc"/>
+  <text x="660" y="38" text-anchor="middle" class="title">Euclidean and Mahalanobis distance measure different geometry</text>
+  <text x="660" y="64" text-anchor="middle" class="subtitle">Mahalanobis distance rescales and rotates space using the covariance structure.</text>
+
+  <!-- Euclidean panel -->
+  <g transform="translate(25,90)">
+    <rect class="panel" x="0" y="0" width="610" height="520"/>
+    <text x="305" y="35" text-anchor="middle" class="panel-title">A. Euclidean distance</text>
+    <text x="305" y="59" text-anchor="middle" class="small">equal distance from the mean forms circles</text>
+
+    <line class="axis" x1="80" y1="420" x2="550" y2="420"/>
+    <line class="axis" x1="305" y1="85" x2="305" y2="470"/>
+    <circle class="circle" cx="305" cy="270" r="65"/>
+    <circle class="circle" cx="305" cy="270" r="125"/>
+    <circle class="circle" cx="305" cy="270" r="185"/>
+    <circle class="mean" cx="305" cy="270" r="6"/>
+    <text x="316" y="260" class="small">μ</text>
+
+    <circle class="pointA" cx="455" cy="270" r="8"/>
+    <circle class="pointB" cx="305" cy="120" r="8"/>
+    <text x="466" y="263" class="label">A</text>
+    <text x="316" y="113" class="label">B</text>
+
+    <line class="major" x1="305" y1="270" x2="447" y2="270"/>
+    <line class="minor" x1="305" y1="270" x2="305" y2="128"/>
+
+    <rect class="note" x="120" y="455" width="370" height="42"/>
+    <text x="305" y="481" text-anchor="middle" class="label">A and B have the same Euclidean distance</text>
+  </g>
+
+  <!-- Mahalanobis panel -->
+  <g transform="translate(685,90)">
+    <rect class="panel" x="0" y="0" width="610" height="520"/>
+    <text x="305" y="35" text-anchor="middle" class="panel-title">B. Mahalanobis distance</text>
+    <text x="305" y="59" text-anchor="middle" class="small">equal distance follows covariance-aligned ellipses</text>
+
+    <line class="axis" x1="80" y1="420" x2="550" y2="420"/>
+    <line class="axis" x1="305" y1="85" x2="305" y2="470"/>
+
+    <g transform="rotate(-25 305 270)">
+      <ellipse class="ellipse" cx="305" cy="270" rx="85" ry="38"/>
+      <ellipse class="ellipse" cx="305" cy="270" rx="165" ry="74"/>
+      <ellipse class="ellipse" cx="305" cy="270" rx="240" ry="108"/>
+      <line class="major" x1="305" y1="270" x2="485" y2="270"/>
+      <line class="minor" x1="305" y1="270" x2="305" y2="150"/>
+    </g>
+
+    <circle class="mean" cx="305" cy="270" r="6"/>
+    <text x="316" y="260" class="small">μ</text>
+
+    <!-- approximately same ordinary displacement -->
+    <circle class="pointA" cx="440" cy="207" r="8"/>
+    <circle class="pointB" cx="242" cy="135" r="8"/>
+    <text x="451" y="200" class="label">A</text>
+    <text x="253" y="128" class="label">B</text>
+
+    <text x="465" y="245" class="small" fill="#16a34a">high-variance direction</text>
+    <text x="95" y="126" class="small" fill="#dc2626">low-variance direction</text>
+
+    <rect class="note" x="85" y="455" width="440" height="42"/>
+    <text x="305" y="481" text-anchor="middle" class="label">B is more unusual because displacement along low variance is penalized more</text>
+  </g>
+
+  <rect class="note" x="320" y="625" width="680" height="38"/>
+  <text x="660" y="649" text-anchor="middle" class="label">In PCA coordinates: d² = Σ zₘ² / λₘ, so small-variance directions receive larger weight.</text>
+</svg>

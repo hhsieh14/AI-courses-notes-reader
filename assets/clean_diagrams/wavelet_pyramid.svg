@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="560" viewBox="0 0 1240 560">
+  <style>
+    .title { font: 700 26px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .label { font: 700 17px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .small { font: 14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#4b5563; }
+    .signal { fill:#ffffff; stroke:#64748b; stroke-width:1.5; rx:13; }
+    .approx { fill:#dbeafe; stroke:#2563eb; stroke-width:1.8; rx:13; }
+    .detail { fill:#ffedd5; stroke:#ea580c; stroke-width:1.8; rx:13; }
+    .filter { fill:#f8fafc; stroke:#94a3b8; stroke-width:1.4; rx:10; }
+    .arrow { stroke:#475569; stroke-width:2; fill:none; marker-end:url(#arrow); }
+    .branch { stroke:#64748b; stroke-width:1.8; fill:none; }
+    .guide { stroke:#94a3b8; stroke-width:1.5; stroke-dasharray:6 6; }
+    .note { fill:#f0fdf4; stroke:#16a34a; stroke-width:1.2; rx:12; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="560" fill="#f8fafc"/>
+  <text x="620" y="38" text-anchor="middle" class="title">Discrete wavelet pyramid: decompose only the approximation branch</text>
+
+  <rect class="signal" x="40" y="229" width="150" height="70"/>
+  <text x="115" y="257" text-anchor="middle" class="label">signal x[n]</text>
+  <text x="115" y="281" text-anchor="middle" class="small">full resolution</text>
+
+  <path class="branch" d="M190,264 C235,264 230,160 285,160"/>
+  <path class="branch" d="M190,264 C235,264 230,365 285,365"/>
+
+  <rect class="filter" x="285" y="126" width="150" height="68"/>
+  <text x="360" y="151" text-anchor="middle" class="label">low-pass h</text>
+  <text x="360" y="174" text-anchor="middle" class="small">smooth content</text>
+
+  <rect class="filter" x="285" y="331" width="150" height="68"/>
+  <text x="360" y="356" text-anchor="middle" class="label">high-pass g</text>
+  <text x="360" y="379" text-anchor="middle" class="small">rapid change</text>
+
+  <path class="arrow" d="M435,160 L500,160"/>
+  <path class="arrow" d="M435,365 L500,365"/>
+
+  <rect class="filter" x="500" y="132" width="90" height="56"/>
+  <text x="545" y="155" text-anchor="middle" class="label">↓ 2</text>
+  <text x="545" y="176" text-anchor="middle" class="small">downsample</text>
+
+  <rect class="filter" x="500" y="337" width="90" height="56"/>
+  <text x="545" y="360" text-anchor="middle" class="label">↓ 2</text>
+  <text x="545" y="381" text-anchor="middle" class="small">downsample</text>
+
+  <path class="arrow" d="M590,160 L660,160"/>
+  <path class="arrow" d="M590,365 L660,365"/>
+
+  <rect class="approx" x="660" y="124" width="155" height="72"/>
+  <text x="738" y="151" text-anchor="middle" class="label">cA₁</text>
+  <text x="738" y="176" text-anchor="middle" class="small">level-1 approximation</text>
+
+  <rect class="detail" x="660" y="329" width="155" height="72"/>
+  <text x="738" y="356" text-anchor="middle" class="label">cD₁</text>
+  <text x="738" y="381" text-anchor="middle" class="small">finest detail</text>
+
+  <!-- Level 2 split -->
+  <path class="branch" d="M815,160 C850,160 845,100 885,100"/>
+  <path class="branch" d="M815,160 C850,160 845,225 885,225"/>
+
+  <rect class="approx" x="885" y="66" width="140" height="68"/>
+  <text x="955" y="92" text-anchor="middle" class="label">cA₂</text>
+  <text x="955" y="116" text-anchor="middle" class="small">coarser approximation</text>
+
+  <rect class="detail" x="885" y="191" width="140" height="68"/>
+  <text x="955" y="217" text-anchor="middle" class="label">cD₂</text>
+  <text x="955" y="241" text-anchor="middle" class="small">level-2 detail</text>
+
+  <!-- Level 3 split -->
+  <path class="branch" d="M1025,100 C1060,100 1055,60 1090,60"/>
+  <path class="branch" d="M1025,100 C1060,100 1055,145 1090,145"/>
+
+  <rect class="approx" x="1090" y="30" width="120" height="60"/>
+  <text x="1150" y="55" text-anchor="middle" class="label">cA₃</text>
+  <text x="1150" y="76" text-anchor="middle" class="small">coarsest</text>
+
+  <rect class="detail" x="1090" y="115" width="120" height="60"/>
+  <text x="1150" y="140" text-anchor="middle" class="label">cD₃</text>
+  <text x="1150" y="161" text-anchor="middle" class="small">level-3 detail</text>
+
+  <line class="guide" x1="850" y1="30" x2="850" y2="435"/>
+  <text x="837" y="458" text-anchor="end" class="small">repeat decomposition</text>
+  <text x="837" y="478" text-anchor="end" class="small">only along cA</text>
+
+  <rect class="note" x="455" y="447" width="510" height="70"/>
+  <text x="710" y="474" text-anchor="middle" class="label">Multiresolution view</text>
+  <text x="710" y="497" text-anchor="middle" class="small">
+    details preserve changes at each scale; the approximation becomes progressively coarser
+  </text>
+
+  <g transform="translate(32,490)">
+    <rect class="approx" x="0" y="0" width="24" height="18"/>
+    <text x="34" y="14" class="small">approximation / low-frequency content</text>
+    <rect class="detail" x="280" y="0" width="24" height="18"/>
+    <text x="314" y="14" class="small">detail / high-frequency content</text>
+  </g>
+</svg>

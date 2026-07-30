@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="760" viewBox="0 0 1320 760">
+  <style>
+    .title { font: 700 26px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#111827; }
+    .subtitle { font: 600 16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#475569; }
+    .panel-title { font: 700 20px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#1f2937; }
+    .label { font: 700 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#374151; }
+    .small { font: 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#4b5563; }
+    .panel { fill:#ffffff; stroke:#d1d5db; stroke-width:1.5; rx:18; }
+    .embed { fill:#dbeafe; stroke:#2563eb; stroke-width:1.7; rx:12; }
+    .attention { fill:#ede9fe; stroke:#7c3aed; stroke-width:1.8; rx:12; }
+    .ffn { fill:#dcfce7; stroke:#16a34a; stroke-width:1.8; rx:12; }
+    .norm { fill:#f8fafc; stroke:#64748b; stroke-width:1.4; rx:10; }
+    .output { fill:#ffedd5; stroke:#ea580c; stroke-width:1.7; rx:12; }
+    .memory { fill:#fef3c7; stroke:#d97706; stroke-width:1.8; rx:12; }
+    .arrow { stroke:#475569; stroke-width:2; fill:none; marker-end:url(#arrow); }
+    .cross { stroke:#d97706; stroke-width:2.4; fill:none; marker-end:url(#arrowOrange); }
+    .residual { stroke:#dc2626; stroke-width:1.8; fill:none; stroke-dasharray:6 5; }
+    .stack { fill:#f8fafc; stroke:#cbd5e1; stroke-width:1.2; rx:10; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#d97706"/>
+    </marker>
+  </defs>
+
+  <rect width="1320" height="760" fill="#f8fafc"/>
+  <text x="660" y="38" text-anchor="middle" class="title">Transformer encoder-decoder overview</text>
+  <text x="660" y="64" text-anchor="middle" class="subtitle">Attention mixes information across positions; feed-forward layers transform each position independently.</text>
+
+  <!-- Encoder -->
+  <g transform="translate(55,95)">
+    <rect class="panel" x="0" y="0" width="520" height="600"/>
+    <text x="260" y="35" text-anchor="middle" class="panel-title">Encoder stack</text>
+
+    <rect class="embed" x="125" y="500" width="270" height="58"/>
+    <text x="260" y="525" text-anchor="middle" class="label">input embedding + position</text>
+    <text x="260" y="548" text-anchor="middle" class="small">content representation plus sequence order</text>
+
+    <rect class="attention" x="125" y="390" width="270" height="70"/>
+    <text x="260" y="418" text-anchor="middle" class="label">multi-head self-attention</text>
+    <text x="260" y="442" text-anchor="middle" class="small">Q, K, and V all come from the encoder sequence</text>
+
+    <rect class="norm" x="145" y="325" width="230" height="42"/>
+    <text x="260" y="351" text-anchor="middle" class="label">residual + normalization</text>
+
+    <rect class="ffn" x="125" y="225" width="270" height="70"/>
+    <text x="260" y="253" text-anchor="middle" class="label">position-wise feed-forward</text>
+    <text x="260" y="277" text-anchor="middle" class="small">same MLP applied independently at each position</text>
+
+    <rect class="norm" x="145" y="160" width="230" height="42"/>
+    <text x="260" y="186" text-anchor="middle" class="label">residual + normalization</text>
+
+    <rect class="stack" x="145" y="90" width="230" height="42"/>
+    <text x="260" y="116" text-anchor="middle" class="label">repeat N encoder blocks</text>
+
+    <line class="arrow" x1="260" y1="500" x2="260" y2="464"/>
+    <line class="arrow" x1="260" y1="390" x2="260" y2="371"/>
+    <line class="arrow" x1="260" y1="325" x2="260" y2="299"/>
+    <line class="arrow" x1="260" y1="225" x2="260" y2="206"/>
+    <line class="arrow" x1="260" y1="160" x2="260" y2="136"/>
+
+    <path class="residual" d="M105,425 C75,425 75,346 141,346"/>
+    <path class="residual" d="M105,260 C75,260 75,181 141,181"/>
+
+    <rect class="memory" x="125" y="25" width="270" height="48"/>
+    <text x="260" y="55" text-anchor="middle" class="label">final encoder representations</text>
+    <line class="arrow" x1="260" y1="90" x2="260" y2="77"/>
+  </g>
+
+  <!-- Decoder -->
+  <g transform="translate(745,95)">
+    <rect class="panel" x="0" y="0" width="520" height="600"/>
+    <text x="260" y="35" text-anchor="middle" class="panel-title">Decoder stack</text>
+
+    <rect class="embed" x="125" y="500" width="270" height="58"/>
+    <text x="260" y="525" text-anchor="middle" class="label">shifted output embedding + position</text>
+    <text x="260" y="548" text-anchor="middle" class="small">known prefix during training; generated prefix at inference</text>
+
+    <rect class="attention" x="125" y="410" width="270" height="62"/>
+    <text x="260" y="436" text-anchor="middle" class="label">masked self-attention</text>
+    <text x="260" y="458" text-anchor="middle" class="small">each position sees only earlier outputs</text>
+
+    <rect class="norm" x="145" y="354" width="230" height="38"/>
+    <text x="260" y="378" text-anchor="middle" class="label">residual + normalization</text>
+
+    <rect class="attention" x="125" y="268" width="270" height="62"/>
+    <text x="260" y="294" text-anchor="middle" class="label">encoder-decoder attention</text>
+    <text x="260" y="316" text-anchor="middle" class="small">decoder queries attend to encoder keys and values</text>
+
+    <rect class="norm" x="145" y="212" width="230" height="38"/>
+    <text x="260" y="236" text-anchor="middle" class="label">residual + normalization</text>
+
+    <rect class="ffn" x="125" y="132" width="270" height="58"/>
+    <text x="260" y="156" text-anchor="middle" class="label">position-wise feed-forward</text>
+    <text x="260" y="177" text-anchor="middle" class="small">shared transformation at every position</text>
+
+    <rect class="norm" x="145" y="78" width="230" height="36"/>
+    <text x="260" y="101" text-anchor="middle" class="label">residual + normalization</text>
+
+    <rect class="output" x="125" y="15" width="270" height="46"/>
+    <text x="260" y="43" text-anchor="middle" class="label">linear layer + softmax / numerical output</text>
+
+    <line class="arrow" x1="260" y1="500" x2="260" y2="476"/>
+    <line class="arrow" x1="260" y1="410" x2="260" y2="396"/>
+    <line class="arrow" x1="260" y1="354" x2="260" y2="334"/>
+    <line class="arrow" x1="260" y1="268" x2="260" y2="254"/>
+    <line class="arrow" x1="260" y1="212" x2="260" y2="194"/>
+    <line class="arrow" x1="260" y1="132" x2="260" y2="118"/>
+    <line class="arrow" x1="260" y1="78" x2="260" y2="65"/>
+
+    <path class="residual" d="M105,441 C75,441 75,373 141,373"/>
+    <path class="residual" d="M105,299 C75,299 75,231 141,231"/>
+    <path class="residual" d="M105,161 C75,161 75,96 141,96"/>
+  </g>
+
+  <!-- Cross-attention connection -->
+  <path class="cross" d="M450,145 C590,145 610,394 870,394"/>
+  <text x="660" y="282" text-anchor="middle" class="label">encoder memory supplies K and V</text>
+  <text x="660" y="306" text-anchor="middle" class="small">decoder states supply Q</text>
+
+  <rect class="stack" x="590" y="590" width="140" height="54"/>
+  <text x="660" y="613" text-anchor="middle" class="label">parallel by position</text>
+  <text x="660" y="633" text-anchor="middle" class="small">sequential by layer depth</text>
+</svg>

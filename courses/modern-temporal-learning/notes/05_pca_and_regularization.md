@@ -365,12 +365,10 @@ The correlated-data plot shows two new perpendicular axes:
 
 - one aligned with the long direction of the data cloud;
 - one aligned with the short direction.
-<p align="center">
-  <a href="../assets/original_figures/p035_pca_correlated_axes.png">
-    <img src="../assets/original_figures/p035_pca_correlated_axes.png" alt="Correlated data and PCA directions from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Correlated data and PCA directions from the course page. Select the image to open the full-size version.</em></p>
+![Correlated data and PCA directions from the course page](../assets/original_figures/p035_pca_correlated_axes.png)
+
+*Source figure — Correlated data and PCA directions from the course page.*
+
 The first direction captures most of the variation. The second captures
 the remaining orthogonal variation.
 
@@ -592,13 +590,13 @@ d_M^2
 
 The slide states that Mahalanobis distance is constant on ellipses in
 $M$ dimensions.
-<p align="center">
-  <a href="../assets/clean_diagrams/mahalanobis_geometry.svg">
-    <img src="../assets/clean_diagrams/mahalanobis_geometry.svg" alt="Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean schematic — Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p037_mahalanobis_contours.png">page-37 contour source crop</a></sub></p>
+![Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions](../assets/clean_diagrams/mahalanobis_geometry.png)
+
+*Redrawn course diagram — Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions.*
+
+
+*Original course figure: [page-37 contour source crop](../assets/original_figures/p037_mahalanobis_contours.png)*
+
 A direction with lower variance receives a larger penalty for the same
 absolute displacement.
 
@@ -1188,13 +1186,12 @@ The plotted coefficient paths show:
 - ridge coefficients decreasing smoothly but remaining nonzero over the
   displayed range;
 - lasso coefficients reaching zero and remaining there.
-<p align="center">
-  <a href="../assets/clean_diagrams/ridge_lasso_paths.svg">
-    <img src="../assets/clean_diagrams/ridge_lasso_paths.svg" alt="Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean schematic — Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p043_ridge_lasso_paths.png">page-43 coefficient-path source crop</a></sub></p>
+![Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero](../assets/clean_diagrams/ridge_lasso_paths.png)
+
+*Redrawn course diagram — Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero.*
+
+
+*Original course figure: [page-43 coefficient-path source crop](../assets/original_figures/p043_ridge_lasso_paths.png)*
 | Property | Ridge | Lasso |
 |---|---|---|
 | Penalty | $L_2$ squared norm | $L_1$ norm |

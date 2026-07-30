@@ -100,7 +100,9 @@ and
 
 $$f^{\star}(x)=-1 \quad \text{when } \eta(x)<\frac{1}{2}.$$
 
-![Bayes decision rule at the posterior threshold](../assets/diagrams/bayes_decision_threshold.svg)
+![Bayes decision rule at the posterior threshold](../assets/diagrams/bayes_decision_threshold.png)
+
+*Redrawn course diagram: the posterior threshold at $1/2$ determines the Bayes label, while disagreement near the threshold contributes less excess risk.*
 
 The Bayes risk is
 

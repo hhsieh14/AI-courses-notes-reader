@@ -269,13 +269,13 @@ The page-80 table illustrates two filters being applied at each position.
 
 Stacking causal layers allows deeper outputs to depend on a larger portion
 of the input history.
-<p align="center">
-  <a href="../assets/clean_diagrams/tcn_overview.svg">
-    <img src="../assets/clean_diagrams/tcn_overview.svg" alt="TCN causality, exponentially increasing dilation, and residual-block structure" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — TCN causality, exponentially increasing dilation, and residual-block structure.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p080_causal_convolution_stack.png">causal stack</a> · <a href="../assets/original_figures/p081_dilated_causal_convolution.png">dilated stack</a> · <a href="../assets/original_figures/p082_tcn_residual_block.png">residual block</a></sub></p>
+![TCN causality, exponentially increasing dilation, and residual-block structure](../assets/clean_diagrams/tcn_overview.png)
+
+*Redrawn course diagram — TCN causality, exponentially increasing dilation, and residual-block structure.*
+
+
+*Original course figure: [causal stack](../assets/original_figures/p080_causal_convolution_stack.png) · [dilated stack](../assets/original_figures/p081_dilated_causal_convolution.png) · [residual block](../assets/original_figures/p082_tcn_residual_block.png)*
+
 The page labels:
 
 - input layer;
@@ -451,7 +451,8 @@ A dilation stack:
 ---
 
 ## 15. Dilated causal stack
-<p align="center"><sub>Original course figure: <a href="../assets/original_figures/p081_dilated_causal_convolution.png">page-81 dilated-stack crop</a></sub></p>
+*Original course figure: [page-81 dilated-stack crop](../assets/original_figures/p081_dilated_causal_convolution.png)*
+
 The diagram shows successive hidden layers using increasing dilation.
 
 The handwritten note states:
@@ -558,7 +559,8 @@ The block output adds:
 
 - the transformed branch;
 - the identity or projected input.
-<p align="center"><sub>Original course figure: <a href="../assets/original_figures/p082_tcn_residual_block.png">page-82 residual-block crop</a></sub></p>
+*Original course figure: [page-82 residual-block crop](../assets/original_figures/p082_tcn_residual_block.png)*
+
 **Source:** CSE598MTL.pdf, p. 82
 
 ---

@@ -38,7 +38,9 @@ The notes summarize this structure as
 
 $$R(f_{n})\lesssim \widehat{R}_{n}(f_{n})+\mathrm{Complexity}(\mathcal{F}).$$
 
-![Proof pipeline from empirical risk to a uniform generalization bound](../assets/diagrams/generalization_pipeline.svg)
+![Proof pipeline from empirical risk to a uniform generalization bound](../assets/diagrams/generalization_pipeline.png)
+
+*Redrawn course diagram: symmetrization, Rademacher signs, concentration, and class complexity connect empirical risk to a uniform population-risk guarantee.*
 
 !!! clarification "Approximation versus complexity"
     Enlarging $\mathcal{F}$ can reduce the minimum empirical risk because the learner has more functions from which to choose. However, a richer function class has greater complexity and therefore pays a larger generalization penalty. The source presents this as the basic tradeoff behind function-class selection.

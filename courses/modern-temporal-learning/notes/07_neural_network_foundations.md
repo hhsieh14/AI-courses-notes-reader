@@ -273,12 +273,10 @@ f^{(1)}(\mathbf{x})
 \right)
 \right).
 ```
-<p align="center">
-  <a href="../assets/original_figures/p057_multilayer_network_architecture.png">
-    <img src="../assets/original_figures/p057_multilayer_network_architecture.png" alt="Multilayer feed-forward network from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Multilayer feed-forward network from the course page. Select the image to open the full-size version.</em></p>
+![Multilayer feed-forward network from the course page](../assets/original_figures/p057_multilayer_network_architecture.png)
+
+*Source figure — Multilayer feed-forward network from the course page.*
+
 The diagram distinguishes:
 
 - network **width**: the number of nodes in a layer;

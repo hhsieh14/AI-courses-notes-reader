@@ -47,7 +47,9 @@ Read Chapters 9-12 in order:
 3. [Stochastic gradient descent](chapters/11_stochastic_gradient_descent.md)
 4. [Optimization of neural networks](chapters/12_neural_network_optimization.md)
 
-![Map of optimization methods used in the course](assets/diagrams/optimization_methods.svg)
+![Map of optimization methods used in the course](assets/diagrams/optimization_methods.png)
+
+*Redrawn course diagram: the objective structure determines whether the course uses full-gradient, accelerated, proximal, stochastic, or neural-network-specific analysis.*
 
 Chapter 12 also depends conceptually on the kernel and generalization material from Chapters 5 and 7.
 

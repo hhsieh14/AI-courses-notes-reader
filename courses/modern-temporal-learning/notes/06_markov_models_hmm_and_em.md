@@ -395,12 +395,10 @@ for its emission probability
 
 The course figure shows a hidden state sequence and a noisy observed
 sequence generated from it.
-<p align="center">
-  <a href="../assets/original_figures/p047_hmm_hidden_observed_series.png">
-    <img src="../assets/original_figures/p047_hmm_hidden_observed_series.png" alt="Hidden-state and observed-sequence example from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Hidden-state and observed-sequence example from the course page. Select the image to open the full-size version.</em></p>
+![Hidden-state and observed-sequence example from the course page](../assets/original_figures/p047_hmm_hidden_observed_series.png)
+
+*Source figure — Hidden-state and observed-sequence example from the course page.*
+
 The main inference interest listed is an estimate of the current hidden
 state.
 
@@ -1129,13 +1127,12 @@ The page calls this a hard assignment.
 
 The handwritten diagrams compare overlapping component probabilities and
 nearest-center decisions.
-<p align="center">
-  <a href="../assets/clean_diagrams/em_soft_vs_hard_assignments.svg">
-    <img src="../assets/clean_diagrams/em_soft_vs_hard_assignments.svg" alt="Soft responsibilities preserve uncertainty, while K-means makes one hard assignment" width="900">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Soft responsibilities preserve uncertainty, while K-means makes one hard assignment.</em></p>
-<p align="center"><sub><a href="../assets/original_figures/p053_em_soft_assignments.png">Open the original course figure</a></sub></p>
+![Soft responsibilities preserve uncertainty, while K-means makes one hard assignment](../assets/clean_diagrams/em_soft_vs_hard_assignments.png)
+
+*Redrawn course diagram — Soft responsibilities preserve uncertainty, while K-means makes one hard assignment.*
+
+
+*[Open the original course figure](../assets/original_figures/p053_em_soft_assignments.png)*
 The slide also notes that, for Gaussian components, the responsibility
 formula uses a covariance-adjusted or Mahalanobis-distance form.
 

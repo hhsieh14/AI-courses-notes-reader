@@ -180,13 +180,13 @@ depth.
 ---
 
 ## 6. Transformer architecture
-<p align="center">
-  <a href="../assets/clean_diagrams/transformer_overview.svg">
-    <img src="../assets/clean_diagrams/transformer_overview.svg" alt="Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p093_transformer_architecture.png">page-93 original architecture</a></sub></p>
+![Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization](../assets/clean_diagrams/transformer_overview.png)
+
+*Redrawn course diagram — Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization.*
+
+
+*Original course figure: [page-93 original architecture](../assets/original_figures/p093_transformer_architecture.png)*
+
 The architecture includes:
 
 ### Encoder side
@@ -422,13 +422,13 @@ earlier element is relevant to the current word.
 
 The handwritten interpretation says different attention heads may focus
 on different linguistic relationships.
-<p align="center">
-  <a href="../assets/clean_diagrams/multihead_attention.svg">
-    <img src="../assets/clean_diagrams/multihead_attention.svg" alt="Sentence-level attention interpretation and parallel multi-head query-key-value projections" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Sentence-level attention interpretation and parallel multi-head query-key-value projections.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p094_multihead_attention_example.png">page-94 attention and multi-head crop</a></sub></p>
+![Sentence-level attention interpretation and parallel multi-head query-key-value projections](../assets/clean_diagrams/multihead_attention.png)
+
+*Redrawn course diagram — Sentence-level attention interpretation and parallel multi-head query-key-value projections.*
+
+
+*Original course figure: [page-94 attention and multi-head crop](../assets/original_figures/p094_multihead_attention_example.png)*
+
 **Source:** CSE598MTL.pdf, p. 94
 
 ---
@@ -710,13 +710,13 @@ block contains:
 The masked self-attention attends only to previous decoder outputs.
 
 The encoder-decoder attention attends to the final encoder-stack outputs.
-<p align="center">
-  <a href="../assets/clean_diagrams/transformer_decoder_generation.svg">
-    <img src="../assets/clean_diagrams/transformer_decoder_generation.svg" alt="Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p096_decoder_block_and_operation.png">page-96 decoder source crop</a></sub></p>
+![Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation](../assets/clean_diagrams/transformer_decoder_generation.png)
+
+*Redrawn course diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.*
+
+
+*Original course figure: [page-96 decoder source crop](../assets/original_figures/p096_decoder_block_and_operation.png)*
+
 **Source:** CSE598MTL.pdf, p. 96
 
 ---
@@ -1095,12 +1095,10 @@ and returning:
 ```math
 \mathcal{F}(\mathbf{x})+\mathbf{x}.
 ```
-<p align="center">
-  <a href="../assets/original_figures/p099_residual_learning_block.png">
-    <img src="../assets/original_figures/p099_residual_learning_block.png" alt="Residual learning block from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Residual learning block from the course page. Select the image to open the full-size version.</em></p>
+![Residual learning block from the course page](../assets/original_figures/p099_residual_learning_block.png)
+
+*Source figure — Residual learning block from the course page.*
+
 **Source:** CSE598MTL.pdf, p. 99
 
 ---
@@ -1192,12 +1190,10 @@ The application branch further includes examples such as:
 - time-series forecasting;
 - spatial-temporal forecasting;
 - event forecasting.
-<p align="center">
-  <a href="../assets/original_figures/p100_time_series_transformer_taxonomy.png">
-    <img src="../assets/original_figures/p100_time_series_transformer_taxonomy.png" alt="Taxonomy of transformer methods for time-series modeling" width="860">
-  </a>
-</p>
-<p align="center"><em>Source figure — Taxonomy of transformer methods for time-series modeling. Select the image to open the full-size version.</em></p>
+![Taxonomy of transformer methods for time-series modeling](../assets/original_figures/p100_time_series_transformer_taxonomy.png)
+
+*Source figure — Taxonomy of transformer methods for time-series modeling.*
+
 **Source:** CSE598MTL.pdf, p. 100
 
 ---

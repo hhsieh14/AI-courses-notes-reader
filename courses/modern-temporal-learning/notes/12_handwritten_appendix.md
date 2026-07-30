@@ -45,12 +45,10 @@ inconsistent substitutions. This appendix therefore separates:
 ---
 
 ## 2. Handwritten stationarity recap
-<p align="center">
-  <a href="../assets/original_figures/p101_handwritten_stationarity.png">
-    <img src="../assets/original_figures/p101_handwritten_stationarity.png" alt="Full handwritten stationarity page" width="900">
-  </a>
-</p>
-<p align="center"><em>Source figure — Full handwritten stationarity page. Select the image to open the full-size version.</em></p>
+![Full handwritten stationarity page](../assets/original_figures/p101_handwritten_stationarity.png)
+
+*Source figure — Full handwritten stationarity page.*
+
 The page begins:
 
 > **Handwritten note:** Two series will have the same distribution when
@@ -200,12 +198,10 @@ Page 102 is blank and contains no academic content.
 ---
 
 ## 8. Covariance exercise: source setup
-<p align="center">
-  <a href="../assets/original_figures/p103_handwritten_covariance_exercise.png">
-    <img src="../assets/original_figures/p103_handwritten_covariance_exercise.png" alt="Full handwritten covariance exercise" width="900">
-  </a>
-</p>
-<p align="center"><em>Source figure — Full handwritten covariance exercise. Select the image to open the full-size version.</em></p>
+![Full handwritten covariance exercise](../assets/original_figures/p103_handwritten_covariance_exercise.png)
+
+*Source figure — Full handwritten covariance exercise.*
+
 The page is labeled:
 
 > Exercise 2

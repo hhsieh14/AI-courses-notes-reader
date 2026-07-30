@@ -67,7 +67,9 @@ Define
 
 $$\Phi(t)=\max\{1-t,0\}.$$
 
-![Hinge loss as a function of the signed margin score](../assets/diagrams/hinge_loss.svg)
+![Hinge loss as a function of the signed margin score](../assets/diagrams/hinge_loss.png)
+
+*Redrawn course diagram: hinge loss decreases linearly until the signed margin reaches one and is zero beyond that point.*
 
 For a signed score
 

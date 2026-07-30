@@ -18,7 +18,9 @@ $$\phi:\mathcal{X}\to\mathcal{H},$$
 
 which sends each input $x$ to a transformed feature $\phi(x)$ in a Hilbert space $\mathcal{H}$.
 
-![Feature mapping and the kernel trick](../assets/diagrams/kernel_trick.svg)
+![Feature mapping and the kernel trick](../assets/diagrams/kernel_trick.png)
+
+*Redrawn course diagram: a feature map can make the classes linearly separable, while the kernel computes feature-space inner products without constructing the mapped vectors explicitly.*
 
 The motivation is that data that are not linearly separable in $\mathcal{X}$ may become linearly separable after transformation into $\mathcal{H}$.
 

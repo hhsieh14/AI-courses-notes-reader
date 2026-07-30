@@ -39,7 +39,7 @@ A time series can move up and down while still being stationary.
 Stationarity describes the **data-generating process**, not whether the
 observed line is visually flat.
 
-![Three common stationarity patterns](../assets/clean_diagrams/stationarity_patterns.svg)
+![Three common stationarity patterns](../assets/clean_diagrams/stationarity_patterns.png)
 
 ### Strong stationarity
 
@@ -365,7 +365,7 @@ A disturbance affects a finite number of future observations, and:
 \text{for }k>q.
 ```
 
-![AR and MA memory patterns](../assets/clean_diagrams/ar_ma_memory.svg)
+![AR and MA memory patterns](../assets/clean_diagrams/ar_ma_memory.png)
 
 **Source:** CSE598MTL.pdf, p. 8
 
@@ -557,7 +557,7 @@ acceptable even when the model consistently underpredicts.
    residual correlation remains.
 3. **ARIMA$(1,1,1)$**: proposed next model, adding an MA term.
 
-![ARIMA refinement workflow](../assets/clean_diagrams/arima_refinement_loop.svg)
+![ARIMA refinement workflow](../assets/clean_diagrams/arima_refinement_loop.png)
 
 **Sources:** CSE598MTL.pdf, pp. 11-12
 

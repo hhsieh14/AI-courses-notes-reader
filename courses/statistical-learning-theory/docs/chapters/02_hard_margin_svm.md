@@ -51,7 +51,9 @@ The maximum-margin classifier solves
 
 $$\max_{w,b}\;\min_{1\leq i\leq n}\frac{y_{i}\left(w^{\top}x_{i}+b\right)}{\lVert w\rVert_{2}}.$$
 
-![Hard-margin SVM with support vectors and margin boundaries](../assets/diagrams/hard_margin_svm.svg)
+![Hard-margin SVM with support vectors and margin boundaries](../assets/diagrams/hard_margin_svm.png)
+
+*Redrawn course diagram: the hard-margin separator is centered between the two supporting class boundaries, and the circled samples determine the margin.*
 
 ## 3. Canonical scaling and the hard-margin primal problem
 

@@ -360,13 +360,13 @@ The family illustrations show that wavelets differ in:
 - symmetry;
 - number of nonzero discrete filter coefficients;
 - number of vanishing moments.
-<p align="center">
-  <a href="../assets/clean_diagrams/wavelet_family_comparison.svg">
-    <img src="../assets/clean_diagrams/wavelet_family_comparison.svg" alt="Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean schematic — Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p022_wavelet_families.png">page-22 source grid</a></sub></p>
+![Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics](../assets/clean_diagrams/wavelet_family_comparison.png)
+
+*Redrawn course diagram — Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics.*
+
+
+*Original course figure: [page-22 source grid](../assets/original_figures/p022_wavelet_families.png)*
+
 **Source:** CSE598MTL.pdf, p. 22
 
 ---
@@ -661,13 +661,12 @@ The slide notes:
 - this creates the multiresolution property;
 - the finest detail is referred to as level 1 in the displayed
   convention.
-<p align="center">
-  <a href="../assets/clean_diagrams/wavelet_pyramid.svg">
-    <img src="../assets/clean_diagrams/wavelet_pyramid.svg" alt="Wavelet pyramid with repeated decomposition of the approximation branch" width="900">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Wavelet pyramid with repeated decomposition of the approximation branch.</em></p>
-<p align="center"><sub><a href="../assets/original_figures/p027_wavelet_pyramid.png">Open the original course figure</a></sub></p>
+![Wavelet pyramid with repeated decomposition of the approximation branch](../assets/clean_diagrams/wavelet_pyramid.png)
+
+*Redrawn course diagram — Wavelet pyramid with repeated decomposition of the approximation branch.*
+
+
+*[Open the original course figure](../assets/original_figures/p027_wavelet_pyramid.png)*
 **Source:** CSE598MTL.pdf, p. 27
 
 ---
@@ -976,12 +975,10 @@ This captures an important design tradeoff:
 |---|---|
 | Sharper time localization | Shorter support, such as db2 |
 | Suppress higher-degree polynomial background | More vanishing moments, such as higher db $K$ |
-<p align="center">
-  <a href="../assets/original_figures/p031_plateau_detection_db2_db7.png">
-    <img src="../assets/original_figures/p031_plateau_detection_db2_db7.png" alt="db2 and db7 plateau-detail comparison" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — db2 and db7 plateau-detail comparison. Select the image to open the full-size version.</em></p>
+![db2 and db7 plateau-detail comparison](../assets/original_figures/p031_plateau_detection_db2_db7.png)
+
+*Source figure — db2 and db7 plateau-detail comparison.*
+
 **Source:** CSE598MTL.pdf, p. 31
 
 ---

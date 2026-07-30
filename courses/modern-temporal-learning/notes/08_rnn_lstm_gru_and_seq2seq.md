@@ -235,13 +235,12 @@ Ordinary random cross-validation can train on observations that occur
 after observations placed in the test set.
 
 The page therefore displays blocked alternatives.
-<p align="center">
-  <a href="../assets/clean_diagrams/temporal_cross_validation.svg">
-    <img src="../assets/clean_diagrams/temporal_cross_validation.svg" alt="Random, expanding-window, and sliding-window temporal validation" width="900">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Random, expanding-window, and sliding-window temporal validation.</em></p>
-<p align="center"><sub><a href="../assets/original_figures/p067_blocked_cross_validation.png">Open the original course figure</a></sub></p>
+![Random, expanding-window, and sliding-window temporal validation](../assets/clean_diagrams/temporal_cross_validation.png)
+
+*Redrawn course diagram — Random, expanding-window, and sliding-window temporal validation.*
+
+
+*[Open the original course figure](../assets/original_figures/p067_blocked_cross_validation.png)*
 The upper figure contrasts approaches labeled approximately as:
 
 - cross-validation;
@@ -748,12 +747,10 @@ The page states:
 
 Lower layers may learn more primitive features, while deeper layers
 integrate those features.
-<p align="center">
-  <a href="../assets/original_figures/p071_rnn_architectures.png">
-    <img src="../assets/original_figures/p071_rnn_architectures.png" alt="Basic and stacked RNN architectures from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Basic and stacked RNN architectures from the course page. Select the image to open the full-size version.</em></p>
+![Basic and stacked RNN architectures from the course page](../assets/original_figures/p071_rnn_architectures.png)
+
+*Source figure — Basic and stacked RNN architectures from the course page.*
+
 The slide notes that architecture selection remains a work in progress,
 similar to other deep-network design choices.
 
@@ -1113,12 +1110,10 @@ The page labels:
 
 The inner structure is more complex than a basic RNN, even though the
 external network use is similar.
-<p align="center">
-  <a href="../assets/original_figures/p074_lstm_cell_diagrams.png">
-    <img src="../assets/original_figures/p074_lstm_cell_diagrams.png" alt="LSTM cell diagrams from the course page" width="800">
-  </a>
-</p>
-<p align="center"><em>Source figure — LSTM cell diagrams from the course page. Select the image to open the full-size version.</em></p>
+![LSTM cell diagrams from the course page](../assets/original_figures/p074_lstm_cell_diagrams.png)
+
+*Source figure — LSTM cell diagrams from the course page.*
+
 **Source:** CSE598MTL.pdf, p. 74
 
 ---
@@ -1554,12 +1549,10 @@ The encoder reads the input sequence and produces an internal
 representation.
 
 The decoder uses that representation to produce an output sequence.
-<p align="center">
-  <a href="../assets/original_figures/p078_encoder_decoder_forecast.png">
-    <img src="../assets/original_figures/p078_encoder_decoder_forecast.png" alt="Encoder-decoder sequence and forecast diagrams from the course page" width="800">
-  </a>
-</p>
-<p align="center"><em>Source figure — Encoder-decoder sequence and forecast diagrams from the course page. Select the image to open the full-size version.</em></p>
+![Encoder-decoder sequence and forecast diagrams from the course page](../assets/original_figures/p078_encoder_decoder_forecast.png)
+
+*Source figure — Encoder-decoder sequence and forecast diagrams from the course page.*
+
 **Source:** CSE598MTL.pdf, p. 78
 
 ---

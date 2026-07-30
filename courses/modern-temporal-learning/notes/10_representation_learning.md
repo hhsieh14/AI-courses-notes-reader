@@ -544,13 +544,13 @@ The loss may be:
 - MAE;
 
 between the original and reconstructed time series.
-<p align="center">
-  <a href="../assets/clean_diagrams/temporal_autoencoder.svg">
-    <img src="../assets/clean_diagrams/temporal_autoencoder.svg" alt="Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation" width="920">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p086_temporal_autoencoder_example.png">page-86 architecture and ECG example</a></sub></p>
+![Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation](../assets/clean_diagrams/temporal_autoencoder.png)
+
+*Redrawn course diagram — Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation.*
+
+
+*Original course figure: [page-86 architecture and ECG example](../assets/original_figures/p086_temporal_autoencoder_example.png)*
+
 **Source:** CSE598MTL.pdf, p. 86
 
 ---
@@ -748,13 +748,13 @@ Each modality has its own encoder.
 
 Representations associated with the same source are treated as positive
 pairs, while mismatched sources are negative pairs.
-<p align="center">
-  <a href="../assets/clean_diagrams/contrastive_temporal_pipeline.svg">
-    <img src="../assets/clean_diagrams/contrastive_temporal_pipeline.svg" alt="Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss" width="940">
-  </a>
-</p>
-<p align="center"><em>Clean diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.</em></p>
-<p align="center"><sub>Original course figures: <a href="../assets/original_figures/p088_contrastive_pairing_slowness.png">page-88 pairing and slowness crop</a> · <a href="../assets/original_figures/p089_contrastive_encoder_head.png">page-89 encoder and head crop</a></sub></p>
+![Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss](../assets/clean_diagrams/contrastive_temporal_pipeline.png)
+
+*Redrawn course diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.*
+
+
+*Original course figure: [page-88 pairing and slowness crop](../assets/original_figures/p088_contrastive_pairing_slowness.png) · [page-89 encoder and head crop](../assets/original_figures/p089_contrastive_encoder_head.png)*
+
 **Source:** CSE598MTL.pdf, p. 88
 
 ---
@@ -872,7 +872,8 @@ For one positive pair:
 
 the other transformed instances in the minibatch are treated as
 negatives.
-<p align="center"><sub>Original course figure: <a href="../assets/original_figures/p089_contrastive_encoder_head.png">page-89 encoder/head source crop</a></sub></p>
+*Original course figure: [page-89 encoder/head source crop](../assets/original_figures/p089_contrastive_encoder_head.png)*
+
 **Source:** CSE598MTL.pdf, p. 89
 
 ---
@@ -1095,12 +1096,10 @@ It compares:
 - no projection;
 - linear projection;
 - nonlinear projection.
-<p align="center">
-  <a href="../assets/original_figures/p090_projection_head_results.png">
-    <img src="../assets/original_figures/p090_projection_head_results.png" alt="Projection-head comparison from the course page" width="760">
-  </a>
-</p>
-<p align="center"><em>Source figure — Projection-head comparison from the course page. Select the image to open the full-size version.</em></p>
+![Projection-head comparison from the course page](../assets/original_figures/p090_projection_head_results.png)
+
+*Source figure — Projection-head comparison from the course page.*
+
 The page's conclusion is that the projection-head choice can affect
 downstream representation quality.
 

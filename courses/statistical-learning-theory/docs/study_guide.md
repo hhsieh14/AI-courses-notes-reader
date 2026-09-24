@@ -1,14 +1,6 @@
----
-course: "Statistical Learning Theory"
-chapter: "00"
-title: "Study Guide and Theorem Map"
-source_pages: "598SLT.pdf, pp. 1-81"
-status: "consolidated v1.0"
----
-
 # Study Guide and Theorem Map
 
-This page organizes the transformed course without changing the source sequence. It is intended for review after reading the detailed chapters.
+A one-page map of the course for review after reading the chapters: how the three parts connect, every major result, and the proof patterns that keep recurring.
 
 ## 1. Three-part course structure
 
@@ -49,33 +41,33 @@ Read Chapters 9-12 in order:
 
 ![Map of optimization methods used in the course](assets/diagrams/optimization_methods.png)
 
-*Redrawn course diagram: the objective structure determines whether the course uses full-gradient, accelerated, proximal, stochastic, or neural-network-specific analysis.*
+*The structure of the objective determines whether to use full-gradient, accelerated, proximal, stochastic, or neural-network-specific analysis.*
 
 Chapter 12 also depends conceptually on the kernel and generalization material from Chapters 5 and 7.
 
 ## 2. Theorem and result map
 
-| Result | Chapter | Treatment in the source-based notes |
+| Result | Chapter | Status in these notes |
 |---|---|---|
 | Bayes excess-risk identity | 1 | Proved |
 | Plug-in classifier excess-risk bound | 1 | Proved |
 | Hard-margin SVM dual and support-vector reconstruction | 2 | Derived through stationarity and KKT |
 | Slack-variable and hinge-loss equivalence | 4 | Proved in both directions |
-| Representer theorem | 5 | Stated; finite-dimensional proof idea developed |
+| Representer theorem | 5 | Proved (orthogonal decomposition) |
 | Hoeffding's lemma | 6 | Proved |
 | Hoeffding's inequality | 6 | Derived from the exponential Markov method |
-| McDiarmid's inequality | 6 | Stated with the proof structure used in the course |
-| Rademacher contraction principle | 7 | Proof structure summarized at the source's level |
+| McDiarmid's inequality | 6 | Proof structure (martingale differences) |
+| Rademacher contraction principle | 7 | One-coordinate proof + reference |
 | Rademacher generalization bound | 7 | Developed from uniform deviation and symmetrization |
 | RKHS Rademacher-complexity bound | 7 | Proved |
-| VC dimension of intervals | 8 | Proved |
+| VC dimension of intervals and planar half-spaces | 8 | Proved (Radon's theorem) |
 | Gradient-descent rate O(1/k) | 9 | Proved by a telescoping potential argument |
-| Accelerated-gradient rate O(1/k^2) | 9 | Stated without proof |
+| Accelerated-gradient rate O(1/k^2) | 9 | Stated; proof idea and reference |
 | Proximal-gradient rate O(1/k) | 10 | Proved |
 | Accelerated proximal-gradient rate O(1/k^2) | 10 | Stated without proof |
 | Averaged SGD bound with fixed learning rate | 11 | Proved |
 | Initial tangent-Gram concentration | 12 | Proved with Hoeffding and a union bound |
-| NTK optimization and generalization result | 12 | Separated into proved, informal, and imported components |
+| NTK optimization and generalization result | 12 | Key lemma proved; rest cited (Du et al. 2019; Arora et al. 2019) |
 
 ## 3. Recurring proof patterns
 
@@ -131,4 +123,4 @@ For an exam or technical interview, use three passes:
 2. **Proof skeletons:** reproduce the key inequality or decomposition before filling in algebra.
 3. **Connections:** explain how regularization, complexity, and optimization interact rather than treating them as isolated topics.
 
-The unresolved and source-limited points remain collected in [Questions and Discussion](questions_and_discussion.md).
+Test yourself with the [questions and answers](questions_and_discussion.md).

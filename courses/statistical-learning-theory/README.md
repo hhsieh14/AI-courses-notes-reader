@@ -1,28 +1,21 @@
 # Statistical Learning Theory
 
-A structured, equation-heavy transformation of an 81-page Statistical Learning Theory notebook.
+My notes from the graduate Statistical Learning Theory course at Arizona State University: the theory behind *why* machine learning works. Every major result is stated as a theorem and proved, or explicitly cited when the proof is beyond the course.
 
 ## Start here
 
-- [Course introduction](docs/index.md)
-- [Study guide and theorem map](docs/study_guide.md)
-- [Course map](docs/course_map.md)
-- [Notation reference](docs/notation.md)
-- [Questions and discussion](docs/questions_and_discussion.md)
+- [Introduction](docs/index.md): what questions the course answers
+- [Study guide and theorem map](docs/study_guide.md): every result, where it's proved, and the recurring proof patterns
+- [Course map](docs/course_map.md): chapter list
+- [Questions and answers](docs/questions_and_discussion.md): 60 self-test questions with answers
+- [Notation](docs/notation.md)
 
-## Chapters
+## Parts
 
-1. [Probabilistic Prediction and Bayes Classification](docs/chapters/01_probabilistic_prediction.md)
-2. [Hard-Margin SVM and Duality](docs/chapters/02_hard_margin_svm.md)
-3. [Feature Maps and Kernels](docs/chapters/03_feature_maps_and_kernels.md)
-4. [Soft-Margin SVM and Hinge Loss](docs/chapters/04_soft_margin_svm.md)
-5. [RKHS and the Representer Theorem](docs/chapters/05_rkhs_and_representer.md)
-6. [Concentration Inequalities](docs/chapters/06_concentration_inequalities.md)
-7. [Generalization Bounds and Rademacher Complexity](docs/chapters/07_generalization_and_rademacher.md)
-8. [VC Dimension](docs/chapters/08_vc_dimension.md)
-9. [Smooth Convex Optimization](docs/chapters/09_smooth_convex_optimization.md)
-10. [Nonsmooth and Proximal Optimization](docs/chapters/10_nonsmooth_proximal_optimization.md)
-11. [Stochastic Gradient Descent](docs/chapters/11_stochastic_gradient_descent.md)
-12. [Optimization of Neural Networks](docs/chapters/12_neural_network_optimization.md)
+| Part | Chapters | Big idea |
+|---|---|---|
+| Prediction, SVMs and kernels | [1](docs/chapters/01_probabilistic_prediction.md)–[5](docs/chapters/05_rkhs_and_representer.md) | Bayes rule, max margin, duality, RKHS, representer theorem |
+| Concentration and generalization | [6](docs/chapters/06_concentration_inequalities.md)–[8](docs/chapters/08_vc_dimension.md) | Hoeffding/McDiarmid, Rademacher complexity, VC dimension |
+| Optimization | [9](docs/chapters/09_smooth_convex_optimization.md)–[12](docs/chapters/12_neural_network_optimization.md) | GD, proximal GD, SGD, NTK analysis of wide networks |
 
-The chapters preserve the source sequence, theorem statements, definitions, proofs, and handwritten questions. Added explanations are explicitly labeled.
+Related: [CSE 575 notes](../cse-575-statistical-machine-learning/README.md) (the applied side of the same models) and [temporal learning notes](../modern-temporal-learning/README.md).

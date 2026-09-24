@@ -1,11 +1,3 @@
----
-course: "Statistical Learning Theory"
-chapter: "00"
-title: "Notation"
-source_pages: "598SLT.pdf, pp. 2-81"
-status: "consolidated v1.0"
----
-
 # Notation
 
 Math is kept outside Markdown tables because some Markdown renderers process table cells before the math engine.
@@ -169,4 +161,4 @@ Math is kept outside Markdown tables because some Markdown renderers process tab
 - Population expectations are written with explicit conditioning or distributions whenever ambiguity is possible.
 - Optimal quantities use a braced star, such as $f^{\star}$, $w^{\star}$, and $R^{\star}$.
 - Accents always include braces, such as $\widehat{y}$ and $\widehat{\eta}$.
-- The source occasionally reuses symbols across lectures. Each chapter will state local meanings when needed.
+- A few symbols are reused (e.g. $\sigma$ for Rademacher variables, ReLU and noise level); each chapter states its local meaning.

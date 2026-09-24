@@ -1,175 +1,96 @@
----
-course: "Statistical Learning Theory"
-chapter: "04"
-title: "Soft-Margin SVM and Hinge Loss"
-source_pages: "598SLT.pdf, pp. 15-17"
-status: "consolidated v1.0"
----
+# 4. Soft-Margin SVM and Hinge Loss
 
-# Soft-Margin SVM and Hinge Loss
+Real data overlap, so the hard-margin constraints are usually infeasible. This chapter relaxes them with slack variables and proves that the result is exactly "hinge loss + L2 regularization". That identity is what connects SVMs to the generalization theory of Chapter 7.
 
-**Source:** 598SLT.pdf, pp. 15-17.
+## 1. Why hard margins aren't enough
 
-## 1. Why hard margins are insufficient
-
-The hard-margin SVM requires every training point to satisfy
-
-$$y_{i}\left(w^{\top}x_{i}+b\right)\geq 1.$$
-
-This is possible only when the training sample is linearly separable in the chosen feature space. Noise, overlap, or outlying observations can make the constraints infeasible.
-
-The soft-margin formulation relaxes the margin constraints by introducing nonnegative slack variables $\xi_{i}$.
+$y_{i}(w^{\top}x_{i}+b)\geq 1$ for every $i$ is possible only if the data are linearly separable in the chosen feature space. Noise, class overlap or a single outlier breaks it. The fix: let each point violate its constraint by a non-negative amount $\xi_i$, and pay for it.
 
 ## 2. Slack variables
 
-The relaxed constraints are
+$$\min_{w,b,\xi}\;\frac{1}{2}\lVert w\rVert_{2}^{2}+C\sum_{i=1}^{n}\xi_{i}\quad\text{s.t.}\quad y_{i}\left(w^{\top}x_{i}+b\right)\geq 1-\xi_{i},\quad\xi_{i}\geq 0 .$$
 
-$$y_{i}\left(w^{\top}x_{i}+b\right)\geq 1-\xi_{i},$$
+$C>0$ prices violations and is chosen by cross-validation.
 
-with
+| $\xi_i$ | Meaning |
+|---|---|
+| $0$ | meets the unit-margin constraint |
+| $(0,1)$ | correctly classified, inside the margin |
+| $1$ | exactly on the decision boundary |
+| $>1$ | misclassified |
 
-$$\xi_{i}\geq 0.$$
-
-The soft-margin SVM solves
-
-$$\min_{w,b,\xi_{1},\ldots,\xi_{n}}\;\frac{1}{2}\lVert w\rVert_{2}^{2}+C\sum_{i=1}^{n}\xi_{i},$$
-
-subject to the relaxed constraints for every training point.
-
-The parameter $C>0$ controls the cost of margin violations and is selected in practice by cross-validation.
-
-### Interpreting $\xi_{i}$
-
-- If $\xi_{i}=0$, then the point satisfies the unit-margin constraint.
-- If $0<\xi_{i}<1$, then the point is correctly classified but lies inside the margin.
-- If $\xi_{i}=1$, the point lies exactly on the decision boundary.
-- If $\xi_{i}>1$, the point is misclassified. Consequently $\sum_{i}\xi_{i}$ upper-bounds the number of training mistakes.
+Every misclassified point has $\xi_i>1$, so $\sum_i\xi_i$ upper-bounds the number of training errors.
 
 > [!TIP]
-> **What does $C$ trade off?**
+> **What $C$ trades**
 >
-> The regularization term prefers a smaller norm and therefore a wider margin. The slack penalty prefers fewer or smaller violations. Increasing $C$ makes violations more expensive relative to the margin term; decreasing $C$ tolerates more violation in exchange for stronger regularization.
+> $\frac12\lVert w\rVert^2$ wants a wide margin (strong regularization). $C\sum\xi_i$ wants few, small violations. Large $C$ gives a narrow margin that fits the training data closely; small $C$ gives a wide margin that tolerates errors.
 
-## 3. Soft-margin SVM with feature mapping
+## 3. With a feature map
 
-Let $\phi:\mathcal{X}\to\mathcal{H}$ map the inputs into a Hilbert space. The feature-mapped soft-margin problem is
-
-$$\min_{w\in\mathcal{H},b,\xi_{1},\ldots,\xi_{n}}\;\frac{1}{2}\langle w,w\rangle_{\mathcal{H}}+C\sum_{i=1}^{n}\xi_{i},$$
-
-subject to
-
-$$y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\geq 1-\xi_{i}\quad\text{for }i=1,\ldots,n,$$
-
-and
-
-$$\xi_{i}\geq 0\quad\text{for }i=1,\ldots,n.$$
+$$\min_{w\in\mathcal{H},b,\xi}\;\frac{1}{2}\langle w,w\rangle_{\mathcal{H}}+C\sum_{i=1}^{n}\xi_{i}\quad\text{s.t.}\quad y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\geq 1-\xi_{i},\quad\xi_{i}\geq 0 .$$
 
 ## 4. Hinge loss
 
-Define
+Define $\Phi(t)=\max\{1-t,0\}$. For the signed score $t=y_i(\langle w,\phi(x_i)\rangle+b)$, $\Phi(t)$ is 0 when $t\ge1$ (confidently correct) and grows linearly as $t$ falls below 1.
 
-$$\Phi(t)=\max\{1-t,0\}.$$
+![Hinge loss](../assets/diagrams/hinge_loss.png)
 
-![Hinge loss as a function of the signed margin score](../assets/diagrams/hinge_loss.png)
+*Hinge loss is zero beyond a signed margin of 1 and linear below it.*
 
-*Redrawn course diagram: hinge loss decreases linearly until the signed margin reaches one and is zero beyond that point.*
-
-For a signed score
-
-$$t=y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right),$$
-
-$\Phi(t)$ is zero when $t\geq 1$ and increases linearly when $t<1$.
-
-The course rewrites the constrained problem as
+The unconstrained **hinge formulation** is
 
 $$\min_{w\in\mathcal{H},b}\;\frac{1}{2}\langle w,w\rangle_{\mathcal{H}}+C\sum_{i=1}^{n}\Phi\left(y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\right).$$
 
-The second term is the total hinge loss on the training sample.
-
-## 5. Equivalence of the slack and hinge formulations
+## 5. The two formulations are equivalent
 
 ### Theorem 1
 
-Define the constrained optimum
+Let LHS be the optimal value of the slack formulation (§3) and RHS the optimal value of the hinge formulation (§4). Then LHS = RHS.
 
-$$\mathrm{LHS}=\min_{w\in\mathcal{H},b,\xi_{1},\ldots,\xi_{n}}\;\frac{1}{2}\langle w,w\rangle_{\mathcal{H}}+C\sum_{i=1}^{n}\xi_{i},$$
+**Proof, LHS ≥ RHS.** Take an optimal $(w^\star,b^\star,\xi^\star)$ of the slack problem. For fixed $w^\star,b^\star$, each $\xi_i$ must satisfy $\xi_i\ge0$ and $\xi_i\ge1-y_i(\langle w^\star,\phi(x_i)\rangle+b^\star)$, and the objective increases in $\xi_i$. So at the optimum each slack is the smallest feasible value:
 
-subject to
+$$\xi_{i}^{\star}=\max\left\lbrace 1-y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right),0\right\rbrace=\Phi\left(y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right)\right).$$
 
-$$y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\geq 1-\xi_{i},\qquad\xi_{i}\geq 0.$$
+The slack optimum therefore equals the hinge objective at $(w^\star,b^\star)$, which is at least the hinge minimum.
 
-Define the unconstrained optimum
-
-$$\mathrm{RHS}=\min_{w\in\mathcal{H},b}\;\frac{1}{2}\langle w,w\rangle_{\mathcal{H}}+C\sum_{i=1}^{n}\Phi\left(y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\right).$$
-
-Then
-
-$$\mathrm{LHS}=\mathrm{RHS}.$$
-
-### Proof, direction 1: $\mathrm{LHS}\geq\mathrm{RHS}$
-
-Let an optimal constrained solution be
-
-$$\left(w^{\star},b^{\star},\xi_{1}^{\star},\ldots,\xi_{n}^{\star}\right).$$
-
-For fixed $w^{\star}$ and $b^{\star}$, the smallest feasible slack is
-
-$$\xi_{i}^{\star}=\max\left\lbrace 1-y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right),0\right\rbrace.$$
-
-Otherwise, a larger slack could be reduced while preserving feasibility and lowering the objective.
-
-Therefore,
-
-$$\xi_{i}^{\star}=\Phi\left(y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right)\right).$$
-
-The constrained optimum is consequently the hinge objective evaluated at $w^{\star},b^{\star}$. Since $\mathrm{RHS}$ is the minimum of that hinge objective over every $w,b$,
-
-$$\mathrm{LHS}\geq\mathrm{RHS}.$$
-
-### Proof, direction 2: $\mathrm{LHS}\leq\mathrm{RHS}$
-
-Let $w^{\star},b^{\star}$ minimize the hinge formulation. Define
-
-$$\xi_{i}^{\star}=\Phi\left(y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right)\right).$$
-
-By construction,
-
-$$\xi_{i}^{\star}\geq 0,$$
-
-and
-
-$$\xi_{i}^{\star}\geq 1-y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right).$$
-
-Thus,
-
-$$y_{i}\left(\langle w^{\star},\phi(x_{i})\rangle_{\mathcal{H}}+b^{\star}\right)\geq 1-\xi_{i}^{\star}.$$
-
-The constructed tuple is feasible for the constrained problem and has exactly the same objective value as the hinge solution. Since $\mathrm{LHS}$ is the minimum over all feasible tuples,
-
-$$\mathrm{LHS}\leq\mathrm{RHS}.$$
-
-Combining the two inequalities gives
-
-$$\mathrm{LHS}=\mathrm{RHS}.$$
+**Proof, LHS ≤ RHS.** Take an optimal $(w^\star,b^\star)$ of the hinge problem and set $\xi_i^\star=\Phi(y_i(\langle w^\star,\phi(x_i)\rangle+b^\star))$. Then $\xi_i^\star\ge0$ and $\xi_i^\star\ge1-y_i(\cdot)$, so the tuple is feasible for the slack problem with the same objective value. The slack minimum is at most that. $\square$
 
 > [!TIP]
-> **Why does the hinge loss replace many constraints?**
+> **Why one loss replaces $n$ constraints**
 >
-> For fixed $w$ and $b$, each slack variable has an obvious smallest feasible value. Substituting that value removes the slack variables and their constraints. The positive-part operation $\max\{1-t,0\}$ records exactly how much the signed margin falls below one.
+> For fixed $(w,b)$ each slack has an obvious optimal value, the positive part of the margin shortfall. Substituting it eliminates both the slack variables and their constraints.
 
 ## 6. Convexity
 
-The notes emphasize that the hinge function is convex. Together with the squared-norm regularizer, this makes the soft-margin objective convex in the model parameters under the course formulation.
+$\Phi$ is convex (a maximum of two affine functions), composing it with the affine map $(w,b)\mapsto y_i(\langle w,\phi(x_i)\rangle+b)$ preserves convexity, and $\frac12\lVert w\rVert^2$ is strictly convex. The soft-margin objective is therefore convex, and every local minimum is global.
 
-A local minimizer of a convex objective is also a global minimizer.
+> [!NOTE]
+> **Beyond the lecture: the dual and the loss-function family**
+>
+> Redoing Chapter 2's derivation with slacks gives the same dual objective, with the box constraint $0\le\alpha_i\le C$ in place of $\alpha_i\ge0$. Points with $0<\alpha_i<C$ lie on the margin, and points with $\alpha_i=C$ are inside the margin or misclassified.
+>
+> The template "regularizer + convex surrogate of 0-1 loss" covers most linear classifiers: hinge gives the SVM, logistic loss $\log(1+e^{-t})$ gives logistic regression, and squared hinge gives the L2-SVM. Hinge is the only one of these that is exactly zero for $t\ge1$, which is where sparsity in $\alpha$ comes from.
 
-## Chapter summary
+## Summary
 
-- Slack variables make the SVM feasible when some points violate the margin.
-- The parameter $C$ balances regularization against violations.
-- The smallest feasible slack for a point is its hinge loss.
-- Substituting the optimal slacks gives an equivalent unconstrained regularized objective.
-- The resulting soft-margin objective is convex.
+- Slack variables make the problem feasible for any data; $C$ prices violations.
+- The optimal slack is the hinge loss, so the soft-margin SVM is hinge loss + L2 regularization.
+- The objective is convex, and $\sum_i\xi_i$ bounds the training errors.
+
+## Questions to test yourself
+
+<details>
+<summary>What does increasing C do to the margin and to overfitting?</summary>
+
+Violations become more expensive, so the margin narrows and the boundary fits the training data more tightly: lower bias, higher variance.
+</details>
+
+<details>
+<summary>Why is the optimal slack exactly the hinge loss?</summary>
+
+The objective increases with each $\xi_i$, and the constraints require $\xi_i\ge\max\{0,1-t_i\}$; the minimum feasible value is that bound.
+</details>
 
 ---
 

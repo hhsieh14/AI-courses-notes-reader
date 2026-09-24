@@ -1,14 +1,6 @@
----
-course: "Statistical Learning Theory"
-chapter: "07"
-title: "Generalization Bounds and Rademacher Complexity"
-source_pages: "598SLT.pdf, pp. 38-54"
-status: "consolidated v1.0"
----
+# 7. Generalization Bounds and Rademacher Complexity
 
-# Generalization Bounds and Rademacher Complexity
-
-**Source:** 598SLT.pdf, pp. 38-54.
+This is the central chapter of the course. It proves that, with high probability, *every* function in a class has population risk close to its empirical risk, with a gap controlled by the class's **Rademacher complexity**. Then it applies the result to kernel SVMs and finds that the $\lVert w\rVert^2$ regularizer is exactly what controls that complexity.
 
 ## 1. Generalization of a learning algorithm
 
@@ -34,18 +26,18 @@ The empirical risk $\widehat{R}_{n}(f_{n})$ has already been minimized. The cent
 
 $$R(f_{n})\leq \widehat{R}_{n}(f_{n})+\text{a complexity term}+\text{a small probability term}.$$
 
-The notes summarize this structure as
+In short,
 
 $$R(f_{n})\lesssim \widehat{R}_{n}(f_{n})+\mathrm{Complexity}(\mathcal{F}).$$
 
 ![Proof pipeline from empirical risk to a uniform generalization bound](../assets/diagrams/generalization_pipeline.png)
 
-*Redrawn course diagram: symmetrization, Rademacher signs, concentration, and class complexity connect empirical risk to a uniform population-risk guarantee.*
+*Symmetrization, Rademacher signs, concentration, and class complexity connect empirical risk to a uniform population-risk guarantee.*
 
 > [!TIP]
 > **Approximation versus complexity**
 >
-> Enlarging $\mathcal{F}$ can reduce the minimum empirical risk because the learner has more functions from which to choose. However, a richer function class has greater complexity and therefore pays a larger generalization penalty. The source presents this as the basic tradeoff behind function-class selection.
+> Enlarging $\mathcal{F}$ can reduce the minimum empirical risk because the learner has more functions from which to choose. However, a richer function class has greater complexity and therefore pays a larger generalization penalty. This is the basic trade-off behind choosing a function class.
 
 ## 2. Why a pointwise bound is not enough
 
@@ -76,11 +68,11 @@ holds simultaneously for every $f\in\mathcal{F}$. In particular, it holds for th
 
 ## 3. Bounded-loss assumption
 
-The source assumes that the loss is bounded:
+Assume the loss is bounded:
 
 $$\ell(\widehat{y},y)\in[0,1].$$
 
-For binary labels $y\in\{-1,1\}$, the notes give a clipped hinge-type example:
+For binary labels $y\in\{-1,1\}$, a useful example is the clipped hinge:
 
 $$\ell(\widehat{y},y)=\min\left\lbrace \max\left\lbrace 1-y\widehat{y},0\right\rbrace,1\right\rbrace.$$
 
@@ -89,7 +81,7 @@ The upper clipping at $1$ is essential for the bounded-difference argument below
 > [!NOTE]
 > **Relation to the ordinary hinge loss**
 >
-> The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above. The source therefore uses a bounded loss for the McDiarmid step and later returns to the ordinary hinge loss through a Lipschitz-contraction argument.
+> The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above. So we use a bounded loss for the McDiarmid step. The Lipschitz-contraction step (§10) handles the dependence on the loss, but not boundedness; see the warning in §17.
 
 ## 4. Bounded difference of the uniform gap
 
@@ -155,7 +147,7 @@ $$\sup_{f\in\mathcal{F}_{1}}\left(R(f)-\widehat{R}_{n}(f)\right)\leq \sup_{f\in\
 
 Taking expectations preserves the inequality. A richer class creates more opportunities for some function to fit the sample unusually well relative to its population behavior. The expected supremum therefore serves as a complexity measure of the function class.
 
-Directly working with the population expectation inside $R(f)$ is difficult. The source replaces it with an independent training sample.
+The population expectation inside $R(f)$ is hard to work with directly, so we replace it with an independent copy of the training sample.
 
 ## 7. Ghost sample and symmetrization
 
@@ -216,7 +208,7 @@ Let $X_{1},\ldots,X_{n}$ be i.i.d. observations and let $\sigma_{1},\ldots,\sigm
 
 $$\mathfrak{R}_{n}(\mathcal{F})=\mathbb{E}_{X^{n},\sigma_{1:n}}\left[\sup_{f\in\mathcal{F}}\frac{1}{n}\sum_{i=1}^{n}\sigma_{i}f(X_{i})\right].$$
 
-The source often writes $\mathfrak{R}(\mathcal{F})$ when the sample size is understood.
+When the sample size is clear I write $\mathfrak{R}(\mathcal{F})$.
 
 The random signs make the sum behave like a correlation between $f(X_{i})$ and pure noise. A class with enough flexibility to align strongly with many random sign patterns has high Rademacher complexity.
 
@@ -226,7 +218,7 @@ $$R(f)\leq \widehat{R}_{n}(f)+2\mathbb{E}_{(X,Y)^{n},\sigma_{1:n}}\left[\sup_{f\
 
 for every $f\in\mathcal{F}$.
 
-To replace the signed loss class by $\mathfrak{R}_{n}(\mathcal{F})$, the notes introduce a contraction result.
+To replace the signed loss class by $\mathfrak{R}_{n}(\mathcal{F})$ we need a contraction result.
 
 ## 10. Lipschitz loss functions
 
@@ -238,13 +230,13 @@ for all relevant $x,x'$ and $y$, where $M>0$ is a constant.
 
 ### Theorem 1: contraction principle
 
-Under the source's $M$-Lipschitz assumption,
+If the loss is $M$-Lipschitz in its first argument,
 
 $$\mathbb{E}_{(X,Y)^{n},\sigma_{1:n}}\left[\sup_{f\in\mathcal{F}}\frac{1}{n}\sum_{i=1}^{n}\sigma_{i}\ell\left(f(X_{i}),Y_{i}\right)\right]\leq M\mathfrak{R}_{n}(\mathcal{F}).$$
 
-### Proof structure used in the notes
+### Proof sketch
 
-The notes first prove the result for $n=1$. For two candidate functions $f_{1},f_{2}\in\mathcal{F}$, the average over one Rademacher variable can be rewritten using a maximum and minimum. The identity
+First prove the result for $n=1$. For two candidate functions $f_{1},f_{2}\in\mathcal{F}$, the average over one Rademacher variable can be rewritten using a maximum and minimum. The identity
 
 $$\max\{a,b\}=\frac{a+b+\lvert a-b\rvert}{2}$$
 
@@ -255,9 +247,9 @@ $$\left\lvert \ell\left(f_{1}(x),y\right)-\ell\left(f_{2}(x),y\right)\right\rver
 This gives the one-coordinate contraction. The general case is obtained by applying the same argument one Rademacher coordinate at a time while conditioning on the remaining variables.
 
 > [!NOTE]
-> **Level of proof in the source**
+> **Beyond the lecture: the full contraction lemma**
 >
-> The notebook gives the $n=1$ calculation and states that the general case follows by the same strategy. This chapter preserves that proof level rather than introducing a different full contraction-lemma proof.
+> The general statement is Talagrand's contraction lemma (Ledoux & Talagrand, 1991): if each $\varphi_i$ is $M$-Lipschitz, then $\mathbb E_\sigma\sup_{f}\sum_i\sigma_i\varphi_i(f(x_i))\le M\,\mathbb E_\sigma\sup_f\sum_i\sigma_if(x_i)$. The one-coordinate argument above is the heart of its proof: condition on $\sigma_2,\ldots,\sigma_n$, apply the $n=1$ case to $\sigma_1$, and repeat for each coordinate.
 
 ## 11. Rademacher generalization theorem
 
@@ -315,7 +307,7 @@ For binary classification, the hinge loss is
 
 $$\ell(\widehat{y},y)=\max\left\lbrace 1-y\widehat{y},0\right\rbrace.$$
 
-The source uses the elementary fact
+We use the elementary fact
 
 $$\left\lvert \max\{a,0\}-\max\{b,0\}\right\rvert\leq \lvert a-b\rvert.$$
 
@@ -347,7 +339,7 @@ The prediction score is
 
 $$f_{w,b}(x)=\langle w,\phi(x)\rangle_{\mathcal{H}}+b.$$
 
-The source defines the SVM function class as the collection of such scores:
+The SVM function class is the collection of such scores:
 
 $$\mathcal{F}=\left\lbrace f_{w,b}:f_{w,b}(x)=\langle w,\phi(x)\rangle_{\mathcal{H}}+b,\;w=\sum_{i=1}^{n}\alpha_{i}\phi(x_{i})\right\rbrace.$$
 
@@ -381,7 +373,7 @@ on $z\geq 0$.
 
 ### Theorem 3: RKHS class bound
 
-For the class of predictors satisfying $\lVert w\rVert_{\mathcal{H}}\leq B$, the source states the sample-dependent bound
+For the class of predictors with $\lVert w\rVert_{\mathcal{H}}\leq B$ we have the sample-dependent bound
 
 $$\mathfrak{R}_{n}(\mathcal{F})\leq \frac{B}{n}\sqrt{\sum_{i=1}^{n}K(x_{i},x_{i})}.$$
 
@@ -434,9 +426,9 @@ Combining the steps proves
 $$\mathfrak{R}_{n}(\mathcal{F})\leq \frac{B}{n}\sqrt{\sum_{i=1}^{n}K(x_{i},x_{i})}.$$
 
 > [!NOTE]
-> **Expected versus sample-dependent notation**
+> **Expected versus empirical complexity**
 >
-> Earlier pages define Rademacher complexity with expectation over both the sample and the Rademacher variables. The theorem on pages 52-53 writes a bound using the realized diagonal values $K(x_{i},x_{i})$. This chapter preserves the source statement and reads it as a conditional or empirical complexity bound for the observed sample. An expected version would additionally average the right-hand side over the sample.
+> §9 defines $\mathfrak R_n$ with an expectation over both the sample and the signs. The bound here uses the realized $K(x_i,x_i)$, so it bounds the *empirical* Rademacher complexity (expectation over $\sigma$ only). Taking the expectation over the sample and using Jensen gives $\mathfrak R_n(\mathcal F)\le \frac{B}{\sqrt n}\sqrt{\mathbb E\,K(X,X)}$. For the Gaussian kernel $K(x,x)=1$, so $\mathfrak R_n\le B/\sqrt n$.
 
 ## 17. Risk bound for soft-margin SVMs
 
@@ -456,12 +448,12 @@ The soft-margin SVM objective controls exactly these two quantities:
 
 $$\frac{1}{2}\lVert w\rVert_{\mathcal{H}}^{2}+C\sum_{i=1}^{n}\Phi\left(y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\right).$$
 
-A small objective value forces both the norm and the empirical hinge loss to remain small. This is the source's statistical-learning justification for the regularized SVM objective.
+A small objective value forces both the norm and the empirical hinge loss to remain small. This is the statistical justification for the regularized SVM objective.
 
 > [!TIP]
 > **Why is the norm in the objective?**
 >
-> The handwritten notes ask why $\lVert w\rVert_{\mathcal{H}}^{2}$ appears in the objective. The generalization analysis supplies the answer: the norm bounds the complexity of the prediction class and therefore appears in an upper bound on population risk.
+> A question I had early on: why does $\lVert w\rVert_{\mathcal{H}}^{2}$ appear in the objective at all? The generalization analysis supplies the answer: the norm bounds the complexity of the prediction class and therefore appears in an upper bound on population risk.
 
 > [!TIP]
 > **Connection to maximum margin**
@@ -470,7 +462,7 @@ A small objective value forces both the norm and the empirical hinge loss to rem
 
 ## 18. Chapter summary
 
-The source develops the generalization argument in the following sequence:
+The whole argument in seven steps:
 
 1. Replace a data-dependent pointwise gap by a uniform supremum over $\mathcal{F}$.
 2. Apply McDiarmid's inequality to concentrate that supremum around its expectation.

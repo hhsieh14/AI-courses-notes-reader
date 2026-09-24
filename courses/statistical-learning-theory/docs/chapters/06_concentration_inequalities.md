@@ -1,14 +1,6 @@
----
-course: "Statistical Learning Theory"
-chapter: "06"
-title: "Concentration Inequalities"
-source_pages: "598SLT.pdf, pp. 24-37"
-status: "consolidated v1.0"
----
+# 6. Concentration Inequalities
 
-# Concentration Inequalities
-
-**Source:** 598SLT.pdf, pp. 24-37.
+Why should a model that does well on the training sample do well on new data? The first step is a probability question: how far can an average of $n$ random quantities stray from its expectation? This chapter answers it with exponential tail bounds (Hoeffding and McDiarmid) and ends by showing how to control the *worst* deviation over a whole class, which sets up the generalization bounds of Chapter 7.
 
 ## 1. Why concentration matters in learning
 
@@ -34,16 +26,16 @@ $$\min_{w\in\mathcal{H},b}\;\sum_{i=1}^{n}\Phi\left(y_{i}\left(\langle w,\phi(x_
 
 The central question is why a small empirical risk should imply a small population risk. Concentration inequalities answer this by controlling the probability that a random empirical quantity is far from its expectation.
 
-The notes first present the schematic type of condition
+The kind of statement we are after looks like
 
 $$P\left(R(f)>\widehat{R}_{n}(f)+\varepsilon\right)\leq \exp\left(-c\varepsilon^{2}n\right),$$
 
 where $c>0$ is a constant.
 
-> [!TIP]
+> [!WARNING]
 > **Pointwise versus data-dependent functions**
 >
-> A bound stated for every fixed $f\in\mathcal{F}$ does not automatically justify substituting the data-dependent minimizer $f_{n}$. To control a function selected after seeing the sample, the later chapters seek a uniform bound that holds simultaneously over the entire class $\mathcal{F}$.
+> A bound stated for every fixed $f\in\mathcal{F}$ does not automatically justify substituting the data-dependent minimizer $f_{n}$. To control a function selected after seeing the sample, we will need a uniform bound that holds simultaneously over the entire class $\mathcal{F}$.
 
 ## 2. The expectation of empirical risk is population risk
 
@@ -190,7 +182,7 @@ Define
 
 $$f_{\theta}(u)=\log\left(\exp(-\theta u)\left(1-\theta+\theta\exp(u)\right)\right).$$
 
-The source computes
+A direct calculation gives
 
 $$f_{\theta}(0)=0$$
 
@@ -225,7 +217,7 @@ $$\mathbb{E}[\exp(sX)]\leq \exp\left(\frac{s^{2}(b-a)^{2}}{8}\right).$$
 > [!TIP]
 > **Why does the proof stop at second order?**
 >
-> The handwritten notes ask why an infinite Taylor series is unnecessary. The source uses Taylor's theorem with a remainder evaluated at an intermediate point $\xi$, not an infinite-series approximation. Once the second derivative is uniformly bounded by $1/4$, the second-order remainder already provides the required global upper bound.
+> I first wondered why we don't need the full Taylor series. The answer is that Taylor's theorem with the Lagrange remainder is *exact*: $f_\theta(u)=f_\theta(0)+f_\theta'(0)u+\frac12f_\theta''(\xi)u^2$ for some $\xi$ between 0 and $u$. Once the second derivative is uniformly bounded by $1/4$, the second-order remainder already provides the required global upper bound.
 
 ## 7. Hoeffding's inequality
 
@@ -310,7 +302,7 @@ $$\lvert\widehat{R}_{n}(f)-R(f)\rvert<t.$$
 > [!TIP]
 > **Why require the loss to lie in $[0,1]$?**
 >
-> The width of each summand's interval determines the Hoeffding exponent. The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above, so this particular application does not apply to it directly. The notes mention the clipped loss $\min\{\max\{1-y\widehat{y},0\},1\}$ as one bounded alternative.
+> The width of each summand's interval determines the Hoeffding exponent. The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above, so this particular application does not apply to it directly. One bounded alternative is the clipped loss $\min\{\max\{1-y\widehat{y},0\},1\}$ as one bounded alternative.
 
 ## 9. Functions of bounded difference
 
@@ -364,7 +356,7 @@ Thus,
 
 $$P\left(\lvert g(X^{n})-\mathbb{E}[g(X^{n})]\rvert\geq t\right)\leq 2\exp\left(-\frac{2t^{2}}{\sum_{i=1}^{n}c_{i}^{2}}\right).$$
 
-The course states that the detailed proof is in the reference material and is not required. It provides the following proof structure.
+The full proof is long; here is its structure, which is worth knowing because the same martingale idea appears throughout probability.
 
 ## 11. Sketch of the McDiarmid proof
 
@@ -397,7 +389,7 @@ The same exponential Markov argument and the same optimization over $s$ as in Ho
 > [!NOTE]
 > **Where is the difficult step?**
 >
-> The handwritten notes flag that bounding the change in $g$ is not immediately the same as bounding the conditional range of $V_{i}$. The reference proof constructs conditional lower and upper envelopes for the $i$th revealed coordinate and shows that their gap is at most $c_{i}$. This is the technical bridge needed before applying the conditional Hoeffding lemma.
+> Bounding the change in $g$ is not immediately the same as bounding the conditional range of $V_{i}$. The standard proof constructs conditional lower and upper envelopes for the $i$th revealed coordinate and shows that their gap is at most $c_{i}$. This is the technical bridge needed before applying the conditional Hoeffding lemma.
 
 ## 12. Hoeffding as a special case of McDiarmid
 
@@ -471,7 +463,7 @@ $$g(X^{n})=\sup_{A\in\mathcal{A}}\lvert P_{n}(A)-P(A)\rvert,$$
 
 where $\mathcal{A}$ may be infinite.
 
-The source uses the useful identities
+Two identities are useful here:
 
 $$\sup_{a\in A}h_{1}(a)-\inf_{b\in B}h_{2}(b)=\sup_{a\in A,b\in B}(h_{1}(a)-h_{2}(b))$$
 
@@ -510,9 +502,9 @@ which measures the complexity of the class $\mathcal{A}$. The next chapter devel
 >
 > Instead of assigning a separate failure event to every set and summing those probabilities, the supremum is treated as a single random function of the sample. McDiarmid controls its fluctuation around its expectation even when the class is infinite. The size of the class has not disappeared; it is now encoded in the expected supremum.
 
-## 16. Reference example: Kernel density estimation
+## 16. Example: kernel density estimation
 
-The final page gives a reference-level application that the course says is not required in detail.
+McDiarmid applies well beyond sums. A nice example is the $L^1$ error of a kernel density estimator.
 
 Let $X_{1},\ldots,X_{n}$ be independent real-valued observations from a density $f$. Let $K:\mathbb{R}\to\mathbb{R}$ be nonnegative and satisfy
 

@@ -1,22 +1,14 @@
----
-course: "Statistical Learning Theory"
-chapter: "12"
-title: "Optimization of Neural Networks"
-source_pages: "598SLT.pdf, pp. 75-81"
-status: "consolidated v1.0"
----
+# 12. Optimization of Neural Networks
 
-# Optimization of Neural Networks
-
-**Source:** 598SLT.pdf, pp. 75-81.
+Neural-network training objectives are nonconvex, so none of the convex results from Chapters 9–11 apply directly. Yet very wide networks trained by gradient descent reliably reach zero training error and often generalize. This chapter follows the **neural tangent kernel** (NTK) explanation for a two-layer ReLU network (Du et al., 2019; Arora et al., 2019). When the network is wide enough, its training dynamics are close to those of kernel regression with a fixed kernel. That brings back both the linear-convergence tools of Chapter 9 and the Rademacher bounds of Chapter 7.
 
 ## 1. Why neural networks?
 
-The course introduces neural networks as multilayered prediction models whose output is computed from the input through a feed-forward sequence of transformations.
+Neural networks are multilayered prediction models whose output is computed from the input through a feed-forward sequence of transformations.
 
-Different hidden layers can extract features at different levels of abstraction. In the image-classification example on page 75, early layers detect low-level patterns, middle layers combine them into intermediate structures, and later layers form higher-level semantic features.
+Different hidden layers can extract features at different levels of abstraction. In an image classifier, early layers detect low-level patterns, middle layers combine them into intermediate structures, and later layers form higher-level semantic features.
 
-The lecture does not attempt to analyze an arbitrary deep network. It studies the training behavior of a **two-layer neural network** consisting of:
+We won't analyze an arbitrary deep network. We study the training behavior of a **two-layer neural network** consisting of:
 
 - one hidden layer;
 - one output layer.
@@ -48,7 +40,7 @@ $$\sigma(z)=\sigma(w^{\top}x).$$
 
 ### 2.1 Sigmoid activation
 
-One activation shown in the notes is the sigmoid function:
+One common activation is the sigmoid:
 
 $$\sigma(z)=\frac{1}{1+e^{-z}}.$$
 
@@ -56,7 +48,7 @@ Its values lie in $(0,1)$.
 
 ### 2.2 ReLU activation
 
-The lecture uses the rectified linear unit for the later analysis:
+The analysis uses the rectified linear unit:
 
 $$\sigma(z)=\max\{0,z\}.$$
 
@@ -67,7 +59,7 @@ $$\sigma'(z)=\mathbf{1}_{\{z\geq 0\}}.$$
 > [!NOTE]
 > **Derivative at zero**
 >
-> ReLU is not differentiable at $z=0$. The source adopts the indicator convention shown above. Since a continuously distributed random initialization hits an exact zero inner product with probability zero under nondegenerate inputs, this convention does not affect the stated probabilistic argument.
+> ReLU is not differentiable at $z=0$. We use the indicator convention above. Since a continuously distributed random initialization hits an exact zero inner product with probability zero under nondegenerate inputs, this convention does not affect the stated probabilistic argument.
 
 ## 3. The two-layer model
 
@@ -93,12 +85,12 @@ The collection of hidden-layer weights is
 
 $$W=\{w_{r}\}_{r=1}^{m}.$$
 
-Only $W$ is optimized during training in this lecture. The output signs $a_{1},\ldots,a_{m}$ are sampled once and then held fixed.
+Only $W$ is trained. The output signs $a_{1},\ldots,a_{m}$ are sampled once and then held fixed.
 
 > [!TIP]
 > **Why include the factor $1/\sqrt{m}$?**
 >
-> The source uses this width normalization so that the scale of the network output and its tangent-kernel matrix remains controlled as the number of hidden neurons grows.
+> This width normalization is chosen so that the scale of the network output and its tangent-kernel matrix remains controlled as the number of hidden neurons grows.
 
 ## 4. Training data and empirical objective
 
@@ -114,7 +106,7 @@ and
 
 $$y_{i}\in\{-1,1\}.$$
 
-The squared empirical objective used in the gradient calculation on page 77 is
+The training objective is
 
 $$\Phi(W)=\frac{1}{2n}\sum_{i=1}^{n}\left(y_{i}-f(W,x_{i})\right)^{2}.$$
 
@@ -132,7 +124,7 @@ $$\Phi(W)=\frac{1}{2n}\lVert\widehat{y}(W)-y\rVert_{2}^{2}.$$
 
 ## 5. Random initialization
 
-For every hidden neuron, the source initializes
+Initialize every hidden neuron as
 
 $$w_{r}(0)\sim\mathcal{N}(0,\kappa^{2}I),\qquad 1\leq r\leq m,$$
 
@@ -184,9 +176,9 @@ At iteration $k$, the proof-consistent form is therefore
 $$\nabla_{w_{r}}\Phi(W(k-1))=\frac{a_{r}}{n\sqrt{m}}\sum_{i=1}^{n}\left(f(W(k-1),x_{i})-y_{i}\right)\mathbf{1}_{\{w_{r}(k-1)^{\top}x_{i}\geq 0\}}x_{i}.$$
 
 > [!NOTE]
-> **Iteration index in the source**
+> **Iteration index**
 >
-> The highlighted gradient on page 77 places $w_{r}(k)$ inside the ReLU indicator even though the gradient is evaluated at $W(k-1)$. The derivation and the subsequent matrix update require $w_{r}(k-1)$. This chapter records the proof-consistent index and flags the discrepancy rather than silently treating the two expressions as identical.
+> The indicator must use the *current* weights $w_r(k-1)$, the point where the gradient is evaluated. Writing $w_r(k)$ there is an easy slip to make.
 
 ## 7. Vectorized gradient dynamics
 
@@ -198,7 +190,7 @@ Define the activation indicator
 
 $$I_{r,i}(k)=\mathbf{1}_{\{w_{r}(k)^{\top}x_{i}\geq 0\}}.$$
 
-The source introduces a block matrix
+Stack the per-example gradients into a block matrix
 
 $$Z(k)\in\mathbb{R}^{md\times n}.$$
 
@@ -215,13 +207,13 @@ Then the vectorized parameter update is
 $$\mathrm{vec}(W(k))=\mathrm{vec}(W(k-1))-\eta Z(k-1)(\widehat{y}(k-1)-y).$$
 
 > [!NOTE]
-> **Normalization inconsistency across pages 77-79**
+> **Two normalizations**
 >
-> Page 77 defines $Z(k)$ with the factor $1/(n\sqrt{m})$. Pages 78-79 subsequently write the Gram matrix and its expectation at the scale obtained from a $1/\sqrt{m}$ Jacobian. Those conventions differ by a factor of $n^{2}$ in the Gram matrix and can be converted into one another by rescaling the learning rate. The source does not explicitly perform this conversion. The rest of this chapter follows the kernel-scale formulas used in the convergence and generalization statements while preserving this warning.
+> With the $\frac{1}{n}$ of the objective folded into $Z(k)$, the Gram matrix $Z^\top Z$ is $1/n^2$ times the "kernel-scale" matrix whose entries are $\frac{x_i^\top x_j}{m}\sum_rI_{r,i}I_{r,j}$. The two conventions differ only by rescaling $\eta$. Below I use the kernel scale, so $\mathbb E[H(0)]=K$ exactly.
 
 ## 8. Prediction-space dynamics
 
-The course states that the change in the training-prediction vector can be approximated by
+The change in the training predictions is approximately
 
 $$\widehat{y}(k)-\widehat{y}(k-1)=-\eta Z(k-1)^{\top}Z(k-1)(\widehat{y}(k-1)-y)+e(k-1),$$
 
@@ -243,9 +235,9 @@ $$\widehat{y}(k)-y=(I-\eta H(k-1))(\widehat{y}(k-1)-y)+e(k-1).$$
 > The approximation error is stated as order $1/\sqrt{m}$. A wider network therefore makes the prediction dynamics closer to a linear recursion driven by the Gram matrix $H(k)$.
 
 > [!NOTE]
-> **Unproved local-linearization statement**
+> **What makes this rigorous**
 >
-> Pages 77-78 state the prediction update and the size of $e(k)$ but do not derive them. A rigorous argument must control changes in ReLU activation patterns and the Taylor remainder along the entire gradient-descent trajectory.
+> The Taylor remainder $e(k)$ comes from ReLU activation patterns flipping between steps. Du et al. show that if every $w_r$ stays within $O(1/\sqrt m)$ of its initialization, only a small fraction of patterns flip, which bounds $e(k)$ along the whole trajectory.
 
 ## 9. From the changing Gram matrix to the NTK matrix
 
@@ -253,7 +245,7 @@ The analysis uses two approximation facts.
 
 ### Fact 1: $H(k)$ stays close to $H(0)$
 
-With probability at least $1-\delta$ over the training data and random initialization, the source states
+With probability at least $1-\delta$ over the random initialization (for fixed training inputs), Du et al. (2019) show
 
 $$\lVert H(k)-H(0)\rVert_{F}=O\left(\frac{1}{\sqrt{m}\,\delta^{3/2}}\right).$$
 
@@ -265,7 +257,7 @@ For normalized inputs, define
 
 $$K_{i,j}=\frac{x_{i}^{\top}x_{j}\left(\pi-\arccos(x_{i}^{\top}x_{j})\right)}{2\pi}.$$
 
-The source identifies
+and
 
 $$K_{i,j}=\mathbb{E}[H_{i,j}(0)].$$
 
@@ -291,7 +283,7 @@ $$\lVert H(0)-K\rVert_{F}=O\left(\frac{n\sqrt{\log(n/\delta)}}{\sqrt{m}}\right).
 
 ### Proof
 
-Fix a pair $(i,j)$. At the kernel scale used in pages 78-79, the source writes
+Fix a pair $(i,j)$. At the kernel scale,
 
 $$H_{i,j}(0)=\frac{x_{i}^{\top}x_{j}}{m}\sum_{r=1}^{m}I_{r,i}(0)I_{r,j}(0).$$
 
@@ -334,11 +326,11 @@ This proves the lemma.
 > [!NOTE]
 > **Bounded inner products**
 >
-> The clean Hoeffding constant displayed in the source treats the indicator average as the random part and assumes the multiplicative inner product is bounded in magnitude. Normalized inputs provide $\lvert x_{i}^{\top}x_{j}\rvert\leq 1$.
+> This Hoeffding constant treats the indicator average as the random part and assumes the multiplicative inner product is bounded in magnitude. Normalized inputs provide $\lvert x_{i}^{\top}x_{j}\rvert\leq 1$.
 
 ## 11. Approximate linear convergence in prediction space
 
-Combining the source's three approximations gives
+Combining the three approximations gives
 
 $$H(k)\approx H(0)\approx K$$
 
@@ -362,7 +354,7 @@ Assume that $K$ is positive definite and let
 
 $$\lambda_{0}=\lambda_{\min}(K)>0.$$
 
-The source chooses
+Choose
 
 $$\eta=O\left(\frac{\lambda_{0}}{n^{2}}\right)$$
 
@@ -383,7 +375,7 @@ $$\lVert\widehat{y}(k)-y\rVert_{2}\lesssim(1-\eta\lambda_{0})^{k}\lVert\widehat{
 
 ### Theorem 1
 
-For sufficiently large $m$ and the learning-rate scale stated above, the source gives the informal bound
+For sufficiently large $m$ and the learning-rate scale stated above, we get the informal bound
 
 $$\Phi(W(k))\leq(1-\eta\lambda_{0})^{2k}\lVert\widehat{y}(0)-y\rVert_{2}^{2}$$
 
@@ -402,20 +394,18 @@ as $k\to\infty$.
 Thus an overparameterized two-layer network can fit the training labels under the stated NTK-style conditions.
 
 > [!NOTE]
-> **Objective normalization**
->
-> Earlier, the empirical objective is $\Phi(W)=\lVert\widehat{y}(W)-y\rVert_{2}^{2}/(2n)$. The displayed theorem on page 80 omits the factor $1/(2n)$. The geometric rate is unchanged, but the exact multiplicative constant is inconsistent across the source pages.
+> Here $\Phi$ is written without its $\frac{1}{2n}$ factor; the rate is unaffected.
 
 > [!NOTE]
-> **Why the theorem is informal**
+> **Why "informal"**
 >
-> The notes do not prove the uniform-in-$k$ control needed to justify all three substitutions: small $e(k)$, $H(k)\approx H(0)$, and $H(0)\approx K$. They also do not state an explicit minimum width. The theorem is therefore preserved as the lecture's informal conclusion rather than upgraded into a fully specified result.
+> Making this a theorem needs uniform control over all $k$ of the three approximations, $e(k)\approx0$, $H(k)\approx H(0)$ and $H(0)\approx K$, and an explicit width. For unit-variance initialization, Du et al. (2019) need $m=\Omega\!\left(n^6/(\lambda_0^4\delta^3)\right)$. Later work lowers the polynomial but not the idea.
 
 ## 13. Optimization is not generalization
 
 Driving $\Phi(W(k))$ to zero controls the empirical training error. It does not by itself imply small population risk.
 
-The course next considers a loss satisfying the Lipschitz condition
+Now consider a loss satisfying the Lipschitz condition
 
 $$\lvert\ell(f(W,x),y)-\ell(f(W,x'),y)\rvert\leq M\lvert f(W,x)-f(W,x')\rvert$$
 
@@ -434,11 +424,11 @@ The empirical-risk term can become small during training, but a useful populatio
 > [!TIP]
 > **Do we get rid of empirical risk?**
 >
-> No. Gradient descent still minimizes the empirical squared objective. The generalization theorem adds an upper bound on population risk after training. The model does not directly minimize the displayed population-risk upper bound in this lecture.
+> No. Gradient descent still minimizes the empirical squared objective. The generalization theorem adds an upper bound on population risk after training. The model does not directly minimize the displayed population-risk upper bound.
 
 ## 14. Distance from initialization and the reachable function class
 
-The source states that, throughout training,
+Arora et al. (2019) show that, throughout training,
 
 $$\lVert\mathrm{vec}(W(k))-\mathrm{vec}(W(0))\rVert_{2}\leq\sqrt{y^{\top}K^{-1}y}+\text{a small noise term}.$$
 
@@ -454,9 +444,7 @@ Every network encountered along the analyzed gradient-descent path belongs to th
 > A smaller parameter ball is a smaller function class. The Rademacher-complexity term can therefore be controlled using the maximum distance traveled from the initialization.
 
 > [!NOTE]
-> **Unproved movement bound**
->
-> Page 81 states the distance bound but refers readers to an external paper for its proof. The notebook does not derive it from the preceding recursion.
+> The proof (Arora et al., 2019) sums the per-step movements along the approximately linear trajectory, $\sum_k\eta\,Z(k)(\hat y(k)-y)$, and bounds the sum using $(I-\eta K)^k$ and $K^{-1}$.
 
 ## 15. Final population-risk bound
 
@@ -468,7 +456,7 @@ provided that $m$ is sufficiently large and
 
 $$\eta=O\left(\frac{\lambda_{0}}{n^{2}}\right).$$
 
-The detailed proof is not included in the notebook. The source points to a reference titled `fine_grained_analysis_two_layer_neural_network.pdf`.
+This is the main generalization result of Arora, Du, Hu, Li & Wang, *Fine-Grained Analysis of Optimization and Generalization for Overparameterized Two-Layer Neural Networks* (ICML 2019).
 
 The bound has two central messages:
 
@@ -491,7 +479,7 @@ $$y^{\top}K^{-1}y=\sum_{j=1}^{n}\frac{(u_{j}^{\top}y)^{2}}{\lambda_{j}}.$$
 
 This quantity is small when most of the label vector lies in eigendirections associated with large eigenvalues of $K$.
 
-That is the meaning of the source's statement that the label vector is well represented by the top few eigenvectors of the NTK Gram matrix.
+That is what it means for the label vector is well represented by the top few eigenvectors of the NTK Gram matrix.
 
 > [!TIP]
 > **Why do top eigenvectors help both convergence and generalization?**
@@ -500,7 +488,7 @@ That is the meaning of the source's statement that the label vector is well repr
 
 ## 17. Interpretation of the final figures
 
-The plots on page 81 compare three label patterns on MNIST:
+Arora et al. compare three label patterns on MNIST:
 
 - a worst-case direction;
 - random labels;
@@ -508,29 +496,32 @@ The plots on page 81 compare three label patterns on MNIST:
 
 The actual-label loss falls rapidly, while the worst-case construction converges very slowly. The accompanying eigenvalue-projection plot indicates that the real labels have stronger alignment with the leading NTK eigendirections than random or adversarial label vectors.
 
-The figures support the lecture's qualitative conclusion: overparameterization alone is not the entire explanation. The interaction between the data, labels, and NTK spectrum determines both the optimization speed and the population-risk upper bound.
+The experiments support the main conclusion: overparameterization alone is not the entire explanation. The interaction between the data, labels, and NTK spectrum determines both the optimization speed and the population-risk upper bound.
 
-## 18. What is proved and what is imported
+## 18. What is proved here and what is cited
 
-The notebook directly proves:
+Proved in this chapter:
 
 - the gradient formula for one hidden weight;
 - the vectorized gradient update;
-- concentration of $H(0)$ around $K$ using Hoeffding's inequality and a union bound.
+- concentration of $H(0)$ around $K$ (Hoeffding plus a union bound).
 
-The notebook states or cites, without a complete proof:
+Cited from Du et al. (2019) and Arora et al. (2019):
 
 - the prediction-space Taylor approximation and the remainder $e(k)$;
 - stability of $H(k)$ around $H(0)$ throughout training;
-- the required lower bound on network width $m$;
+- the width requirement;
 - the distance-from-initialization bound;
 - the final population-risk theorem.
 
-This boundary is important: the final result is a structured NTK argument, but several of its most difficult steps are delegated to the external reference.
+> [!NOTE]
+> **Beyond the lecture: the limits of the NTK picture**
+>
+> In the NTK regime the network barely moves from initialization, so it behaves like a fixed kernel method and does **not learn features**. Real networks at practical widths move much further, and their feature learning is part of why they beat kernels on images and text (Chizat, Oyallon & Bach, 2019, "lazy training"). The NTK story explains *why* gradient descent finds global minima of wide nonconvex networks, but not everything about why deep learning works.
 
 ## 19. Chapter summary
 
-The course analyzes a two-layer ReLU network with fixed random output signs and trainable hidden weights. In the overparameterized regime, the hidden activation patterns move little, so the changing tangent Gram matrix remains close to its initialization and to a deterministic NTK matrix $K$.
+We analyzed a two-layer ReLU network with fixed random output signs and trainable hidden weights. In the overparameterized regime, the hidden activation patterns move little, so the changing tangent Gram matrix remains close to its initialization and to a deterministic NTK matrix $K$.
 
 The resulting prediction dynamics are approximately linear:
 

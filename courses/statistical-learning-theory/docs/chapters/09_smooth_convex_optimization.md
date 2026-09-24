@@ -1,18 +1,10 @@
----
-course: "Statistical Learning Theory"
-chapter: "09"
-title: "Smooth Convex Optimization"
-source_pages: "598SLT.pdf, pp. 57-64"
-status: "consolidated v1.0"
----
+# 9. Smooth Convex Optimization
 
-# Smooth Convex Optimization
-
-**Source:** 598SLT.pdf, pp. 57-64.
+The last part of the course turns from *whether* a learned model generalizes to *how* we compute it. This chapter proves the basic convergence rate of gradient descent, $O(1/k)$ for smooth convex objectives, using two inequalities (the descent lemma and first-order convexity) and a telescoping sum. It then states the accelerated $O(1/k^2)$ rate.
 
 ## 1. Optimization methods for machine learning
 
-The course now shifts from statistical guarantees to the optimization procedures used to fit machine-learning models. It introduces three methods:
+Three methods are covered in this part:
 
 - gradient descent;
 - proximal gradient descent;
@@ -48,7 +40,7 @@ Equivalently,
 
 $$h_{\theta}(x)=x^{\top}\theta.$$
 
-The goal is to make every prediction $\widehat{y}^{(i)}$ close to its ground-truth target $y^{(i)}$. The course therefore uses the sum of squared errors:
+The goal is to make every prediction $\widehat{y}^{(i)}$ close to its ground-truth target $y^{(i)}$. We use the sum of squared errors:
 
 $$J(\theta)=\sum_{i=1}^{m}\left(y^{(i)}-\widehat{y}^{(i)}\right)^{2}.$$
 
@@ -63,7 +55,7 @@ $$\min_{\theta\in\mathbb{R}^{d+1}}J(\theta).$$
 > [!TIP]
 > **Why begin with squared loss?**
 >
-> The handwritten note on page 57 says that a quadratic objective is easy to optimize. In this lecture, squared loss supplies a differentiable convex function whose gradient can be computed explicitly, making it a convenient first example for gradient descent.
+> A quadratic objective is easy to optimize: squared loss supplies a differentiable convex function whose gradient can be computed explicitly, making it a convenient first example for gradient descent.
 
 ## 3. Vectorized formulation
 
@@ -95,9 +87,9 @@ Equivalently,
 
 $$J(\theta)=\left(y-X\theta\right)^{\top}\left(y-X\theta\right).$$
 
-### Source example: house-price prediction
+### Example: house-price prediction
 
-Page 58 uses five training examples with square footage and number of rooms as the observed features. After adding the intercept column, the design matrix has three columns. The slide reports the fitted parameter vector
+Take five training examples with square footage and number of rooms as the observed features. After adding the intercept column, the design matrix has three columns. The fitted parameter vector is
 
 $$\widehat{\theta}=\left[-235.63,0.19,73.13\right]^{\top}.$$
 
@@ -109,17 +101,17 @@ and the predicted price is computed from
 
 $$\widehat{y}=\widetilde{x}^{\top}\widehat{\theta}.$$
 
-The slide reports the prediction as $371.25$ in units of one thousand dollars.
+The fitted model predicts $371.25$ (thousand dollars).
 
 > [!NOTE]
 > **Rounded coefficients in the example**
 >
-> The displayed parameter values are rounded to two decimal places. Recomputing the prediction using only those rounded numbers does not exactly reproduce the displayed value $371.25$. The reported prediction is consistent with using more precise coefficients before rounding them for presentation.
+> The coefficients are rounded to two decimals. Plugging the rounded values in gives $363.76$; the $371.25$ comes from the unrounded fit. A square-footage slope of about $0.1937$ instead of $0.19$ accounts for almost all of the gap ($0.0037\times2000\approx7.4$).
 
 > [!NOTE]
-> **The source changes its use of d**
+> **Notation**
 >
-> Page 57 uses $d$ for the number of original features and therefore places $\theta$ in $\mathbb{R}^{d+1}$. Page 58 labels the three-column augmented example as $d=3$. This chapter keeps the first convention and calls the augmented dimension $d+1$.
+> $d$ is the number of original features, so with the intercept $\theta\in\mathbb{R}^{d+1}$. In the house example $d=2$ and $X$ has three columns.
 
 ## 4. Gradient descent for linear regression
 
@@ -141,7 +133,7 @@ $$\eta>0$$
 
 is the learning rate.
 
-The course lists two stopping rules:
+Two common stopping rules:
 
 - stop when $\lVert\nabla J(\theta^{(k)})\rVert_{2}$ is smaller than a predetermined threshold $\varepsilon>0$;
 - stop when a predetermined maximum number of iterations has been reached.
@@ -173,7 +165,7 @@ as the number of iterations increases.
 > [!NOTE]
 > **Differentiability versus smoothness**
 >
-> Page 59 initially calls a differentiable convex problem a smooth convex optimization problem. The theorem on the same page uses the stronger property that the gradient is Lipschitz continuous. In the convergence result below, smoothness therefore means an $L$-Lipschitz gradient.
+> "Smooth" is used loosely for "differentiable", but the convergence theorem needs more: an $L$-Lipschitz gradient. Below, smooth always means that.
 
 ## 6. Lipschitz-continuous gradients
 
@@ -183,12 +175,12 @@ $$\lVert\nabla f(x)-\nabla f(y)\rVert_{2}\leq L\lVert x-y\rVert_{2}$$
 
 for every $x,y\in\mathbb{R}^{d}$.
 
-This condition controls how quickly the gradient can change. The constant $L$ determines a safe fixed learning rate in the course theorem.
+This condition controls how quickly the gradient can change. The constant $L$ determines a safe fixed learning rate.
 
 > [!TIP]
 > **Why does L affect the learning rate?**
 >
-> The theorem sets $\eta=1/L$. A smaller valid Lipschitz constant permits a larger guaranteed step size. The handwritten note on page 59 connects this larger step size with a potentially smaller number of iterations, while the theorem's bound makes the dependence explicit through $1/(\eta k)$.
+> The theorem sets $\eta=1/L$. A smaller valid Lipschitz constant permits a larger guaranteed step size. A larger step size means fewer iterations, and the bound makes the dependence explicit through $1/(\eta k)$. For least squares, $J(\theta)=\lVert y-X\theta\rVert^2$ has $L=2\lambda_{\max}(X^\top X)$.
 
 ## 7. Descent lemma for smooth functions
 
@@ -248,7 +240,7 @@ $$f(y)\leq f(x)+\nabla f(x)^{\top}(y-x)+\frac{L}{2}\lVert y-x\rVert_{2}^{2}.$$
 
 ## 8. First-order property of convexity
 
-For a differentiable convex function $f$, the source uses the inequality
+For a differentiable convex function $f$,
 
 $$f(y)\geq f(x)+\nabla f(x)^{\top}(y-x).$$
 
@@ -365,11 +357,11 @@ Renaming $K$ as $k$ completes the proof.
 > [!TIP]
 > **Why does the final iterate lie below the average?**
 >
-> The descent lemma shows $f(x^{(1)})\geq f(x^{(2)})\geq\cdots\geq f(x^{(K)})$. Therefore, the last objective gap is no larger than the average of the first $K$ objective gaps. This is the step highlighted in the handwritten derivation on page 62.
+> The descent lemma shows $f(x^{(1)})\geq f(x^{(2)})\geq\cdots\geq f(x^{(K)})$. Therefore, the last objective gap is no larger than the average of the first $K$ objective gaps. This is the step that turns an average bound into a last-iterate bound.
 
 ## 10. Accelerated gradient descent
 
-The source next asks whether the $O(1/k)$ convergence rate can be improved. It introduces accelerated gradient descent, abbreviated as AGD.
+Can we do better than $O(1/k)$? Nesterov's **accelerated gradient descent** (AGD) can.
 
 The idea is to add a momentum-like extrapolation before taking a gradient step.
 
@@ -389,12 +381,12 @@ Update the momentum parameter by
 
 $$t_{k+1}=\frac{1+\sqrt{1+4t_{k}^{2}}}{2}.$$
 
-The course runs this procedure until the predetermined maximum number of iterations is reached.
+Run for a fixed number of iterations (a tolerance on $\lVert\nabla f\rVert$ works too).
 
 > [!TIP]
 > **Can AGD also use a tolerance-based stopping rule?**
 >
-> The handwritten note on page 63 asks why AGD cannot stop using a threshold $\varepsilon$. It answers that such a rule can also be used, while identifying a fixed maximum number of iterations as common practice in this presentation. The convergence theorem below is naturally stated after a specified number of iterations.
+> Yes. A gradient-norm threshold works for AGD as well. A fixed iteration budget is just the natural way to state the theorem. One caveat: AGD is not a descent method (the objective can go up temporarily), so don't stop on "objective increased".
 
 ## 11. Convergence theorem for accelerated gradient descent
 
@@ -415,7 +407,7 @@ $$f\left(x^{(k)}\right)-f\left(x^{\star}\right)=O\left(\frac{1}{k^{2}}\right).$$
 > [!NOTE]
 > **Check the constant.** The standard guarantee for this scheme (Nesterov; Beck and Teboulle's FISTA with $h=0$) is $f(x^{(k)})-f(x^{\star})\leq\dfrac{2\lVert x^{(0)}-x^{\star}\rVert_{2}^{2}}{\eta(k+1)^{2}}$. The constant displayed above is smaller than the usual result, so treat it as the $O(1/k^{2})$ rate rather than an exact bound.
 
-The source does not prove this theorem on pages 63-64. It uses the result to compare the rates:
+Comparing the rates:
 
 $$\mathrm{GD}:\quad O\left(\frac{1}{k}\right),$$
 
@@ -424,9 +416,9 @@ $$\mathrm{AGD}:\quad O\left(\frac{1}{k^{2}}\right).$$
 Thus, under the assumptions of the two theorems, AGD has the faster objective-value convergence guarantee.
 
 > [!NOTE]
-> **Proof of accelerated convergence**
+> **Beyond the lecture: where acceleration comes from**
 >
-> The notebook states the accelerated $O(1/k^{2})$ theorem but does not derive it. This chapter therefore records the update and theorem without inserting an external proof.
+> The proof (Beck & Teboulle, 2009) builds an estimate sequence: it tracks a potential $t_k^2\,(f(x^{(k)})-f^\star)+\frac{1}{2\eta}\lVert u^{(k)}-x^\star\rVert^2$ with $u^{(k)}$ an auxiliary "momentum" point, and shows it doesn't increase. Since $t_k\ge(k+1)/2$, the gap falls like $1/k^2$. The rate is optimal: no first-order method can beat $O(1/k^2)$ on this class of problems in the worst case (Nesterov's lower bound).
 
 ## 12. Chapter summary
 
@@ -437,7 +429,7 @@ Thus, under the assumptions of the two theorems, AGD has the faster objective-va
 5. Convexity provides a tangent-hyperplane lower bound.
 6. Combining the two inequalities produces a telescoping proof of the $O(1/k)$ gradient-descent rate.
 7. Accelerated gradient descent adds an extrapolation step and achieves the stated $O(1/k^{2})$ rate.
-8. The source proves the gradient-descent theorem but only states the accelerated theorem.
+8. The accelerated rate is optimal among first-order methods for smooth convex problems.
 
 ---
 

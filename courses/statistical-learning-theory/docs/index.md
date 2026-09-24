@@ -1,39 +1,12 @@
----
-course: "Statistical Learning Theory"
-chapter: "00"
-title: "Statistical Learning Theory"
-source_pages: "598SLT.pdf, pp. 1-81"
-status: "consolidated v1.0"
----
+# Statistical Learning Theory: Introduction
 
-# Statistical Learning Theory
+CSE 575 (my other notes) asks *which models exist and how to fit them*. This course asks two harder questions:
 
-This repository transforms an 81-page course notebook into clean, source-grounded study chapters. The transformation preserves the original sequence, terminology, theorem statements, handwritten questions, and level of detail while making equations and proofs readable in Markdown and MathJax.
+1. **Why should a model that fits the training data work on new data?** Chapters 6–8 answer with concentration inequalities and complexity measures: Rademacher complexity and VC dimension.
+2. **Why do our optimization algorithms find good solutions, and how fast?** Chapters 9–12 prove convergence rates for gradient descent, proximal methods and SGD, and end with why very wide neural networks train to zero error.
 
-## Transformation principles
+Kernel SVMs are the running example that ties the two together (Chapters 1–5). The final generalization bound for SVMs (Chapter 7) shows that the $\lVert w\rVert^2$ regularizer isn't a heuristic: it is exactly the quantity that controls the complexity term.
 
-1. Course content is preserved before clarification is added.
-2. Theorems, definitions, assumptions, and proofs remain structurally distinct.
-3. Handwritten questions become explicit clarification or discussion sections.
-4. Missing proof steps are labeled rather than silently presented as source content.
-5. Display equations use the rendering-safe LaTeX conventions documented in the repository.
-6. Diagrams are redrawn only when they materially improve understanding.
+**How to read.** Each chapter states results as theorems and proves them. Where a proof is long and standard, I give its structure and a reference instead, and say so explicitly. "Beyond the lecture" boxes add results I found necessary to complete the picture (Radon's theorem for VC bounds, Sauer–Shelah, step-size schedules for SGD, the limits of the NTK regime).
 
-## Course organization
-
-- **Prediction, SVMs, and kernels:** Chapters 1-5
-- **Concentration and generalization:** Chapters 6-8
-- **Optimization and neural networks:** Chapters 9-12
-
-Start with the [Study Guide and Theorem Map](study_guide.md) for the dependency structure, major results, and recurring proof patterns.
-
-## Current status
-
-- Course-wide page audit: complete
-- Full content transformation of all 81 source pages: complete
-- Twelve consolidated chapters: complete
-- Cross-chapter study guide and theorem map: complete
-- Six source-grounded diagrams: complete
-- Portable LaTeX and local-link validation: passing
-- Browser smoke test using locally rendered MathML: passing
-
+Start with the [study guide](study_guide.md) for the map of results, or go straight to [Chapter 1](chapters/01_probabilistic_prediction.md). Symbols are listed in [notation](notation.md).

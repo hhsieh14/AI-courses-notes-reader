@@ -1,20 +1,12 @@
----
-course: "Statistical Learning Theory"
-chapter: "11"
-title: "Stochastic Gradient Descent"
-source_pages: "598SLT.pdf, pp. 71-74"
-status: "consolidated v1.0"
----
+# 11. Stochastic Gradient Descent
 
-# Stochastic Gradient Descent
-
-**Source:** 598SLT.pdf, pp. 71-74.
+When the objective is an average over millions of examples, even one full gradient is expensive. SGD uses the gradient of a single random example instead: a noisy but unbiased estimate. This chapter proves that with a fixed step size SGD converges to within $\eta\sigma^2$ of the optimum at rate $O(1/k)$, and explains how decaying step sizes remove that floor.
 
 ## 1. Why introduce stochastic gradients?
 
 The previous chapters studied gradient descent for smooth convex objectives and proximal gradient descent for composite objectives. Both methods use information from the full objective at every iteration.
 
-For linear regression, the course writes
+For linear regression,
 
 $$J(\theta)=\lVert y-X\theta\rVert_{2}^{2}.$$
 
@@ -55,27 +47,21 @@ is a random index.
 >
 > One SGD iteration uses only one sample gradient instead of all $n$ sample gradients. The resulting update is cheaper but noisy: it does not usually point in exactly the same direction as the full gradient.
 
-> [!NOTE]
-> **The source's factor-$n$ speed statement**
->
-> Page 72 describes one SGD iteration as $n$ times faster than one full-gradient iteration. This is a comparison of the number of per-sample gradient evaluations. It does not claim that SGD needs the same number of iterations or that implementation overhead is exactly zero.
+> One SGD step costs $1/n$ of a full-gradient step in gradient evaluations. That doesn't make SGD $n$ times faster overall: it needs more steps, and hardware favors mini-batches. The win is largest early in training and when $n$ is huge.
 
 ## 2. Finite-sum optimization problem
 
-The general problem considered by the course is
+The general problem is
 
 $$\min_{x\in\mathbb{R}^{d}}f(x)=\frac{1}{n}\sum_{i=1}^{n}f_{i}(x).$$
 
-Each $f_{i}$ is usually the loss associated with the $i$-th training sample. The source gives squared loss for linear regression and hinge loss for SVMs as examples.
+Each $f_{i}$ is usually the loss associated with the $i$-th training sample. Examples: squared loss for linear regression, hinge loss for SVMs.
 
 The component functions do not need to be identical:
 
 $$f_{i}\neq f_{j}\quad\text{may hold when }i\neq j.$$
 
-> [!NOTE]
-> **Two normalization conventions**
->
-> Page 71 writes the regression objective as an unnormalized sum, while page 72 defines the general finite-sum objective using the average $n^{-1}\sum_{i=1}^{n}f_{i}$. The two conventions differ by a constant factor, which also rescales the gradient and the effective learning rate. This chapter follows the averaged convention for the convergence theorem.
+> Sums and averages differ by a factor of $n$, which rescales the gradient and so the effective learning rate. The theorem below uses the average.
 
 ## 3. SGD algorithm for the finite-sum problem
 
@@ -93,7 +79,7 @@ $$x^{(k)}=x^{(k-1)}-\eta\nabla f_{i_{k}}\left(x^{(k-1)}\right),$$
 
 where $\eta>0$ is the learning rate.
 
-The notebook presents a fixed learning rate and a fixed maximum number of iterations.
+Here we use a fixed learning rate and a fixed number of iterations.
 
 > [!TIP]
 > **Why is the output averaged?**
@@ -102,7 +88,7 @@ The notebook presents a fixed learning rate and a fixed maximum number of iterat
 
 ## 4. Assumptions for the convergence result
 
-The source uses three assumptions.
+We make three assumptions.
 
 ### Assumption 1: convex and smooth component functions
 
@@ -142,14 +128,11 @@ Equivalently, under the unbiasedness assumption,
 
 $$\mathbb{E}\left[\left\lVert\nabla f_{i_{k}}(x)\right\rVert_{2}^{2}\right]\leq\sigma^{2}+\lVert\nabla f(x)\rVert_{2}^{2}.$$
 
-> [!NOTE]
-> **Variance notation on page 72**
->
-> The displayed assumption on page 72 is written using the variance of the gradient norm. The proof on page 74 instead uses the vector second-moment identity above. This chapter states the proof-consistent interpretation and does not silently treat the two expressions as identical.
+> The proof needs a bound on the vector second moment, $\mathbb E\lVert\nabla f_{i_k}(x)-\nabla f(x)\rVert^2\le\sigma^2$, not just on the variance of the gradient's norm.
 
 ## 5. Optimal point and averaged iterate
 
-Because $f$ is convex, the source assumes that a global minimizer exists:
+Assume a global minimizer exists:
 
 $$x^{\star}\in\underset{x\in\mathbb{R}^{d}}{\arg\min}\;f(x).$$
 
@@ -186,10 +169,7 @@ is the residual term caused by stochastic-gradient noise under a fixed learning 
 >
 > A larger fixed learning rate reduces the first term more quickly but increases the noise term. A smaller learning rate reduces the residual term but makes the optimization term larger for a fixed $k$.
 
-> [!NOTE]
-> **The absolute value is unnecessary**
->
-> Since $x^{\star}$ is a global minimizer and $\bar{x}^{(k)}$ is feasible, $f(\bar{x}^{(k)})-f(x^{\star})\geq 0$. The source states the theorem with an absolute value, but the proof bounds the nonnegative objective gap.
+> $f(\bar x^{(k)})-f(x^\star)\ge0$ since $x^\star$ is a global minimizer, so no absolute value is needed.
 
 ## 7. Proof of Theorem 1
 
@@ -287,21 +267,18 @@ $$\mathbb{E}\left[f\left(\bar{x}^{(k^{\prime})}\right)\right]-f\left(x^{\star}\r
 
 Renaming $k^{\prime}$ as $k$ completes the proof.
 
-> [!TIP]
-> **Conditional and total expectations**
->
-> The source says to take expectation with respect to the random index $i_{k}$ at each step. Formally, this is a conditional expectation given all earlier sampled indices. Applying total expectation afterward produces the unconditional expectations in the theorem.
+> Each step's expectation is conditional on the indices drawn so far, $\mathbb E[\,\cdot\mid i_1,\ldots,i_{k-1}]$; the tower property turns the chain of conditional bounds into the unconditional statement.
 
 ## 8. What the theorem does and does not say
 
 The theorem guarantees convergence of the expected objective at the averaged iterate to a neighborhood whose size is controlled by $\eta\sigma^{2}$.
 
-With a fixed $\eta$, the displayed upper bound does not go to zero as $k\to\infty$ unless $\sigma=0$. The source therefore points to separate reference material for almost-sure convergence and a different weighted averaging scheme, but those results are not derived in the notebook.
+With a fixed $\eta$, the bound doesn't go to zero as $k\to\infty$ unless $\sigma=0$: SGD settles into a noise ball of radius about $\eta\sigma^2$. The note below shows how to shrink it.
 
 > [!NOTE]
-> **Almost-sure convergence is only referenced**
+> **Beyond the lecture: removing the $\eta\sigma^2$ floor**
 >
-> Page 74 cites the Canvas reference “Almost sure convergence rates for Stochastic Gradient Descent and Stochastic Heavy Ball.” The notebook states that it uses a different weighted average of the iterates and obtains a more recent almost-sure result. No theorem or proof from that reference is reproduced here.
+> Balance the two terms. For a budget of $k$ steps, $\eta=\min\{1/L,\;\lVert x^{(0)}-x^\star\rVert/(\sigma\sqrt{2k})\}$ gives $\mathbb E f(\bar x^{(k)})-f^\star\le\frac{L\lVert x^{(0)}-x^\star\rVert^2}{2k}+\frac{\sqrt2\,\sigma\lVert x^{(0)}-x^\star\rVert}{\sqrt k}$, the familiar $O(1/\sqrt k)$ SGD rate. Decaying steps $\eta_t\propto1/\sqrt t$ achieve the same without knowing $k$, and with strong convexity $\eta_t\propto1/t$ gives $O(1/k)$. Almost-sure (not just in-expectation) convergence also holds under weighted averaging schemes (Sebbouh, Gower & Defazio, 2021). Mini-batches of size $B$ divide $\sigma^2$ by $B$.
 
 ## 9. Main takeaways
 
@@ -310,7 +287,7 @@ With a fixed $\eta$, the displayed upper bound does not go to zero as $k\to\inft
 - Unbiasedness makes the stochastic gradient correct on average.
 - A bounded-noise assumption controls its second moment.
 - Under convexity and smoothness, a fixed-step SGD bound has an optimization term of order $1/k$ and a residual term $\eta\sigma^{2}$.
-- Averaging the iterates is essential in the source proof because Jensen's inequality converts the average of objective values into an objective value at the average iterate.
+- Averaging the iterates is essential in the proof because Jensen's inequality converts the average of objective values into an objective value at the average iterate.
 
 ---
 

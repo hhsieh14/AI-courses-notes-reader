@@ -44,6 +44,7 @@ What models and algorithms can we use?
 Why should the learned model generalize?
                     ↓
 How do we model data whose order and timing matter?
+```
 
 ## About these notes
 

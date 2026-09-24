@@ -22,8 +22,10 @@ be a collection of subsets of a space $\mathcal{Z}$.
 
 When $\mathcal{C}$ comes from binary prediction functions, each predictor can be identified with the region on which it predicts the positive class. For example, a linear binary classifier determines one half-space, so a class of linear classifiers can be studied as a class of subsets.
 
-!!! clarification "Why switch from functions to sets?"
-    For a binary-valued function $f$, consider its positive region $C_{f}=\{z\in\mathcal{Z}:f(z)=1\}$. Questions about the label patterns produced by the function class become questions about which intersections $S\cap C_{f}$ can be formed on a finite sample $S$.
+> [!TIP]
+> **Why switch from functions to sets?**
+>
+> For a binary-valued function $f$, consider its positive region $C_{f}=\{z\in\mathcal{Z}:f(z)=1\}$. Questions about the label patterns produced by the function class become questions about which intersections $S\cap C_{f}$ can be formed on a finite sample $S$.
 
 ## 2. Shattering
 
@@ -43,8 +45,10 @@ $$2^{m}$$
 
 possible inclusion patterns on those points.
 
-!!! clarification "What shattering does not mean"
-    Shattering does not mean that one single set $C$ realizes all subsets simultaneously. A different member of $\mathcal{C}$ may be selected for each target subset $S'\subseteq S$.
+> [!TIP]
+> **What shattering does not mean**
+>
+> Shattering does not mean that one single set $C$ realizes all subsets simultaneously. A different member of $\mathcal{C}$ may be selected for each target subset $S'\subseteq S$.
 
 ## 3. Example: intervals on the real line
 
@@ -125,8 +129,10 @@ Combining the lower and upper bounds gives
 
 $$\mathrm{VC}(\mathcal{C})=2.$$
 
-!!! clarification "The key obstruction"
-    Intervals cannot create a disconnected selection pattern on ordered points. Once both outer points are included, every point between them must also be included.
+> [!TIP]
+> **The key obstruction**
+>
+> Intervals cannot create a disconnected selection pattern on ordered points. Once both outer points are included, every point between them must also be included.
 
 ## 6. Half-spaces in two dimensions
 
@@ -154,8 +160,10 @@ For three points in a noncollinear configuration, every binary inclusion pattern
 
 Thus, a suitable three-point set is shattered.
 
-!!! technical-note "A necessary precision about the three-point statement"
-    Page 56 says that any set of three points in $\mathbb{R}^{2}$ can be shattered. The diagram and the intended VC lower-bound argument use points in general position. Three collinear points cannot be shattered because a half-space cannot select the two outer points while excluding the middle point. The source-supported conclusion needed here is that there exists a three-point set that can be shattered.
+> [!NOTE]
+> **A necessary precision about the three-point statement**
+>
+> Page 56 says that any set of three points in $\mathbb{R}^{2}$ can be shattered. The diagram and the intended VC lower-bound argument use points in general position. Three collinear points cannot be shattered because a half-space cannot select the two outer points while excluding the middle point. The source-supported conclusion needed here is that there exists a three-point set that can be shattered.
 
 ### Four-point obstruction shown in the notes
 
@@ -165,8 +173,10 @@ The source then states
 
 $$\mathrm{VC}(\mathcal{C})=3.$$
 
-!!! technical-note "Scope of the page-level argument"
-    The displayed four-point configuration proves only that this particular set is not shattered. To establish the upper bound $\mathrm{VC}(\mathcal{C})\leq 3$, one must show that no four-point set in $\mathbb{R}^{2}$ can be shattered. The source does not provide that full argument on pages 55-56 and instead points to external reference theorems.
+> [!NOTE]
+> **Scope of the page-level argument**
+>
+> The displayed four-point configuration proves only that this particular set is not shattered. To establish the upper bound $\mathrm{VC}(\mathcal{C})\leq 3$, one must show that no four-point set in $\mathbb{R}^{2}$ can be shattered. The source does not provide that full argument on pages 55-56 and instead points to external reference theorems.
 
 ## 7. Half-spaces in $\mathbb{R}^{d}$
 
@@ -178,8 +188,10 @@ where $\mathcal{C}_{d}$ is the class of affine half-spaces in $\mathbb{R}^{d}$.
 
 The page does not prove this theorem. It refers the reader to Theorem 7.1 and Theorem 7.2 in Section 7.3 of the course reference material.
 
-!!! source-boundary "What is and is not proved in these notes"
-    The interval result is proved directly on page 55. The two-dimensional half-space diagrams motivate the result, while the rigorous general half-space theorem is cited rather than derived in the notebook.
+> [!NOTE]
+> **What is and is not proved in these notes**
+>
+> The interval result is proved directly on page 55. The two-dimensional half-space diagrams motivate the result, while the rigorous general half-space theorem is cited rather than derived in the notebook.
 
 ## 8. Relation to Rademacher complexity
 

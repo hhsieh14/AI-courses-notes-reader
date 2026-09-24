@@ -34,8 +34,10 @@ $$R(f)=\mathbb{E}_{(X,Y)\sim P}\left[\ell(f(X),Y)\right].$$
 
 The goal is to construct a prediction function whose risk is small.
 
-!!! important "The learned predictor is random"
-    The training sample is random. Because the learned function depends on the training sample, the output of the learning algorithm is also random. Statistical learning theory therefore asks for guarantees that hold with high probability over the draw of the training data.
+> [!IMPORTANT]
+> **The learned predictor is random**
+>
+> The training sample is random. Because the learned function depends on the training sample, the output of the learning algorithm is also random. Statistical learning theory therefore asks for guarantees that hold with high probability over the draw of the training data.
 
 ## 2. Classification and regression losses
 
@@ -144,8 +146,10 @@ Therefore,
 
 $$R(f^{\star})=R^{\star}.$$
 
-!!! clarification "Why does disagreement near $\eta(x)=1/2$ matter less?"
-    The factor $\left\lvert 2\eta(x)-1\right\rvert$ measures how strongly one class is preferred at $x$. If $\eta(x)$ is close to $1/2$, the two labels have nearly equal conditional probabilities, so choosing the non-Bayes label adds only a small amount of risk. If $\eta(x)$ is close to $0$ or $1$, disagreement with the Bayes rule is much more costly.
+> [!TIP]
+> **Why does disagreement near $\eta(x)=1/2$ matter less?**
+>
+> The factor $\left\lvert 2\eta(x)-1\right\rvert$ measures how strongly one class is preferred at $x$. If $\eta(x)$ is close to $1/2$, the two labels have nearly equal conditional probabilities, so choosing the non-Bayes label adds only a small amount of risk. If $\eta(x)$ is close to $0$ or $1$, disagreement with the Bayes rule is much more costly.
 
 ## 5. Why learning is still necessary
 
@@ -181,8 +185,10 @@ and
 
 $$f_{\widehat{\eta}}(x)=-1 \quad \text{when } \widehat{\eta}(x)<\frac{1}{2}.$$
 
-!!! clarification "Why divide the space into small cells?"
-    The target quantity is conditional: $P(Y=1\mid X=x)$. Exact repeated observations at the same continuous-valued input may be unavailable, so nearby points are grouped and treated as approximately comparable. Smaller cells reduce the approximation bias because points in a cell are more similar, but they also leave fewer samples in each cell and increase estimation variability. The source emphasizes the first effect; the bias-variance tension will become important later.
+> [!TIP]
+> **Why divide the space into small cells?**
+>
+> The target quantity is conditional: $P(Y=1\mid X=x)$. Exact repeated observations at the same continuous-valued input may be unavailable, so nearby points are grouped and treated as approximately comparable. Smaller cells reduce the approximation bias because points in a cell are more similar, but they also leave fewer samples in each cell and increase estimation variability. The source emphasizes the first effect; the bias-variance tension will become important later.
 
 ## 7. Plug-in classification bound
 

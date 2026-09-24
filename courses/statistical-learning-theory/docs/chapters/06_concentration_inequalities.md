@@ -40,8 +40,10 @@ $$P\left(R(f)>\widehat{R}_{n}(f)+\varepsilon\right)\leq \exp\left(-c\varepsilon^
 
 where $c>0$ is a constant.
 
-!!! clarification "Pointwise versus data-dependent functions"
-    A bound stated for every fixed $f\in\mathcal{F}$ does not automatically justify substituting the data-dependent minimizer $f_{n}$. To control a function selected after seeing the sample, the later chapters seek a uniform bound that holds simultaneously over the entire class $\mathcal{F}$.
+> [!TIP]
+> **Pointwise versus data-dependent functions**
+>
+> A bound stated for every fixed $f\in\mathcal{F}$ does not automatically justify substituting the data-dependent minimizer $f_{n}$. To control a function selected after seeing the sample, the later chapters seek a uniform bound that holds simultaneously over the entire class $\mathcal{F}$.
 
 ## 2. The expectation of empirical risk is population risk
 
@@ -95,8 +97,10 @@ $$P\left(\lvert X-\mathbb{E}[X]\rvert\geq t\right)=P\left((X-\mathbb{E}[X])^{2}\
 
 The numerator is $\mathrm{Var}(X)$.
 
-!!! note "Why seek a stronger inequality?"
-    Chebyshev gives a polynomial tail proportional to $1/t^{2}$. For bounded independent variables, Hoeffding's inequality gives an exponentially decreasing tail, which is much more useful for learning-theory bounds.
+> [!NOTE]
+> **Why seek a stronger inequality?**
+>
+> Chebyshev gives a polynomial tail proportional to $1/t^{2}$. For bounded independent variables, Hoeffding's inequality gives an exponentially decreasing tail, which is much more useful for learning-theory bounds.
 
 ## 4. Exponential Markov method
 
@@ -218,8 +222,10 @@ Exponentiating and substituting $u=s(b-a)$ yields
 
 $$\mathbb{E}[\exp(sX)]\leq \exp\left(\frac{s^{2}(b-a)^{2}}{8}\right).$$
 
-!!! clarification "Why does the proof stop at second order?"
-    The handwritten notes ask why an infinite Taylor series is unnecessary. The source uses Taylor's theorem with a remainder evaluated at an intermediate point $\xi$, not an infinite-series approximation. Once the second derivative is uniformly bounded by $1/4$, the second-order remainder already provides the required global upper bound.
+> [!TIP]
+> **Why does the proof stop at second order?**
+>
+> The handwritten notes ask why an infinite Taylor series is unnecessary. The source uses Taylor's theorem with a remainder evaluated at an intermediate point $\xi$, not an infinite-series approximation. Once the second derivative is uniformly bounded by $1/4$, the second-order remainder already provides the required global upper bound.
 
 ## 7. Hoeffding's inequality
 
@@ -301,8 +307,10 @@ we have
 
 $$\lvert\widehat{R}_{n}(f)-R(f)\rvert<t.$$
 
-!!! clarification "Why require the loss to lie in $[0,1]$?"
-    The width of each summand's interval determines the Hoeffding exponent. The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above, so this particular application does not apply to it directly. The notes mention the clipped loss $\min\{\max\{1-y\widehat{y},0\},1\}$ as one bounded alternative.
+> [!TIP]
+> **Why require the loss to lie in $[0,1]$?**
+>
+> The width of each summand's interval determines the Hoeffding exponent. The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above, so this particular application does not apply to it directly. The notes mention the clipped loss $\min\{\max\{1-y\widehat{y},0\},1\}$ as one bounded alternative.
 
 ## 9. Functions of bounded difference
 
@@ -386,8 +394,10 @@ $$\mathbb{E}\left[\exp\left(s\sum_{i=1}^{n}V_{i}\right)\right]\leq \exp\left(\fr
 
 The same exponential Markov argument and the same optimization over $s$ as in Hoeffding's inequality complete the proof.
 
-!!! note "Where is the difficult step?"
-    The handwritten notes flag that bounding the change in $g$ is not immediately the same as bounding the conditional range of $V_{i}$. The reference proof constructs conditional lower and upper envelopes for the $i$th revealed coordinate and shows that their gap is at most $c_{i}$. This is the technical bridge needed before applying the conditional Hoeffding lemma.
+> [!NOTE]
+> **Where is the difficult step?**
+>
+> The handwritten notes flag that bounding the change in $g$ is not immediately the same as bounding the conditional range of $V_{i}$. The reference proof constructs conditional lower and upper envelopes for the $i$th revealed coordinate and shows that their gap is at most $c_{i}$. This is the technical bridge needed before applying the conditional Hoeffding lemma.
 
 ## 12. Hoeffding as a special case of McDiarmid
 
@@ -495,8 +505,10 @@ $$\mathbb{E}\left[\sup_{A\in\mathcal{A}}\lvert P_{n}(A)-P(A)\rvert\right],$$
 
 which measures the complexity of the class $\mathcal{A}$. The next chapter develops tools for this purpose.
 
-!!! clarification "What changed compared with the finite union bound?"
-    Instead of assigning a separate failure event to every set and summing those probabilities, the supremum is treated as a single random function of the sample. McDiarmid controls its fluctuation around its expectation even when the class is infinite. The size of the class has not disappeared; it is now encoded in the expected supremum.
+> [!TIP]
+> **What changed compared with the finite union bound?**
+>
+> Instead of assigning a separate failure event to every set and summing those probabilities, the supremum is treated as a single random function of the sample. McDiarmid controls its fluctuation around its expectation even when the class is infinite. The size of the class has not disappeared; it is now encoded in the expected supremum.
 
 ## 16. Reference example: Kernel density estimation
 

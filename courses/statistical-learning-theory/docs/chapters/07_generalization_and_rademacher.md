@@ -42,8 +42,10 @@ $$R(f_{n})\lesssim \widehat{R}_{n}(f_{n})+\mathrm{Complexity}(\mathcal{F}).$$
 
 *Redrawn course diagram: symmetrization, Rademacher signs, concentration, and class complexity connect empirical risk to a uniform population-risk guarantee.*
 
-!!! clarification "Approximation versus complexity"
-    Enlarging $\mathcal{F}$ can reduce the minimum empirical risk because the learner has more functions from which to choose. However, a richer function class has greater complexity and therefore pays a larger generalization penalty. The source presents this as the basic tradeoff behind function-class selection.
+> [!TIP]
+> **Approximation versus complexity**
+>
+> Enlarging $\mathcal{F}$ can reduce the minimum empirical risk because the learner has more functions from which to choose. However, a richer function class has greater complexity and therefore pays a larger generalization penalty. The source presents this as the basic tradeoff behind function-class selection.
 
 ## 2. Why a pointwise bound is not enough
 
@@ -67,8 +69,10 @@ $$R(f)-\widehat{R}_{n}(f)\leq g\left((X,Y)^{n}\right)$$
 
 holds simultaneously for every $f\in\mathcal{F}$. In particular, it holds for the random function $f_{n}$ selected by empirical-risk minimization.
 
-!!! clarification "Why take the supremum?"
-    Applying a concentration inequality separately to one particular $f$ only controls that fixed function. Taking the supremum first constructs one random variable that dominates the generalization gap of every function in the class.
+> [!TIP]
+> **Why take the supremum?**
+>
+> Applying a concentration inequality separately to one particular $f$ only controls that fixed function. Taking the supremum first constructs one random variable that dominates the generalization gap of every function in the class.
 
 ## 3. Bounded-loss assumption
 
@@ -82,8 +86,10 @@ $$\ell(\widehat{y},y)=\min\left\lbrace \max\left\lbrace 1-y\widehat{y},0\right\r
 
 The upper clipping at $1$ is essential for the bounded-difference argument below.
 
-!!! technical-note "Relation to the ordinary hinge loss"
-    The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above. The source therefore uses a bounded loss for the McDiarmid step and later returns to the ordinary hinge loss through a Lipschitz-contraction argument.
+> [!NOTE]
+> **Relation to the ordinary hinge loss**
+>
+> The ordinary hinge loss $\max\{1-y\widehat{y},0\}$ is not bounded above. The source therefore uses a bounded loss for the McDiarmid step and later returns to the ordinary hinge loss through a Lipschitz-contraction argument.
 
 ## 4. Bounded difference of the uniform gap
 
@@ -171,8 +177,10 @@ $$\mathbb{E}\left[g\left((X,Y)^{n}\right)\right]\leq \mathbb{E}_{(X,Y)^{n},(X',Y
 
 This replacement of a population expectation by a difference between two independent samples is the symmetrization step.
 
-!!! clarification "What the ghost sample accomplishes"
-    The ghost sample is not additional observed data used by the learning algorithm. It is an independent mathematical copy introduced only in the proof so that both terms in the generalization gap have the same finite-sample form.
+> [!TIP]
+> **What the ghost sample accomplishes**
+>
+> The ghost sample is not additional observed data used by the learning algorithm. It is an independent mathematical copy introduced only in the proof so that both terms in the generalization gap have the same finite-sample form.
 
 ## 8. Rademacher variables
 
@@ -246,8 +254,10 @@ $$\left\lvert \ell\left(f_{1}(x),y\right)-\ell\left(f_{2}(x),y\right)\right\rver
 
 This gives the one-coordinate contraction. The general case is obtained by applying the same argument one Rademacher coordinate at a time while conditioning on the remaining variables.
 
-!!! technical-note "Level of proof in the source"
-    The notebook gives the $n=1$ calculation and states that the general case follows by the same strategy. This chapter preserves that proof level rather than introducing a different full contraction-lemma proof.
+> [!NOTE]
+> **Level of proof in the source**
+>
+> The notebook gives the $n=1$ calculation and states that the general case follows by the same strategy. This chapter preserves that proof level rather than introducing a different full contraction-lemma proof.
 
 ## 11. Rademacher generalization theorem
 
@@ -421,8 +431,10 @@ Combining the steps proves
 
 $$\mathfrak{R}_{n}(\mathcal{F})\leq \frac{B}{n}\sqrt{\sum_{i=1}^{n}K(x_{i},x_{i})}.$$
 
-!!! technical-note "Expected versus sample-dependent notation"
-    Earlier pages define Rademacher complexity with expectation over both the sample and the Rademacher variables. The theorem on pages 52-53 writes a bound using the realized diagonal values $K(x_{i},x_{i})$. This chapter preserves the source statement and reads it as a conditional or empirical complexity bound for the observed sample. An expected version would additionally average the right-hand side over the sample.
+> [!NOTE]
+> **Expected versus sample-dependent notation**
+>
+> Earlier pages define Rademacher complexity with expectation over both the sample and the Rademacher variables. The theorem on pages 52-53 writes a bound using the realized diagonal values $K(x_{i},x_{i})$. This chapter preserves the source statement and reads it as a conditional or empirical complexity bound for the observed sample. An expected version would additionally average the right-hand side over the sample.
 
 ## 17. Risk bound for soft-margin SVMs
 
@@ -441,11 +453,15 @@ $$\frac{1}{2}\lVert w\rVert_{\mathcal{H}}^{2}+C\sum_{i=1}^{n}\Phi\left(y_{i}\lef
 
 A small objective value forces both the norm and the empirical hinge loss to remain small. This is the source's statistical-learning justification for the regularized SVM objective.
 
-!!! clarification "Why is the norm in the objective?"
-    The handwritten notes ask why $\lVert w\rVert_{\mathcal{H}}^{2}$ appears in the objective. The generalization analysis supplies the answer: the norm bounds the complexity of the prediction class and therefore appears in an upper bound on population risk.
+> [!TIP]
+> **Why is the norm in the objective?**
+>
+> The handwritten notes ask why $\lVert w\rVert_{\mathcal{H}}^{2}$ appears in the objective. The generalization analysis supplies the answer: the norm bounds the complexity of the prediction class and therefore appears in an upper bound on population risk.
 
-!!! clarification "Connection to maximum margin"
-    In a linear or RKHS classifier, decreasing $\lVert w\rVert$ under an appropriate normalization increases the geometric margin. The maximum-margin interpretation and the Rademacher-complexity interpretation therefore support the same regularizer from two different viewpoints.
+> [!TIP]
+> **Connection to maximum margin**
+>
+> In a linear or RKHS classifier, decreasing $\lVert w\rVert$ under an appropriate normalization increases the geometric margin. The maximum-margin interpretation and the Rademacher-complexity interpretation therefore support the same regularizer from two different viewpoints.
 
 ## 18. Chapter summary
 

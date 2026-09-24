@@ -50,11 +50,15 @@ $$i_{k}\in\{1,2,\ldots,n\}$$
 
 is a random index.
 
-!!! clarification "What is gained and what is lost?"
-    One SGD iteration uses only one sample gradient instead of all $n$ sample gradients. The resulting update is cheaper but noisy: it does not usually point in exactly the same direction as the full gradient.
+> [!TIP]
+> **What is gained and what is lost?**
+>
+> One SGD iteration uses only one sample gradient instead of all $n$ sample gradients. The resulting update is cheaper but noisy: it does not usually point in exactly the same direction as the full gradient.
 
-!!! technical-note "The source's factor-$n$ speed statement"
-    Page 72 describes one SGD iteration as $n$ times faster than one full-gradient iteration. This is a comparison of the number of per-sample gradient evaluations. It does not claim that SGD needs the same number of iterations or that implementation overhead is exactly zero.
+> [!NOTE]
+> **The source's factor-$n$ speed statement**
+>
+> Page 72 describes one SGD iteration as $n$ times faster than one full-gradient iteration. This is a comparison of the number of per-sample gradient evaluations. It does not claim that SGD needs the same number of iterations or that implementation overhead is exactly zero.
 
 ## 2. Finite-sum optimization problem
 
@@ -68,8 +72,10 @@ The component functions do not need to be identical:
 
 $$f_{i}\neq f_{j}\quad\text{may hold when }i\neq j.$$
 
-!!! technical-note "Two normalization conventions"
-    Page 71 writes the regression objective as an unnormalized sum, while page 72 defines the general finite-sum objective using the average $n^{-1}\sum_{i=1}^{n}f_{i}$. The two conventions differ by a constant factor, which also rescales the gradient and the effective learning rate. This chapter follows the averaged convention for the convergence theorem.
+> [!NOTE]
+> **Two normalization conventions**
+>
+> Page 71 writes the regression objective as an unnormalized sum, while page 72 defines the general finite-sum objective using the average $n^{-1}\sum_{i=1}^{n}f_{i}$. The two conventions differ by a constant factor, which also rescales the gradient and the effective learning rate. This chapter follows the averaged convention for the convergence theorem.
 
 ## 3. SGD algorithm for the finite-sum problem
 
@@ -89,8 +95,10 @@ where $\eta>0$ is the learning rate.
 
 The notebook presents a fixed learning rate and a fixed maximum number of iterations.
 
-!!! clarification "Why is the output averaged?"
-    The sequence $x^{(1)},x^{(2)},\ldots$ is random because every update depends on a random index. The theorem controls the objective at the averaged iterate rather than directly controlling the final raw iterate.
+> [!TIP]
+> **Why is the output averaged?**
+>
+> The sequence $x^{(1)},x^{(2)},\ldots$ is random because every update depends on a random index. The theorem controls the objective at the averaged iterate rather than directly controlling the final raw iterate.
 
 ## 4. Assumptions for the convergence result
 
@@ -134,8 +142,10 @@ Equivalently, under the unbiasedness assumption,
 
 $$\mathbb{E}\left[\left\lVert\nabla f_{i_{k}}(x)\right\rVert_{2}^{2}\right]\leq\sigma^{2}+\lVert\nabla f(x)\rVert_{2}^{2}.$$
 
-!!! technical-note "Variance notation on page 72"
-    The displayed assumption on page 72 is written using the variance of the gradient norm. The proof on page 74 instead uses the vector second-moment identity above. This chapter states the proof-consistent interpretation and does not silently treat the two expressions as identical.
+> [!NOTE]
+> **Variance notation on page 72**
+>
+> The displayed assumption on page 72 is written using the variance of the gradient norm. The proof on page 74 instead uses the vector second-moment identity above. This chapter states the proof-consistent interpretation and does not silently treat the two expressions as identical.
 
 ## 5. Optimal point and averaged iterate
 
@@ -171,11 +181,15 @@ $$\eta\sigma^{2}$$
 
 is the residual term caused by stochastic-gradient noise under a fixed learning rate.
 
-!!! clarification "The learning-rate tradeoff"
-    A larger fixed learning rate reduces the first term more quickly but increases the noise term. A smaller learning rate reduces the residual term but makes the optimization term larger for a fixed $k$.
+> [!TIP]
+> **The learning-rate tradeoff**
+>
+> A larger fixed learning rate reduces the first term more quickly but increases the noise term. A smaller learning rate reduces the residual term but makes the optimization term larger for a fixed $k$.
 
-!!! technical-note "The absolute value is unnecessary"
-    Since $x^{\star}$ is a global minimizer and $\bar{x}^{(k)}$ is feasible, $f(\bar{x}^{(k)})-f(x^{\star})\geq 0$. The source states the theorem with an absolute value, but the proof bounds the nonnegative objective gap.
+> [!NOTE]
+> **The absolute value is unnecessary**
+>
+> Since $x^{\star}$ is a global minimizer and $\bar{x}^{(k)}$ is feasible, $f(\bar{x}^{(k)})-f(x^{\star})\geq 0$. The source states the theorem with an absolute value, but the proof bounds the nonnegative objective gap.
 
 ## 7. Proof of Theorem 1
 
@@ -273,8 +287,10 @@ $$\mathbb{E}\left[f\left(\bar{x}^{(k^{\prime})}\right)\right]-f\left(x^{\star}\r
 
 Renaming $k^{\prime}$ as $k$ completes the proof.
 
-!!! clarification "Conditional and total expectations"
-    The source says to take expectation with respect to the random index $i_{k}$ at each step. Formally, this is a conditional expectation given all earlier sampled indices. Applying total expectation afterward produces the unconditional expectations in the theorem.
+> [!TIP]
+> **Conditional and total expectations**
+>
+> The source says to take expectation with respect to the random index $i_{k}$ at each step. Formally, this is a conditional expectation given all earlier sampled indices. Applying total expectation afterward produces the unconditional expectations in the theorem.
 
 ## 8. What the theorem does and does not say
 
@@ -282,8 +298,10 @@ The theorem guarantees convergence of the expected objective at the averaged ite
 
 With a fixed $\eta$, the displayed upper bound does not go to zero as $k\to\infty$ unless $\sigma=0$. The source therefore points to separate reference material for almost-sure convergence and a different weighted averaging scheme, but those results are not derived in the notebook.
 
-!!! source-boundary "Almost-sure convergence is only referenced"
-    Page 74 cites the Canvas reference “Almost sure convergence rates for Stochastic Gradient Descent and Stochastic Heavy Ball.” The notebook states that it uses a different weighted average of the iterates and obtains a more recent almost-sure result. No theorem or proof from that reference is reproduced here.
+> [!NOTE]
+> **Almost-sure convergence is only referenced**
+>
+> Page 74 cites the Canvas reference “Almost sure convergence rates for Stochastic Gradient Descent and Stochastic Heavy Ball.” The notebook states that it uses a different weighted average of the iterates and obtains a more recent almost-sure result. No theorem or proof from that reference is reproduced here.
 
 ## 9. Main takeaways
 

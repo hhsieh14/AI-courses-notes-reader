@@ -73,8 +73,10 @@ $$y_{i}\left(w^{\top}x_{i}+b\right)\geq 1 \quad \text{for } i=1,\ldots,n.$$
 
 The factor $1/2$ is included because it simplifies derivatives and does not change the optimizer.
 
-!!! clarification "Why are the labels encoded as $\{-1,1\}$?"
-    With this encoding, the two correctness conditions combine into one inequality. If $y_{i}=1$, the constraint requires $w^{\top}x_{i}+b\geq 1$. If $y_{i}=-1$, it requires $w^{\top}x_{i}+b\leq -1$. Both are represented by $y_{i}(w^{\top}x_{i}+b)\geq 1$.
+> [!TIP]
+> **Why are the labels encoded as $\{-1,1\}$?**
+>
+> With this encoding, the two correctness conditions combine into one inequality. If $y_{i}=1$, the constraint requires $w^{\top}x_{i}+b\geq 1$. If $y_{i}=-1$, it requires $w^{\top}x_{i}+b\leq -1$. Both are represented by $y_{i}(w^{\top}x_{i}+b)\geq 1$.
 
 ## 4. Constrained optimization and the Lagrangian
 
@@ -126,8 +128,10 @@ $$\lambda_{i}^{\star}f_{i}(x^{\star})=0 \quad \text{for } i=1,\ldots,m.$$
 
 $$\nabla f_{0}(x^{\star})+\sum_{i=1}^{m}\lambda_{i}^{\star}\nabla f_{i}(x^{\star})+\sum_{j=1}^{p}\nu_{j}^{\star}\nabla h_{j}(x^{\star})=0.$$
 
-!!! note "Technical condition"
-    The source uses the KKT system to recover the primal solution from the dual. In general, the exact necessity and sufficiency of KKT conditions depend on convexity and a suitable constraint qualification. The hard-margin SVM is a convex quadratic program, and under the separability assumption its constraints are feasible.
+> [!NOTE]
+> **Technical condition**
+>
+> The source uses the KKT system to recover the primal solution from the dual. In general, the exact necessity and sufficiency of KKT conditions depend on convexity and a suitable constraint qualification. The hard-margin SVM is a convex quadratic program, and under the separability assumption its constraints are feasible.
 
 ## 6. Lagrangian of the hard-margin SVM
 

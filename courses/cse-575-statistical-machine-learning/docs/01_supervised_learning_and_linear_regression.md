@@ -64,21 +64,10 @@ For multiclass classification, the output belongs to a finite set of categories.
 
 The supervised-learning workflow has two stages:
 
-<div class="grid cards" markdown>
-
--   **Training**
-
-    ---
-
-    Combine data with known answers and a parameterized model. Fit the parameters using the training examples.
-
--   **Prediction**
-
-    ---
-
-    Apply the fitted model to new data whose answer is unknown. Return a numerical value or category.
-
-</div>
+| Stage | What happens |
+|---|---|
+| **Training** | Combine data with known answers and a parameterized model. Fit the parameters using the training examples. |
+| **Prediction** | Apply the fitted model to new data whose answer is unknown. Return a numerical value or category. |
 
 ## 1.4 Hypotheses and parameters
 

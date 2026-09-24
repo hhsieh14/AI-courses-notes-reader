@@ -24,8 +24,10 @@ which sends each input $x$ to a transformed feature $\phi(x)$ in a Hilbert space
 
 The motivation is that data that are not linearly separable in $\mathcal{X}$ may become linearly separable after transformation into $\mathcal{H}$.
 
-!!! clarification "What changes after feature mapping?"
-    The classifier is still linear in the transformed feature $\phi(x)$, even when the resulting decision boundary is nonlinear as a function of the original input $x$. The source illustrates this by showing a nonseparable configuration before the map and a separable configuration afterward.
+> [!TIP]
+> **What changes after feature mapping?**
+>
+> The classifier is still linear in the transformed feature $\phi(x)$, even when the resulting decision boundary is nonlinear as a function of the original input $x$. The source illustrates this by showing a nonseparable configuration before the map and a separable configuration afterward.
 
 ## 2. Hilbert spaces
 
@@ -59,8 +61,10 @@ $$\langle x,x'\rangle=x^{\top}x'.$$
 
 The notes suggest viewing a Hilbert space as a possibly infinite-dimensional analogue of Euclidean space.
 
-!!! note "Completeness is deferred"
-    Page 13 states that a Hilbert space is complete, but the construction and meaning of completion are developed later when the course builds a reproducing-kernel Hilbert space. At this point, the important structure is the vector space together with its inner product.
+> [!NOTE]
+> **Completeness is deferred**
+>
+> Page 13 states that a Hilbert space is complete, but the construction and meaning of completion are developed later when the course builds a reproducing-kernel Hilbert space. At this point, the important structure is the vector space together with its inner product.
 
 ## 3. Kernels
 
@@ -120,8 +124,10 @@ subject to the same feasibility conditions.
 
 This substitution is the kernel trick: compute the transformed inner products directly through $K$ instead of explicitly constructing every $\phi(x_{i})$.
 
-!!! clarification "Why is the kernel trick useful?"
-    If $\mathcal{H}$ is very high-dimensional or infinite-dimensional, explicitly storing and multiplying transformed feature vectors may be expensive or impossible. The SVM dual needs only pairwise inner products, so a kernel can provide exactly the quantities required by the optimization problem.
+> [!TIP]
+> **Why is the kernel trick useful?**
+>
+> If $\mathcal{H}$ is very high-dimensional or infinite-dimensional, explicitly storing and multiplying transformed feature vectors may be expensive or impossible. The SVM dual needs only pairwise inner products, so a kernel can provide exactly the quantities required by the optimization problem.
 
 ## 6. Kernel matrix and quadratic programming
 
@@ -131,8 +137,10 @@ $$K_{ij}=K(x_{i},x_{j}).$$
 
 The notes state that these pairwise values can be computed before solving the dual with a standard quadratic-programming method.
 
-!!! note "What is not proved yet?"
-    Pages 13-14 define a kernel through an existing feature map and Hilbert space. They do not yet give a practical criterion for deciding whether an arbitrary proposed function $K$ is a valid kernel. The positive-definite-function criterion and the associated RKHS construction appear in Chapter 5.
+> [!NOTE]
+> **What is not proved yet?**
+>
+> Pages 13-14 define a kernel through an existing feature map and Hilbert space. They do not yet give a practical criterion for deciding whether an arbitrary proposed function $K$ is a valid kernel. The positive-definite-function criterion and the associated RKHS construction appear in Chapter 5.
 
 ## Chapter summary
 

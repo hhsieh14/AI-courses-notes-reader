@@ -44,8 +44,10 @@ The parameter $C>0$ controls the cost of margin violations and is selected in pr
 - If $0<\xi_{i}<1$, then the point is correctly classified but lies inside the margin.
 - If $\xi_{i}\geq 1$, then the score no longer has the correct positive signed margin; in particular, sufficiently large violations can correspond to misclassification.
 
-!!! clarification "What does $C$ trade off?"
-    The regularization term prefers a smaller norm and therefore a wider margin. The slack penalty prefers fewer or smaller violations. Increasing $C$ makes violations more expensive relative to the margin term; decreasing $C$ tolerates more violation in exchange for stronger regularization.
+> [!TIP]
+> **What does $C$ trade off?**
+>
+> The regularization term prefers a smaller norm and therefore a wider margin. The slack penalty prefers fewer or smaller violations. Increasing $C$ makes violations more expensive relative to the margin term; decreasing $C$ tolerates more violation in exchange for stronger regularization.
 
 ## 3. Soft-margin SVM with feature mapping
 
@@ -149,8 +151,10 @@ Combining the two inequalities gives
 
 $$\mathrm{LHS}=\mathrm{RHS}.$$
 
-!!! clarification "Why does the hinge loss replace many constraints?"
-    For fixed $w$ and $b$, each slack variable has an obvious smallest feasible value. Substituting that value removes the slack variables and their constraints. The positive-part operation $\max\{1-t,0\}$ records exactly how much the signed margin falls below one.
+> [!TIP]
+> **Why does the hinge loss replace many constraints?**
+>
+> For fixed $w$ and $b$, each slack variable has an obvious smallest feasible value. Substituting that value removes the slack variables and their constraints. The positive-part operation $\max\{1-t,0\}$ records exactly how much the signed margin falls below one.
 
 ## 6. Convexity
 

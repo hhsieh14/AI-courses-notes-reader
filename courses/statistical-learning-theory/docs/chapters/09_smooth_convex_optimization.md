@@ -60,8 +60,10 @@ The optimization problem is
 
 $$\min_{\theta\in\mathbb{R}^{d+1}}J(\theta).$$
 
-!!! clarification "Why begin with squared loss?"
-    The handwritten note on page 57 says that a quadratic objective is easy to optimize. In this lecture, squared loss supplies a differentiable convex function whose gradient can be computed explicitly, making it a convenient first example for gradient descent.
+> [!TIP]
+> **Why begin with squared loss?**
+>
+> The handwritten note on page 57 says that a quadratic objective is easy to optimize. In this lecture, squared loss supplies a differentiable convex function whose gradient can be computed explicitly, making it a convenient first example for gradient descent.
 
 ## 3. Vectorized formulation
 
@@ -109,11 +111,15 @@ $$\widehat{y}=\widetilde{x}^{\top}\widehat{\theta}.$$
 
 The slide reports the prediction as $371.25$ in units of one thousand dollars.
 
-!!! technical-note "Rounded coefficients in the example"
-    The displayed parameter values are rounded to two decimal places. Recomputing the prediction using only those rounded numbers does not exactly reproduce the displayed value $371.25$. The reported prediction is consistent with using more precise coefficients before rounding them for presentation.
+> [!NOTE]
+> **Rounded coefficients in the example**
+>
+> The displayed parameter values are rounded to two decimal places. Recomputing the prediction using only those rounded numbers does not exactly reproduce the displayed value $371.25$. The reported prediction is consistent with using more precise coefficients before rounding them for presentation.
 
-!!! technical-note "The source changes its use of d"
-    Page 57 uses $d$ for the number of original features and therefore places $\theta$ in $\mathbb{R}^{d+1}$. Page 58 labels the three-column augmented example as $d=3$. This chapter keeps the first convention and calls the augmented dimension $d+1$.
+> [!NOTE]
+> **The source changes its use of d**
+>
+> Page 57 uses $d$ for the number of original features and therefore places $\theta$ in $\mathbb{R}^{d+1}$. Page 58 labels the three-column augmented example as $d=3$. This chapter keeps the first convention and calls the augmented dimension $d+1$.
 
 ## 4. Gradient descent for linear regression
 
@@ -164,8 +170,10 @@ $$f\left(x^{(k)}\right)\to f\left(x^{\star}\right)$$
 
 as the number of iterations increases.
 
-!!! technical-note "Differentiability versus smoothness"
-    Page 59 initially calls a differentiable convex problem a smooth convex optimization problem. The theorem on the same page uses the stronger property that the gradient is Lipschitz continuous. In the convergence result below, smoothness therefore means an $L$-Lipschitz gradient.
+> [!NOTE]
+> **Differentiability versus smoothness**
+>
+> Page 59 initially calls a differentiable convex problem a smooth convex optimization problem. The theorem on the same page uses the stronger property that the gradient is Lipschitz continuous. In the convergence result below, smoothness therefore means an $L$-Lipschitz gradient.
 
 ## 6. Lipschitz-continuous gradients
 
@@ -177,8 +185,10 @@ for every $x,y\in\mathbb{R}^{d}$.
 
 This condition controls how quickly the gradient can change. The constant $L$ determines a safe fixed learning rate in the course theorem.
 
-!!! clarification "Why does L affect the learning rate?"
-    The theorem sets $\eta=1/L$. A smaller valid Lipschitz constant permits a larger guaranteed step size. The handwritten note on page 59 connects this larger step size with a potentially smaller number of iterations, while the theorem's bound makes the dependence explicit through $1/(\eta k)$.
+> [!TIP]
+> **Why does L affect the learning rate?**
+>
+> The theorem sets $\eta=1/L$. A smaller valid Lipschitz constant permits a larger guaranteed step size. The handwritten note on page 59 connects this larger step size with a potentially smaller number of iterations, while the theorem's bound makes the dependence explicit through $1/(\eta k)$.
 
 ## 7. Descent lemma for smooth functions
 
@@ -352,8 +362,10 @@ $$f\left(x^{(K)}\right)-f\left(x^{\star}\right)\leq\frac{\lVert x^{(0)}-x^{\star
 
 Renaming $K$ as $k$ completes the proof.
 
-!!! clarification "Why does the final iterate lie below the average?"
-    The descent lemma shows $f(x^{(1)})\geq f(x^{(2)})\geq\cdots\geq f(x^{(K)})$. Therefore, the last objective gap is no larger than the average of the first $K$ objective gaps. This is the step highlighted in the handwritten derivation on page 62.
+> [!TIP]
+> **Why does the final iterate lie below the average?**
+>
+> The descent lemma shows $f(x^{(1)})\geq f(x^{(2)})\geq\cdots\geq f(x^{(K)})$. Therefore, the last objective gap is no larger than the average of the first $K$ objective gaps. This is the step highlighted in the handwritten derivation on page 62.
 
 ## 10. Accelerated gradient descent
 
@@ -379,8 +391,10 @@ $$t_{k+1}=\frac{1+\sqrt{1+4t_{k}^{2}}}{2}.$$
 
 The course runs this procedure until the predetermined maximum number of iterations is reached.
 
-!!! clarification "Can AGD also use a tolerance-based stopping rule?"
-    The handwritten note on page 63 asks why AGD cannot stop using a threshold $\varepsilon$. It answers that such a rule can also be used, while identifying a fixed maximum number of iterations as common practice in this presentation. The convergence theorem below is naturally stated after a specified number of iterations.
+> [!TIP]
+> **Can AGD also use a tolerance-based stopping rule?**
+>
+> The handwritten note on page 63 asks why AGD cannot stop using a threshold $\varepsilon$. It answers that such a rule can also be used, while identifying a fixed maximum number of iterations as common practice in this presentation. The convergence theorem below is naturally stated after a specified number of iterations.
 
 ## 11. Convergence theorem for accelerated gradient descent
 
@@ -406,8 +420,10 @@ $$\mathrm{AGD}:\quad O\left(\frac{1}{k^{2}}\right).$$
 
 Thus, under the assumptions of the two theorems, AGD has the faster objective-value convergence guarantee.
 
-!!! source-boundary "Proof of accelerated convergence"
-    The notebook states the accelerated $O(1/k^{2})$ theorem but does not derive it. This chapter therefore records the update and theorem without inserting an external proof.
+> [!NOTE]
+> **Proof of accelerated convergence**
+>
+> The notebook states the accelerated $O(1/k^{2})$ theorem but does not derive it. This chapter therefore records the update and theorem without inserting an external proof.
 
 ## 12. Chapter summary
 

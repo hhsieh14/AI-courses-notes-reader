@@ -21,8 +21,10 @@ The lecture does not attempt to analyze an arbitrary deep network. It studies th
 - one hidden layer;
 - one output layer.
 
-!!! clarification "What does two-layer mean here?"
-    The input coordinates are not counted as a layer. The two computational stages are the hidden layer and the output layer. In the special model analyzed later, only the hidden-layer weights are optimized while the output signs remain fixed.
+> [!TIP]
+> **What does two-layer mean here?**
+>
+> The input coordinates are not counted as a layer. The two computational stages are the hidden layer and the output layer. In the special model analyzed later, only the hidden-layer weights are optimized while the output signs remain fixed.
 
 ## 2. A single neuron
 
@@ -62,8 +64,10 @@ For $z>0$, the derivative is $1$. For $z<0$, the derivative is $0$. The gradient
 
 $$\sigma'(z)=\mathbf{1}_{\{z\geq 0\}}.$$
 
-!!! technical-note "Derivative at zero"
-    ReLU is not differentiable at $z=0$. The source adopts the indicator convention shown above. Since a continuously distributed random initialization hits an exact zero inner product with probability zero under nondegenerate inputs, this convention does not affect the stated probabilistic argument.
+> [!NOTE]
+> **Derivative at zero**
+>
+> ReLU is not differentiable at $z=0$. The source adopts the indicator convention shown above. Since a continuously distributed random initialization hits an exact zero inner product with probability zero under nondegenerate inputs, this convention does not affect the stated probabilistic argument.
 
 ## 3. The two-layer model
 
@@ -91,8 +95,10 @@ $$W=\{w_{r}\}_{r=1}^{m}.$$
 
 Only $W$ is optimized during training in this lecture. The output signs $a_{1},\ldots,a_{m}$ are sampled once and then held fixed.
 
-!!! clarification "Why include the factor $1/\sqrt{m}$?"
-    The source uses this width normalization so that the scale of the network output and its tangent-kernel matrix remains controlled as the number of hidden neurons grows.
+> [!TIP]
+> **Why include the factor $1/\sqrt{m}$?**
+>
+> The source uses this width normalization so that the scale of the network output and its tangent-kernel matrix remains controlled as the number of hidden neurons grows.
 
 ## 4. Training data and empirical objective
 
@@ -146,8 +152,10 @@ $$\{a_{r}\}_{r=1}^{m}$$
 
 are mutually independent.
 
-!!! clarification "What is random after initialization?"
-    The initialization is random, but once it has been sampled, ordinary full-batch gradient descent is deterministic. Probability statements later in the chapter are taken over the random training sample and the random initialization.
+> [!TIP]
+> **What is random after initialization?**
+>
+> The initialization is random, but once it has been sampled, ordinary full-batch gradient descent is deterministic. Probability statements later in the chapter are taken over the random training sample and the random initialization.
 
 ## 6. Gradient-descent training
 
@@ -175,8 +183,10 @@ At iteration $k$, the proof-consistent form is therefore
 
 $$\nabla_{w_{r}}\Phi(W(k-1))=\frac{a_{r}}{n\sqrt{m}}\sum_{i=1}^{n}\left(f(W(k-1),x_{i})-y_{i}\right)\mathbf{1}_{\{w_{r}(k-1)^{\top}x_{i}\geq 0\}}x_{i}.$$
 
-!!! technical-note "Iteration index in the source"
-    The highlighted gradient on page 77 places $w_{r}(k)$ inside the ReLU indicator even though the gradient is evaluated at $W(k-1)$. The derivation and the subsequent matrix update require $w_{r}(k-1)$. This chapter records the proof-consistent index and flags the discrepancy rather than silently treating the two expressions as identical.
+> [!NOTE]
+> **Iteration index in the source**
+>
+> The highlighted gradient on page 77 places $w_{r}(k)$ inside the ReLU indicator even though the gradient is evaluated at $W(k-1)$. The derivation and the subsequent matrix update require $w_{r}(k-1)$. This chapter records the proof-consistent index and flags the discrepancy rather than silently treating the two expressions as identical.
 
 ## 7. Vectorized gradient dynamics
 
@@ -204,8 +214,10 @@ Then the vectorized parameter update is
 
 $$\mathrm{vec}(W(k))=\mathrm{vec}(W(k-1))-\eta Z(k-1)(\widehat{y}(k-1)-y).$$
 
-!!! technical-note "Normalization inconsistency across pages 77-79"
-    Page 77 defines $Z(k)$ with the factor $1/(n\sqrt{m})$. Pages 78-79 subsequently write the Gram matrix and its expectation at the scale obtained from a $1/\sqrt{m}$ Jacobian. Those conventions differ by a factor of $n^{2}$ in the Gram matrix and can be converted into one another by rescaling the learning rate. The source does not explicitly perform this conversion. The rest of this chapter follows the kernel-scale formulas used in the convergence and generalization statements while preserving this warning.
+> [!NOTE]
+> **Normalization inconsistency across pages 77-79**
+>
+> Page 77 defines $Z(k)$ with the factor $1/(n\sqrt{m})$. Pages 78-79 subsequently write the Gram matrix and its expectation at the scale obtained from a $1/\sqrt{m}$ Jacobian. Those conventions differ by a factor of $n^{2}$ in the Gram matrix and can be converted into one another by rescaling the learning rate. The source does not explicitly perform this conversion. The rest of this chapter follows the kernel-scale formulas used in the convergence and generalization statements while preserving this warning.
 
 ## 8. Prediction-space dynamics
 
@@ -225,11 +237,15 @@ Subtracting the label vector gives the residual recursion
 
 $$\widehat{y}(k)-y=(I-\eta H(k-1))(\widehat{y}(k-1)-y)+e(k-1).$$
 
-!!! clarification "Why is the width $m$ important?"
-    The approximation error is stated as order $1/\sqrt{m}$. A wider network therefore makes the prediction dynamics closer to a linear recursion driven by the Gram matrix $H(k)$.
+> [!TIP]
+> **Why is the width $m$ important?**
+>
+> The approximation error is stated as order $1/\sqrt{m}$. A wider network therefore makes the prediction dynamics closer to a linear recursion driven by the Gram matrix $H(k)$.
 
-!!! source-boundary "Unproved local-linearization statement"
-    Pages 77-78 state the prediction update and the size of $e(k)$ but do not derive them. A rigorous argument must control changes in ReLU activation patterns and the Taylor remainder along the entire gradient-descent trajectory.
+> [!NOTE]
+> **Unproved local-linearization statement**
+>
+> Pages 77-78 state the prediction update and the size of $e(k)$ but do not derive them. A rigorous argument must control changes in ReLU activation patterns and the Taylor remainder along the entire gradient-descent trajectory.
 
 ## 9. From the changing Gram matrix to the NTK matrix
 
@@ -255,11 +271,15 @@ $$K_{i,j}=\mathbb{E}[H_{i,j}(0)].$$
 
 The matrix $K\in\mathbb{R}^{n\times n}$ is called the Gram matrix of the **Neural Tangent Kernel**, or NTK, for this two-layer model with fixed output signs.
 
-!!! technical-note "Input normalization"
-    The displayed formula uses $\arccos(x_{i}^{\top}x_{j})$, so it implicitly requires inner products in $[-1,1]$. This is naturally satisfied when the inputs are normalized. The pages do not separately state that assumption.
+> [!NOTE]
+> **Input normalization**
+>
+> The displayed formula uses $\arccos(x_{i}^{\top}x_{j})$, so it implicitly requires inner products in $[-1,1]$. This is naturally satisfied when the inputs are normalized. The pages do not separately state that assumption.
 
-!!! clarification "Where does the angle formula come from?"
-    For a Gaussian hidden weight, the two indicators are simultaneously active with probability equal to the fraction of directions lying in the intersection of two half-spaces. For unit vectors, that probability is $(\pi-\arccos(x_{i}^{\top}x_{j}))/(2\pi)$.
+> [!TIP]
+> **Where does the angle formula come from?**
+>
+> For a Gaussian hidden weight, the two indicators are simultaneously active with probability equal to the fraction of directions lying in the intersection of two half-spaces. For unit vectors, that probability is $(\pi-\arccos(x_{i}^{\top}x_{j}))/(2\pi)$.
 
 ## 10. Concentration of the initial Gram matrix
 
@@ -311,8 +331,10 @@ $$\lVert H(0)-K\rVert_{F}=O\left(\frac{n\sqrt{\log(n/\delta)}}{\sqrt{m}}\right).
 
 This proves the lemma.
 
-!!! technical-note "Bounded inner products"
-    The clean Hoeffding constant displayed in the source treats the indicator average as the random part and assumes the multiplicative inner product is bounded in magnitude. Normalized inputs provide $\lvert x_{i}^{\top}x_{j}\rvert\leq 1$.
+> [!NOTE]
+> **Bounded inner products**
+>
+> The clean Hoeffding constant displayed in the source treats the indicator average as the random part and assumes the multiplicative inner product is bounded in magnitude. Normalized inputs provide $\lvert x_{i}^{\top}x_{j}\rvert\leq 1$.
 
 ## 11. Approximate linear convergence in prediction space
 
@@ -352,8 +374,10 @@ Therefore,
 
 $$\lVert\widehat{y}(k)-y\rVert_{2}\lesssim(1-\eta\lambda_{0})^{k}\lVert\widehat{y}(0)-y\rVert_{2}.$$
 
-!!! technical-note "Positive definiteness is an assumption"
-    A kernel Gram matrix is always positive semidefinite, but its minimum eigenvalue may be zero. The geometric convergence statement requires the stronger condition $\lambda_{0}>0$.
+> [!NOTE]
+> **Positive definiteness is an assumption**
+>
+> A kernel Gram matrix is always positive semidefinite, but its minimum eigenvalue may be zero. The geometric convergence statement requires the stronger condition $\lambda_{0}>0$.
 
 ## 12. Informal optimization theorem
 
@@ -377,11 +401,15 @@ as $k\to\infty$.
 
 Thus an overparameterized two-layer network can fit the training labels under the stated NTK-style conditions.
 
-!!! technical-note "Objective normalization"
-    Earlier, the empirical objective is $\Phi(W)=\lVert\widehat{y}(W)-y\rVert_{2}^{2}/(2n)$. The displayed theorem on page 80 omits the factor $1/(2n)$. The geometric rate is unchanged, but the exact multiplicative constant is inconsistent across the source pages.
+> [!NOTE]
+> **Objective normalization**
+>
+> Earlier, the empirical objective is $\Phi(W)=\lVert\widehat{y}(W)-y\rVert_{2}^{2}/(2n)$. The displayed theorem on page 80 omits the factor $1/(2n)$. The geometric rate is unchanged, but the exact multiplicative constant is inconsistent across the source pages.
 
-!!! source-boundary "Why the theorem is informal"
-    The notes do not prove the uniform-in-$k$ control needed to justify all three substitutions: small $e(k)$, $H(k)\approx H(0)$, and $H(0)\approx K$. They also do not state an explicit minimum width. The theorem is therefore preserved as the lecture's informal conclusion rather than upgraded into a fully specified result.
+> [!NOTE]
+> **Why the theorem is informal**
+>
+> The notes do not prove the uniform-in-$k$ control needed to justify all three substitutions: small $e(k)$, $H(k)\approx H(0)$, and $H(0)\approx K$. They also do not state an explicit minimum width. The theorem is therefore preserved as the lecture's informal conclusion rather than upgraded into a fully specified result.
 
 ## 13. Optimization is not generalization
 
@@ -403,8 +431,10 @@ $$R(f)\leq\widehat{R}_{n}(f)+2M\mathfrak{R}_{n}(\mathcal{F})+\sqrt{\frac{\log(1/
 
 The empirical-risk term can become small during training, but a useful population-risk bound also requires the function class explored by gradient descent to have controlled complexity.
 
-!!! clarification "Do we get rid of empirical risk?"
-    No. Gradient descent still minimizes the empirical squared objective. The generalization theorem adds an upper bound on population risk after training. The model does not directly minimize the displayed population-risk upper bound in this lecture.
+> [!TIP]
+> **Do we get rid of empirical risk?**
+>
+> No. Gradient descent still minimizes the empirical squared objective. The generalization theorem adds an upper bound on population risk after training. The model does not directly minimize the displayed population-risk upper bound in this lecture.
 
 ## 14. Distance from initialization and the reachable function class
 
@@ -418,11 +448,15 @@ $$\mathcal{F}=\left\lbrace f(W,\cdot):\lVert\mathrm{vec}(W)-\mathrm{vec}(W(0))\r
 
 Every network encountered along the analyzed gradient-descent path belongs to this ball around the random initialization.
 
-!!! clarification "Why does staying near initialization matter?"
-    A smaller parameter ball is a smaller function class. The Rademacher-complexity term can therefore be controlled using the maximum distance traveled from the initialization.
+> [!TIP]
+> **Why does staying near initialization matter?**
+>
+> A smaller parameter ball is a smaller function class. The Rademacher-complexity term can therefore be controlled using the maximum distance traveled from the initialization.
 
-!!! source-boundary "Unproved movement bound"
-    Page 81 states the distance bound but refers readers to an external paper for its proof. The notebook does not derive it from the preceding recursion.
+> [!NOTE]
+> **Unproved movement bound**
+>
+> Page 81 states the distance bound but refers readers to an external paper for its proof. The notebook does not derive it from the preceding recursion.
 
 ## 15. Final population-risk bound
 
@@ -459,8 +493,10 @@ This quantity is small when most of the label vector lies in eigendirections ass
 
 That is the meaning of the source's statement that the label vector is well represented by the top few eigenvectors of the NTK Gram matrix.
 
-!!! clarification "Why do top eigenvectors help both convergence and generalization?"
-    Along an eigenvector with eigenvalue $\lambda_{j}$, the approximate residual is multiplied by $(1-\eta\lambda_{j})^{k}$. Large-eigenvalue components decay faster. The same components contribute $(u_{j}^{\top}y)^{2}/\lambda_{j}$ to the final complexity quantity, so they are also cheaper in the generalization bound.
+> [!TIP]
+> **Why do top eigenvectors help both convergence and generalization?**
+>
+> Along an eigenvector with eigenvalue $\lambda_{j}$, the approximate residual is multiplied by $(1-\eta\lambda_{j})^{k}$. Large-eigenvalue components decay faster. The same components contribute $(u_{j}^{\top}y)^{2}/\lambda_{j}$ to the final complexity quantity, so they are also cheaper in the generalization bound.
 
 ## 17. Interpretation of the final figures
 

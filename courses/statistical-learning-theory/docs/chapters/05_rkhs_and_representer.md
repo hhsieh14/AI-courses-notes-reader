@@ -42,8 +42,10 @@ $$\mathcal{H}_{0}=\left\lbrace \sum_{i=1}^{m}\alpha_{i}h(\cdot,u_{i})\;\middle|\
 
 Thus, $\mathcal{H}_{0}$ contains every finite linear combination of the functions $h(\cdot,u)$.
 
-!!! clarification "What are the elements of $\mathcal{H}_{0}$?"
-    They are functions on the input space, not ordinary finite-coordinate vectors. A single element $f\in\mathcal{H}_{0}$ may be written as $f(\cdot)=\sum_{i=1}^{m}\alpha_{i}h(\cdot,u_{i})$.
+> [!TIP]
+> **What are the elements of $\mathcal{H}_{0}$?**
+>
+> They are functions on the input space, not ordinary finite-coordinate vectors. A single element $f\in\mathcal{H}_{0}$ may be written as $f(\cdot)=\sum_{i=1}^{m}\alpha_{i}h(\cdot,u_{i})$.
 
 ## 3. Positive-definite functions
 
@@ -91,8 +93,10 @@ positive definiteness gives
 
 $$\langle f,f\rangle_{\mathcal{H}_{0}}=\sum_{i=1}^{m}\sum_{j=1}^{m}\alpha_{i}\alpha_{j}h(u_{i},u_{j})\geq 0.$$
 
-!!! note "Why is positive definiteness needed?"
-    It guarantees that the proposed squared norm cannot be negative. The remaining requirement, $\langle f,f\rangle_{\mathcal{H}_{0}}=0\Rightarrow f=0$, and the fact that the result is independent of the chosen finite representation of $f$, require a more careful construction. Page 20 cites this result from the reference material and states that its proof is not required for the course.
+> [!NOTE]
+> **Why is positive definiteness needed?**
+>
+> It guarantees that the proposed squared norm cannot be negative. The remaining requirement, $\langle f,f\rangle_{\mathcal{H}_{0}}=0\Rightarrow f=0$, and the fact that the result is independent of the chosen finite representation of $f$, require a more careful construction. Page 20 cites this result from the reference material and states that its proof is not required for the course.
 
 ## 5. The reproducing property
 
@@ -108,8 +112,10 @@ This identity is the reproducing property:
 
 $$f(x)=\langle f,h(\cdot,x)\rangle_{\mathcal{H}_{0}}.$$
 
-!!! clarification "Why is it called reproducing?"
-    The inner product with the special function $h(\cdot,x)$ reproduces the value of $f$ at $x$. Function evaluation is therefore encoded by the geometry of the space.
+> [!TIP]
+> **Why is it called reproducing?**
+>
+> The inner product with the special function $h(\cdot,x)$ reproduces the value of $f$ at $x$. Function evaluation is therefore encoded by the geometry of the space.
 
 ## 6. Completion and the RKHS
 
@@ -119,8 +125,10 @@ Informally, $\mathcal{H}$ is the smallest closed space containing $\mathcal{H}_{
 
 The resulting space $\mathcal{H}$ is called the reproducing-kernel Hilbert space associated with $h$.
 
-!!! note "Course-level simplification"
-    For the subsequent derivations, the notes say that one may think of $\mathcal{H}$ as almost the same as $\mathcal{H}_{0}$ while remembering that $\mathcal{H}$ also contains limits required for completeness.
+> [!NOTE]
+> **Course-level simplification**
+>
+> For the subsequent derivations, the notes say that one may think of $\mathcal{H}$ as almost the same as $\mathcal{H}_{0}$ while remembering that $\mathcal{H}$ also contains limits required for completeness.
 
 ## 7. Kernels are positive definite
 
@@ -134,8 +142,10 @@ $$\sum_{i=1}^{m}\sum_{j=1}^{m}\alpha_{i}\alpha_{j}K(u_{i},u_{j})=\left\lVert\sum
 
 Therefore, every kernel is a positive-definite function. Replacing $h$ by $K$ in the preceding construction gives an RKHS associated with $K$.
 
-!!! clarification "Are $\mathcal{H}'$ and the constructed RKHS the same space?"
-    The source explicitly warns that they should not automatically be identified. $\mathcal{H}'$ is one feature space that realizes the kernel as an inner product. The RKHS $\mathcal{H}$ is the function space constructed from the kernel sections $K(\cdot,x)$.
+> [!TIP]
+> **Are $\mathcal{H}'$ and the constructed RKHS the same space?**
+>
+> The source explicitly warns that they should not automatically be identified. $\mathcal{H}'$ is one feature space that realizes the kernel as an inner product. The RKHS $\mathcal{H}$ is the function space constructed from the kernel sections $K(\cdot,x)$.
 
 ## 8. Soft-margin SVM in an RKHS
 
@@ -215,8 +225,10 @@ $$w^{\star}=\sum_{i=1}^{n}\alpha_{i}x_{i}.$$
 
 The notes state that the general representer theorem follows the same orthogonal-decomposition strategy in the Hilbert space, but the full proof is not required.
 
-!!! clarification "Why does the theorem matter computationally?"
-    The optimization can be expressed through $n$ coefficients associated with the training data rather than through arbitrary coordinates of an infinite-dimensional function. This is the structural reason kernel methods can remain finite computational problems.
+> [!TIP]
+> **Why does the theorem matter computationally?**
+>
+> The optimization can be expressed through $n$ coefficients associated with the training data rather than through arbitrary coordinates of an infinite-dimensional function. This is the structural reason kernel methods can remain finite computational problems.
 
 ## Chapter summary
 

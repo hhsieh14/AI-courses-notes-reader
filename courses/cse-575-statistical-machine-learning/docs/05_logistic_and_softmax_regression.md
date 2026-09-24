@@ -1,518 +1,217 @@
 # 5. Logistic and Softmax Regression
 
-**Source pages:** 19–23  
-**Status:** reconstructed and equation-checked
+This chapter moves from similarity-based classification to probabilistic classifiers with parameters. Logistic regression squeezes a linear score through a sigmoid and is trained by maximum likelihood; softmax regression generalizes it to $K$ classes. The chapter ends by showing that both come out of the same recipe, the generalized linear model, together with linear regression.
 
-This chapter moves from similarity-based classification to parameterized probabilistic classifiers. The source first explains why ordinary linear regression is poorly matched to binary labels, introduces the sigmoid function and Bernoulli likelihood, extends logistic regression to multiple input features and one-vs-all classification, and then develops softmax regression for mutually exclusive multiclass outcomes. Page 23 connects linear, logistic, and softmax regression through the exponential family and generalized linear models.
+## 5.1 Why not use linear regression for classification?
 
-## 5.1 Why ordinary linear regression is not a binary classifier
+With labels $y\in\lbrace0,1\rbrace$ you could fit $h_\theta(x)=\theta_0+\theta_1x$ and predict 1 when $h_\theta(x)\ge 0.5$. Two problems:
 
-Suppose the target is binary:
+- the output isn't confined to $[0,1]$, so it isn't a probability;
+- squared error punishes points that are "too correct" (a score of 3 for a positive example), so a few far-away points can drag the boundary.
 
-$$ y\in\lbrace 0,1\rbrace. $$
+The fix is to keep the linear score but pass it through a function that maps $\mathbb R$ to $(0,1)$.
 
-A linear-regression model produces an unrestricted score:
+## 5.2 The sigmoid
 
-$$ h_\theta(x)=\theta_0+\theta_1x. $$
+$$ \sigma(z)=\frac{1}{1+e^{-z}}, \qquad 0<\sigma(z)<1, \qquad \frac{d\sigma}{dz}=\sigma(z)\left(1-\sigma(z)\right). $$
 
-Page 19 illustrates a threshold rule that predicts one class when the linear output exceeds $0.5$ and the other class otherwise. The linear output is not constrained to the interval $[0,1]$, so it is not naturally interpretable as a class probability. Thresholding that unrestricted output also does not provide a Bernoulli probability model for the binary target.
-
-The source therefore replaces the unrestricted linear output with a function that maps every real-valued score to a number between zero and one.
-
-> [!TIP]
-> **Review intuition**
->
-> Logistic regression keeps a linear score, but it does not use that score directly as the prediction. It passes the score through a nonlinear probability mapping.
-
-
-## 5.2 The logistic or sigmoid function
-
-The logistic function is:
-
-$$ \sigma(z)=\frac{1}{1+e^{-z}}. $$
-
-Its range is:
-
-$$ 0<\sigma(z)<1. $$
-
-The source also records its derivative:
-
-$$ \frac{d\sigma(z)}{dz}=\sigma(z)\left(1-\sigma(z)\right). $$
-
-Logistic regression uses the linear score:
-
-$$ z=\theta^\top x, $$
-
-and defines the hypothesis:
+Logistic regression uses
 
 $$ h_\theta(x)=\sigma\left(\theta^\top x\right)=\frac{1}{1+e^{-\theta^\top x}}. $$
 
-For a one-dimensional input with an intercept, this is:
+A very negative score gives a probability near 0, a very positive one near 1.
 
-$$ h_\theta(x)=\frac{1}{1+e^{-\left(\theta_0+\theta_1x\right)}}. $$
+![Logistic and softmax intuition](assets/diagrams/05_logistic_softmax_intuition.svg)
 
-As the score $\theta^\top x$ becomes very negative, the predicted value approaches zero. As the score becomes very positive, it approaches one.
+*The sigmoid turns a score into a probability, the 0.5 threshold is a linear boundary, and softmax normalizes several scores at once.*
 
-![Redrawn logistic and softmax intuition](assets/diagrams/05_logistic_softmax_intuition.svg)
+## 5.3 Probabilities and the decision threshold
 
-*Redrawn from the ideas on source pages 19, 21, and 22: a sigmoid converts a linear score into a binary probability, the threshold corresponds to a linear decision boundary, and softmax normalizes multiple class scores.*
+$$ h_\theta(x)=p(y=1\mid x;\theta), \qquad p(y=0\mid x;\theta)=1-h_\theta(x). $$
 
-## 5.3 Probability interpretation and the decision threshold
+With threshold 0.5, since $\sigma(0)=0.5$:
 
-The probabilistic interpretation is:
+$$ \hat y=1 \iff h_\theta(x)\ge0.5 \iff \theta^\top x\ge 0 . $$
 
-$$ h_\theta(x)=p(y=1\mid x;\theta). $$
-
-Therefore:
-
-$$ p(y=0\mid x;\theta)=1-h_\theta(x). $$
-
-With the common threshold $0.5$:
-
-$$ \hat{y}=1 \quad \text{when} \quad h_\theta(x)\geq 0.5. $$
-
-Because $\sigma(0)=0.5$, this condition is equivalent to:
-
-$$ \theta^\top x\geq 0. $$
-
-For one input feature, the decision point satisfies:
-
-$$ \theta_0+\theta_1x=0. $$
-
-When $\theta_1\neq 0$, the threshold location is:
-
-$$ x=-\frac{\theta_0}{\theta_1}. $$
+For one feature the boundary is the point $x=-\theta_0/\theta_1$.
 
 > [!NOTE]
-> **Added clarification: probability and class prediction**
+> **Probability first, decision second**
 >
-> The model output and the final class label are different objects. Logistic regression produces a probability; a chosen threshold converts that probability into a discrete prediction. The source uses $0.5$, but later evaluation settings may use another threshold.
+> Logistic regression outputs a probability; the threshold turns it into a label. 0.5 minimizes the error rate when the two kinds of error cost the same. If a false negative costs $c_{FN}$ and a false positive $c_{FP}$, the optimal threshold is $c_{FP}/(c_{FP}+c_{FN})$. Chapter 6 evaluates classifiers across all thresholds.
 
+## 5.4 Bernoulli likelihood
 
-## 5.4 Bernoulli model for a binary target
-
-Page 20 models the binary target with a Bernoulli distribution. For $y\in\lbrace 0,1\rbrace$:
-
-$$ p(y=1\mid x;\theta)=h_\theta(x), $$
-
-$$ p(y=0\mid x;\theta)=1-h_\theta(x). $$
-
-Both cases can be written in one expression:
+Model the label as a Bernoulli draw with success probability $h_\theta(x)$. Both cases fit in one expression:
 
 $$ p(y\mid x;\theta)=h_\theta(x)^y\left(1-h_\theta(x)\right)^{1-y}. $$
 
-To verify the expression:
+## 5.5 Log-likelihood and cross-entropy
 
-- when $y=1$, it becomes $h_\theta(x)$;
-- when $y=0$, it becomes $1-h_\theta(x)$.
+For independent examples,
 
-The handwritten annotation on page 20 identifies this as the Bernoulli distribution.
+$$ \ell(\theta)=\sum_{i=1}^{n}\left[y^{(i)}\log h_\theta\left(x^{(i)}\right)+\left(1-y^{(i)}\right)\log\left(1-h_\theta\left(x^{(i)}\right)\right)\right], \qquad \theta_{\mathrm{MLE}}=\mathrm{arg\,max}_{\theta}\,\ell(\theta). $$
 
-## 5.5 Likelihood of the binary training data
+$-\ell(\theta)$ is the **binary cross-entropy** or log loss that deep-learning libraries minimize.
 
-For independent training examples, the likelihood is the product of the conditional probabilities:
+## 5.6 The gradient
 
-$$ L(\theta)=\prod_{i=1}^{n_{\mathrm{train}}}p\left(y^{(i)}\mid x^{(i)};\theta\right). $$
+Using $\nabla_\theta h_\theta(x)=h_\theta(x)(1-h_\theta(x))\,x$ and the chain rule, the sigmoid derivative cancels neatly:
 
-Substituting the Bernoulli form gives:
+$$ \nabla_\theta\ell(\theta)=\sum_{i=1}^{n}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)x^{(i)}. $$
 
-$$ L(\theta)=\prod_{i=1}^{n_{\mathrm{train}}}h_\theta\left(x^{(i)}\right)^{y^{(i)}}\left(1-h_\theta\left(x^{(i)}\right)\right)^{1-y^{(i)}}. $$
+This has the same "error × input" form as the least-squares gradient in Chapter 1. It is not a coincidence (§5.16). We *maximize* $\ell$, so the update is gradient **ascent**:
 
-The source notes that multiplying many probabilities can produce an extremely small number. It therefore uses the log-likelihood:
+$$ \theta^{(t+1)}=\theta^{(t)}+\eta\nabla_\theta\ell\left(\theta^{(t)}\right), $$
 
-$$ \ell(\theta)=\log L(\theta). $$
-
-Using $\log(ab)=\log a+\log b$ and $\log(a^r)=r\log a$:
-
-$$ \ell(\theta)=\sum_{i=1}^{n_{\mathrm{train}}}\left[y^{(i)}\log h_\theta\left(x^{(i)}\right)+\left(1-y^{(i)}\right)\log\left(1-h_\theta\left(x^{(i)}\right)\right)\right]. $$
-
-Maximum likelihood chooses:
-
-$$ \theta_{\mathrm{MLE}}=\mathrm{arg\,max}_{\theta}\ell(\theta). $$
+which is identical to gradient descent on the loss $-\ell$. Keep track of the sign.
 
 > [!NOTE]
-> **Connection to the usual loss**
+> **Beyond the lecture: two practical facts**
 >
-> This is an added naming clarification. The negative of the displayed log-likelihood is commonly called binary cross-entropy or logistic loss. Maximizing $\ell(\theta)$ is equivalent to minimizing $-\ell(\theta)$.
+> 1. **The log-likelihood is concave**, so there are no bad local optima. Newton's method (IRLS) converges in a handful of steps.
+> 2. **On linearly separable data the MLE doesn't exist.** Scaling $\theta$ up always increases the likelihood, so $\|\theta\|\to\infty$ and the predicted probabilities collapse to 0 and 1. Adding an L2 penalty (Chapter 3) fixes this, which is why scikit-learn's `LogisticRegression` regularizes by default (`C=1.0`).
 
+## 5.7 Several features
 
-## 5.6 Derivative of the binary log-likelihood
+With $x=[1,x_1,\ldots,x_d]^\top$ the model is unchanged and the 0.5 boundary is the hyperplane $\theta^\top x=0$. In 2-D (e.g. age and number of positive lymph nodes) it is the line $\theta_0+\theta_1x_1+\theta_2x_2=0$. Transformed features (Chapter 1) give curved boundaries while the model stays linear in $\theta$.
 
-For one training example, define:
+## 5.8 One-vs-rest for multiple classes
 
-$$ \ell^{(i)}(\theta)=y^{(i)}\log h_\theta\left(x^{(i)}\right)+\left(1-y^{(i)}\right)\log\left(1-h_\theta\left(x^{(i)}\right)\right). $$
+For $K$ classes, train $K$ binary classifiers, where classifier $j$ separates class $j$ from everything else, and predict
 
-The source uses the sigmoid derivative to obtain a particularly simple result. Since:
+$$ \hat{y}=\mathrm{arg\,max}_{j}\,h_{\theta_j}(x). $$
 
-$$ \nabla_\theta h_\theta(x)=h_\theta(x)\left(1-h_\theta(x)\right)x, $$
+The $K$ sigmoid outputs are trained separately, so they don't have to sum to 1. The argmax still works, but the outputs aren't a proper distribution over classes.
 
-applying the chain rule gives:
+## 5.9 From Bernoulli to categorical
 
-$$ \nabla_\theta\ell^{(i)}(\theta)=\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)x^{(i)}. $$
-
-Summing over all examples:
-
-$$ \nabla_\theta\ell(\theta)=\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)x^{(i)}. $$
-
-For the one-feature model with an explicit intercept, page 20 writes the two partial derivatives as:
-
-$$ \frac{\partial\ell}{\partial\theta_0}=y-h_\theta(x), $$
-
-$$ \frac{\partial\ell}{\partial\theta_1}=\left(y-h_\theta(x)\right)x. $$
-
-The parameter update for gradient ascent is:
-
-$$ \theta^{(t+1)}=\theta^{(t)}+\eta\nabla_\theta\ell\left(\theta^{(t)}\right). $$
-
-If the negative log-likelihood is used as the objective, the same training procedure is written as gradient descent with a minus sign.
-
-> [!WARNING]
-> **Ascent versus descent**
->
-> Page 20 explicitly asks “Gradient descent? Gradient ascent!” because it formulates training as maximizing log-likelihood. Both descriptions are correct only when the sign of the objective is handled consistently.
-
-
-## 5.7 Multiple input features
-
-For an input vector with several features:
-
-$$ x=\left[1,x_1,x_2,\ldots,x_d\right]^\top. $$
-
-logistic regression uses:
-
-$$ h_\theta(x)=\frac{1}{1+e^{-\theta^\top x}}. $$
-
-The $0.5$ decision boundary is:
-
-$$ \theta^\top x=0. $$
-
-For two measured features and an intercept:
-
-$$ \theta_0+\theta_1x_1+\theta_2x_2=0. $$
-
-This is a line in a two-dimensional feature space. Page 21 illustrates the boundary using age and number of malignant nodes.
-
-The source's boundary is linear because the score is linear in the displayed input features. As in Chapter 1, transformed features could change the shape of the boundary while remaining linear in the parameters, but that extension is not developed on these pages.
-
-## 5.8 One-vs-all multiclass classification
-
-Page 21 first extends binary logistic regression using one-vs-all classification. For $K$ classes, train one binary classifier per class:
-
-$$ h_{\theta_j}(x)\approx p(y=j\mid x), \qquad j=1,2,\ldots,K. $$
-
-Classifier $j$ treats class $j$ as the positive class and all other classes as the negative class. At prediction time, choose the class with the largest score:
-
-$$ \hat{y}=\mathrm{arg\,max}_{j\in\lbrace 1,\ldots,K\rbrace}h_{\theta_j}(x). $$
-
-The source's three-class picture shows three separately learned binary regions whose scores are compared to assign each location to a class.
-
-> [!NOTE]
-> **Added clarification: independent binary models**
->
-> In one-vs-all classification, the separate sigmoid outputs are not guaranteed to sum to one. The method can still choose the largest score, but the outputs are not automatically a single normalized categorical distribution.
-
-
-## 5.9 From Bernoulli to categorical outcomes
-
-Binary logistic regression models a Bernoulli target. For $K$ mutually exclusive classes, the source moves to a categorical distribution.
-
-Let:
-
-$$ \phi_j=p(y=j), \qquad j=1,2,\ldots,K, $$
-
-with:
-
-$$ \sum_{j=1}^{K}\phi_j=1. $$
-
-Using indicator notation, the categorical probability mass function can be written as:
+For $K$ mutually exclusive classes use a categorical distribution with $\phi_j=p(y=j)$, $\sum_j\phi_j=1$:
 
 $$ p(y;\phi)=\prod_{j=1}^{K}\phi_j^{\mathbf{1}[y=j]}. $$
 
-The source writes the same idea as a product such as $\phi_1^{\mathbf{1}[y=1]}\phi_2^{\mathbf{1}[y=2]}\cdots\phi_K^{\mathbf{1}[y=K]}$.
-
 ## 5.10 Softmax regression
 
-For each class $j$, define a linear score:
+Give each class a linear score $s_j(x)=\theta_j^\top x$, exponentiate so they're positive, and normalize:
 
-$$ s_j(x)=\theta_j^\top x. $$
+$$ p(y=j\mid x;\theta)=\frac{e^{\theta_j^\top x}}{\sum_{r=1}^{K}e^{\theta_r^\top x}}, \qquad \hat{y}=\mathrm{arg\,max}_{j}\,\theta_j^\top x . $$
 
-Exponentiation makes every unnormalized class weight positive:
+The probabilities sum to 1 by construction. Only $K-1$ of them are free: once $K-1$ are known, the last is $1-\sum_{j<K}p_j$. Equivalently, adding the same vector to every $\theta_j$ leaves the probabilities unchanged, so the parameters are identifiable only up to a shift.
 
-$$ e^{s_j(x)}>0. $$
+## 5.11 Logistic regression is two-class softmax
 
-Softmax normalizes those weights:
+$$ h_\theta(x)=\frac{e^{\theta^\top x}}{e^{\theta^\top x}+e^0}, \qquad 1-h_\theta(x)=\frac{e^0}{e^{\theta^\top x}+e^0}. $$
 
-$$ p(y=j\mid x;\theta)=\frac{e^{\theta_j^\top x}}{\sum_{r=1}^{K}e^{\theta_r^\top x}}. $$
+That is softmax with scores $\theta^\top x$ and $0$, i.e. with one class's score fixed as the reference.
 
-The probabilities are nonnegative and sum to one:
+## 5.12 Multiclass log-likelihood and gradient
 
-$$ \sum_{j=1}^{K}p(y=j\mid x;\theta)=1. $$
+$$ \ell(\theta)=\sum_{i=1}^{n}\sum_{j=1}^{K}\mathbf{1}[y^{(i)}=j]\left[\theta_j^\top x^{(i)}-\log\sum_{r=1}^{K}e^{\theta_r^\top x^{(i)}}\right]. $$
 
-The predicted class is:
+Its negative is the **categorical cross-entropy**. Differentiating (the lecture stopped at the objective, so I added this):
 
-$$ \hat{y}=\mathrm{arg\,max}_{j\in\lbrace 1,\ldots,K\rbrace}p(y=j\mid x;\theta). $$
+$$ \nabla_{\theta_j}\ell(\theta)=\sum_{i=1}^{n}\left(\mathbf{1}[y^{(i)}=j]-p\left(y=j\mid x^{(i)};\theta\right)\right)x^{(i)} . $$
 
-Because the denominator is shared across classes, this is also:
+This is "observed minus predicted, times input" again, now once per class.
 
-$$ \hat{y}=\mathrm{arg\,max}_{j\in\lbrace 1,\ldots,K\rbrace}\theta_j^\top x. $$
-
-Page 22 presents the last class as the remaining probability:
-
-$$ p(y=K\mid x;\theta)=1-\sum_{j=1}^{K-1}p(y=j\mid x;\theta). $$
-
-Page 23 then explains why only $K-1$ independent probability parameters are needed: once the first $K-1$ probabilities are known, the final probability is fixed by the sum-to-one constraint.
-
-## 5.11 Logistic regression as the two-class softmax case
-
-Page 22 rewrites the sigmoid as:
-
-$$ h_\theta(x)=\frac{e^{\theta^\top x}}{e^{\theta^\top x}+1}. $$
-
-Its complement is:
-
-$$ 1-h_\theta(x)=\frac{1}{e^{\theta^\top x}+1}. $$
-
-These are softmax probabilities for two class scores, $\theta^\top x$ and $0$:
-
-$$ p(y=1\mid x)=\frac{e^{\theta^\top x}}{e^{\theta^\top x}+e^0}, $$
-
-$$ p(y=0\mid x)=\frac{e^0}{e^{\theta^\top x}+e^0}. $$
-
-Thus logistic regression is the binary special case of softmax regression after choosing one class as the reference score.
-
-## 5.12 Multiclass log-likelihood
-
-For one training example, the softmax probability of its observed class can be written as:
-
-$$ p\left(y^{(i)}\mid x^{(i)};\theta\right)=\prod_{j=1}^{K}p\left(y=j\mid x^{(i)};\theta\right)^{\mathbf{1}[y^{(i)}=j]}. $$
-
-The full log-likelihood is:
-
-$$ \ell(\theta)=\sum_{i=1}^{n_{\mathrm{train}}}\sum_{j=1}^{K}\mathbf{1}[y^{(i)}=j]\log p\left(y=j\mid x^{(i)};\theta\right). $$
-
-Substituting softmax gives:
-
-$$ \ell(\theta)=\sum_{i=1}^{n_{\mathrm{train}}}\sum_{j=1}^{K}\mathbf{1}[y^{(i)}=j]\left[\theta_j^\top x^{(i)}-\log\left(\sum_{r=1}^{K}e^{\theta_r^\top x^{(i)}}\right)\right]. $$
-
-The source page 23 records the log-likelihood structure but does not develop the complete multiclass gradient update.
-
-> [!NOTE]
-> **Source boundary**
+> [!WARNING]
+> **Compute softmax stably**
 >
-> The negative of this objective is commonly called categorical cross-entropy. That name is an added clarification; the source primarily frames the expression as log-likelihood.
-
+> $e^{s_j}$ overflows for scores around 700. Subtract the maximum score first, $\mathrm{softmax}(s)=\mathrm{softmax}(s-\max_r s_r)$, which leaves the result unchanged. For the loss use the log-sum-exp trick, $\log\sum_r e^{s_r}=m+\log\sum_r e^{s_r-m}$ with $m=\max_r s_r$. Library functions like `torch.nn.CrossEntropyLoss` take raw scores (logits) for exactly this reason.
 
 ## 5.13 The exponential family
 
-Page 23 places Gaussian, Bernoulli, and categorical distributions into a common form. A distribution belongs to the exponential family when it can be written as:
+Gaussian, Bernoulli and categorical distributions can all be written as
 
-$$ p(y;\eta)=b(y)\exp\left(\eta^\top T(y)-a(\eta)\right). $$
+$$ p(y;\eta)=b(y)\exp\left(\eta^\top T(y)-a(\eta)\right), $$
 
-The source identifies:
+with natural parameter $\eta$, sufficient statistic $T(y)$, log-partition function $a(\eta)$ (it makes the density integrate or sum to 1; $e^{a(\eta)}$ is the partition function) and base measure $b(y)$.
 
-- $\eta$ as the natural or canonical parameter;
-- $T(y)$ as the sufficient statistic;
-- $a(\eta)$ as the log-partition function;
-- $b(y)$ as the part that depends only on the observation.
+## 5.14 Gaussian (unit variance)
 
-The log-partition function ensures that the distribution is normalized. In the continuous case:
+$$ p(y;\mu)=\frac{1}{\sqrt{2\pi}}e^{-y^2/2}\,\exp\left(\mu y-\tfrac{\mu^2}{2}\right) $$
 
-$$ \int p(y;\eta)\,dy=1. $$
+gives $b(y)=\tfrac{1}{\sqrt{2\pi}}e^{-y^2/2}$, $T(y)=y$, $\eta=\mu$, $a(\eta)=\eta^2/2$.
 
-In the discrete case:
+## 5.15 Bernoulli
 
-$$ \sum_y p(y;\eta)=1. $$
+$$ p(y;\phi)=\phi^y(1-\phi)^{1-y}=\exp\left(y\log\frac{\phi}{1-\phi}+\log(1-\phi)\right), $$
 
-The notation $\exp(a(\eta))$ is the partition function, while $a(\eta)$ itself is its logarithm.
+so $\eta=\log\frac{\phi}{1-\phi}$ (the **log-odds** or logit), $T(y)=y$, $b(y)=1$, $a(\eta)=\log(1+e^\eta)$. Inverting, $\phi=\frac{1}{1+e^{-\eta}}$: **the mean of a Bernoulli as a function of its natural parameter is exactly the sigmoid.**
 
-## 5.14 Gaussian distribution in exponential-family form
+A handy check: $a'(\eta)=\frac{e^\eta}{1+e^\eta}=\phi=\mathbb E[y]$. In general the derivative of the log-partition function gives the mean.
 
-The page 23 derivation uses a Gaussian example with fixed unit variance:
+## 5.16 Generalized linear models
 
-$$ p(y;\mu)=\frac{1}{\sqrt{2\pi}}\exp\left(-\frac{1}{2}(y-\mu)^2\right). $$
+A GLM makes three assumptions:
 
-Expanding the square:
+1. $y\mid x;\theta$ follows an exponential-family distribution with natural parameter $\eta$;
+2. the prediction is the conditional mean, $h_\theta(x)=\mathbb{E}[T(y)\mid x]$;
+3. the natural parameter is linear in the input, $\eta=\theta^\top x$.
 
-$$ p(y;\mu)=\frac{1}{\sqrt{2\pi}}\exp\left(-\frac{y^2}{2}\right)\exp\left(\mu y-\frac{\mu^2}{2}\right). $$
-
-Matching terms with the exponential-family form gives:
-
-$$ b(y)=\frac{1}{\sqrt{2\pi}}\exp\left(-\frac{y^2}{2}\right), $$
-
-$$ T(y)=y, $$
-
-$$ \eta=\mu, $$
-
-$$ a(\eta)=\frac{\eta^2}{2}. $$
-
-The source uses this example to connect the Gaussian conditional model with linear regression.
-
-## 5.15 Bernoulli distribution in exponential-family form
-
-For a Bernoulli parameter $\phi$:
-
-$$ p(y;\phi)=\phi^y(1-\phi)^{1-y}. $$
-
-Taking the exponential form:
-
-$$ p(y;\phi)=\exp\left(y\log\phi+(1-y)\log(1-\phi)\right). $$
-
-Rearranging:
-
-$$ p(y;\phi)=\exp\left(y\log\frac{\phi}{1-\phi}+\log(1-\phi)\right). $$
-
-Therefore the natural parameter is:
-
-$$ \eta=\log\frac{\phi}{1-\phi}. $$
-
-This is the log-odds or logit. Solving for $\phi$:
-
-$$ e^\eta=\frac{\phi}{1-\phi}, $$
-
-$$ \phi=\frac{e^\eta}{1+e^\eta}=\frac{1}{1+e^{-\eta}}. $$
-
-Thus the inverse mapping from the Bernoulli natural parameter to its mean is exactly the sigmoid function.
-
-A matching exponential-family identification is:
-
-$$ b(y)=1, \qquad T(y)=y, \qquad a(\eta)=\log\left(1+e^\eta\right). $$
-
-## 5.16 Generalized linear model assumptions
-
-The handwritten summary on page 23 gives three assumptions for a generalized linear model.
-
-1. The conditional target distribution belongs to an exponential family:
-
-$$ y\mid x;\theta\sim\mathrm{ExponentialFamily}(\eta). $$
-
-2. The hypothesis predicts the conditional expectation of the sufficient statistic. For the examples on this page, $T(y)=y$:
-
-$$ h_\theta(x)=\mathbb{E}[T(y)\mid x;\theta]. $$
-
-3. The natural parameter is a linear function of the input:
-
-$$ \eta=\theta^\top x. $$
-
-These assumptions generate different prediction functions depending on the selected response distribution.
-
-### Linear regression from the GLM assumptions
-
-For a Gaussian with fixed variance:
-
-$$ \mathbb{E}[y\mid x;\theta]=\mu. $$
-
-The page identifies $\eta=\mu$, so with $\eta=\theta^\top x$:
-
-$$ h_\theta(x)=\theta^\top x. $$
-
-### Logistic regression from the GLM assumptions
-
-For a Bernoulli target:
-
-$$ \mathbb{E}[y\mid x;\theta]=\phi. $$
-
-The inverse natural-parameter mapping is:
-
-$$ \phi=\frac{1}{1+e^{-\eta}}. $$
-
-Substituting $\eta=\theta^\top x$ gives:
-
-$$ h_\theta(x)=\frac{1}{1+e^{-\theta^\top x}}. $$
-
-The sigmoid is therefore not introduced arbitrarily in the GLM view. It follows from choosing a Bernoulli conditional distribution and linking its natural parameter linearly to the input.
-
-## 5.17 Categorical distribution and the softmax link
-
-Page 23 applies the same reasoning to a categorical target. Since the probabilities sum to one, choose class $K$ as a reference and define $K-1$ natural parameters:
-
-$$ \eta_j=\log\frac{\phi_j}{\phi_K}, \qquad j=1,2,\ldots,K-1. $$
-
-Then:
-
-$$ e^{\eta_j}=\frac{\phi_j}{\phi_K}, $$
-
-so:
-
-$$ \phi_j=e^{\eta_j}\phi_K. $$
-
-Using the normalization condition:
-
-$$ \phi_K+\sum_{j=1}^{K-1}\phi_j=1, $$
-
-we obtain:
-
-$$ \phi_K\left(1+\sum_{j=1}^{K-1}e^{\eta_j}\right)=1. $$
-
-Therefore:
-
-$$ \phi_K=\frac{1}{1+\sum_{j=1}^{K-1}e^{\eta_j}}. $$
-
-For the other classes:
-
-$$ \phi_j=\frac{e^{\eta_j}}{1+\sum_{r=1}^{K-1}e^{\eta_r}}. $$
-
-The source expresses this symmetrically by defining a reference natural parameter $\eta_K=0$:
-
-$$ \phi_j=\frac{e^{\eta_j}}{\sum_{r=1}^{K}e^{\eta_r}}. $$
-
-Finally, with $\eta_j=\theta_j^\top x$:
-
-$$ p(y=j\mid x;\theta)=\frac{e^{\theta_j^\top x}}{\sum_{r=1}^{K}e^{\theta_r^\top x}}. $$
-
-This is softmax regression derived as a generalized linear model for categorical outcomes.
-
-## 5.18 One-vs-all and softmax compared
-
-| Property | One-vs-all logistic regression | Softmax regression |
+| Response distribution | Mean as a function of $\eta$ | Model |
 |---|---|---|
-| Number of fitted binary tasks | one per class | one joint multiclass model |
-| Output form | separate sigmoid scores | normalized categorical probabilities |
-| Sum of outputs | not necessarily one | exactly one |
-| Prediction | largest classifier score | largest class probability |
-| Source location | page 21 | pages 22–23 |
+| Gaussian | $\mu=\eta$ | linear regression |
+| Bernoulli | $\phi=\sigma(\eta)$ | logistic regression |
+| Categorical | $\phi_j=\mathrm{softmax}(\eta)_j$ | softmax regression |
+| Poisson | $\lambda=e^\eta$ | Poisson regression (counts) |
 
-The two approaches can produce similar class decisions, but they make different probability-modeling assumptions.
+So the sigmoid isn't pulled out of thin air: it is what a Bernoulli response plus a linear natural parameter forces. It also explains why every GLM's log-likelihood gradient has the form $\sum_i(y^{(i)}-h_\theta(x^{(i)}))x^{(i)}$.
+
+## 5.17 Softmax as a GLM
+
+Take class $K$ as the reference and set $\eta_j=\log(\phi_j/\phi_K)$ for $j<K$. Then $\phi_j=e^{\eta_j}\phi_K$, and normalization gives
+
+$$ \phi_K=\frac{1}{1+\sum_{j=1}^{K-1}e^{\eta_j}}, \qquad \phi_j=\frac{e^{\eta_j}}{1+\sum_{r=1}^{K-1}e^{\eta_r}} . $$
+
+Defining $\eta_K=0$ makes this symmetric, $\phi_j=e^{\eta_j}/\sum_{r=1}^{K}e^{\eta_r}$, and with $\eta_j=\theta_j^\top x$ we get softmax regression.
+
+## 5.18 One-vs-rest versus softmax
+
+| | One-vs-rest | Softmax |
+|---|---|---|
+| Models trained | $K$ separate binary models | one joint model |
+| Outputs | independent sigmoids | a normalized distribution |
+| Sum of outputs | not necessarily 1 | exactly 1 |
+| Use when | classes can overlap (multi-label) | exactly one class is true |
 
 ## 5.19 Common mistakes
 
-1. **Using the linear score itself as a probability.** The score $\theta^\top x$ is unrestricted; the sigmoid maps it into $(0,1)$.
-2. **Confusing the probability with the thresholded class.** Logistic regression outputs $p(y=1\mid x)$ before a decision rule is applied.
-3. **Using squared-error reasoning for the Bernoulli model without noticing the likelihood change.** The source derives logistic training from Bernoulli log-likelihood.
-4. **Performing gradient descent on the log-likelihood without changing its sign.** The source maximizes log-likelihood using gradient ascent.
-5. **Assuming one-vs-all probabilities must sum to one.** The separately trained sigmoid outputs are not jointly normalized.
-6. **Forgetting the softmax denominator.** Exponentiated scores are unnormalized weights until divided by their sum.
-7. **Treating all $K$ categorical probabilities as independent.** The sum-to-one constraint leaves only $K-1$ independent probability parameters.
-8. **Confusing the partition function with the log-partition function.** The partition function is $e^{a(\eta)}$; $a(\eta)$ is its logarithm.
-9. **Memorizing sigmoid and softmax without the GLM connection.** Page 23 derives them from Bernoulli and categorical exponential-family models.
-10. **Assuming page 23 gives a complete optimization algorithm for softmax.** It derives the model and likelihood structure but does not finish the full gradient procedure.
+1. **Using the score $\theta^\top x$ as a probability.**
+2. **Confusing the probability with the thresholded label.**
+3. **Fitting classification with squared error** without noticing it breaks the likelihood model.
+4. **Mixing up the sign** of gradient ascent on $\ell$ and gradient descent on $-\ell$.
+5. **Expecting one-vs-rest outputs to sum to 1.**
+6. **Exponentiating raw scores** without subtracting the maximum.
+7. **Treating all $K$ softmax parameter vectors as identifiable.**
+8. **Confusing the partition function $e^{a(\eta)}$ with its log $a(\eta)$.**
 
-## 5.20 Chapter summary
+## 5.20 Summary
 
-- Linear regression is not naturally suited to binary probabilities because its output is unrestricted.
-- Logistic regression applies the sigmoid to a linear score.
-- The sigmoid output is interpreted as $p(y=1\mid x;\theta)$.
-- Binary targets are modeled with a Bernoulli distribution.
-- Maximum likelihood leads to the binary log-likelihood and its simple residual-like gradient.
-- With multiple input features, the $0.5$ decision boundary is $\theta^\top x=0$.
-- One-vs-all trains separate binary classifiers and chooses the largest output.
-- Softmax jointly normalizes class scores into a categorical probability distribution.
-- Logistic regression is the two-class softmax model with one reference score fixed to zero.
-- Gaussian, Bernoulli, and categorical distributions can be written in exponential-family form.
-- Generalized linear models combine an exponential-family response, an expected sufficient statistic, and a linear natural parameter.
-- The Bernoulli GLM produces the sigmoid, and the categorical GLM produces softmax.
+- Logistic regression applies a sigmoid to a linear score and is trained by Bernoulli maximum likelihood (cross-entropy).
+- Its gradient is (label − prediction) × input; the objective is concave.
+- Softmax regression generalizes this to $K$ classes; logistic regression is its two-class case.
+- Gaussian, Bernoulli and categorical responses are exponential-family members; the GLM recipe produces linear, logistic and softmax regression.
 
-## 5.21 Self-check questions
+## 5.21 Self-check
 
-1. Why is an unrestricted linear-regression output unsuitable as a binary probability?
-2. What is the derivative of the sigmoid function?
-3. How does the Bernoulli probability expression represent both $y=0$ and $y=1$?
-4. Why does the source optimize log-likelihood instead of the raw likelihood product?
-5. What is the gradient of one-example logistic log-likelihood?
-6. Why is the $0.5$ decision boundary defined by $\theta^\top x=0$?
-7. How does one-vs-all multiclass classification work?
-8. Why do softmax probabilities sum to one?
-9. In what sense is logistic regression a two-class softmax model?
-10. What are $\eta$, $T(y)$, $a(\eta)$, and $b(y)$ in the exponential-family form?
-11. How does the Bernoulli natural parameter lead to the sigmoid?
-12. Why are only $K-1$ categorical probability parameters independent?
-13. Which three assumptions on page 23 define the generalized linear model construction?
+1. Why is a raw linear score a poor probability?
+2. Derive $\sigma'(z)=\sigma(z)(1-\sigma(z))$.
+3. Why is the 0.5 boundary $\theta^\top x=0$?
+4. What happens to logistic regression on separable data?
+5. Why do softmax probabilities sum to 1, and why are only $K-1$ parameter vectors free?
+6. How does the Bernoulli natural parameter lead to the sigmoid?
+7. What are the three GLM assumptions?
+
+<details>
+<summary>Answers</summary>
+
+1. It is unbounded and isn't calibrated to any likelihood.
+2. $\sigma'=e^{-z}/(1+e^{-z})^2=\sigma\cdot\frac{e^{-z}}{1+e^{-z}}=\sigma(1-\sigma)$.
+3. $\sigma(z)\ge 0.5\iff z\ge0$.
+4. The weights grow without bound; add regularization.
+5. Each probability is divided by the sum of all exponentiated scores. Shifting all $\theta_j$ by the same vector cancels in the ratio.
+6. $\eta=\log\frac{\phi}{1-\phi}$; solving for $\phi$ gives $\sigma(\eta)$.
+7. Exponential-family response; predict the conditional mean of $T(y)$; natural parameter linear in $x$.
+
+</details>

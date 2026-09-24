@@ -1,381 +1,190 @@
 # 11. Dimensionality Reduction and Principal Component Analysis
 
-**Source pages:** 51–53  
-**Status:** reconstructed and equation-checked
+High-dimensional data is expensive to store, hard to visualize, and, as KNN showed, it makes distances less meaningful. This chapter motivates dimensionality reduction with the curse of dimensionality, derives principal component analysis as the projection that keeps the most variance, and connects it to the SVD, feature scaling and explained variance, which is how PCA is actually computed and tuned.
 
-This chapter studies how to represent high-dimensional data with fewer coordinates. The source first motivates dimensionality reduction through the curse of dimensionality, then develops principal component analysis as a variance-preserving linear projection. The final pages connect PCA to singular value decomposition, feature scaling, and explained variance.
+**Notation.** $n$ examples, $N$ original features, $k$ kept dimensions. The data matrix $X\in\mathbb R^{n\times N}$ has one example per row.
 
 ## 11.1 Why reduce dimensionality?
 
-Page 51 begins with the **curse of dimensionality**. In theory, additional features can provide more information. In practice, increasing dimensionality can also create two problems:
+More features can mean more information, but in practice:
 
-- too many features can lead to worse performance in practice;
-- the number of training examples required increases exponentially with dimensionality.
+- adding features can make models *worse*;
+- the number of examples needed to cover the space grows exponentially with dimension.
 
-The source illustrates this effect by comparing points placed in one-, two-, and three-dimensional spaces. As the number of dimensions grows, the same number of points becomes increasingly sparse.
+Ten points spread over a line are dense. The same ten points in a square are sparse, and in a cube sparser still. That is the **curse of dimensionality**. Dimensionality reduction looks for
 
-Dimensionality reduction seeks a lower-dimensional representation:
+$$ \mathbb{R}^{N}\longrightarrow\mathbb{R}^{k}, \qquad k\ll N, $$
 
-$$ \mathbb{R}^{N}\longrightarrow\mathbb{R}^{k}, \qquad k\ll N. $$
+that keeps the structure we care about.
 
-The purpose is not simply to delete information. The goal is to preserve the structure judged most important for the task while using fewer coordinates.
+![PCA as projection](assets/diagrams/11_pca_projection.svg)
 
-![Redrawn PCA, projection, SVD, and explained-variance overview](assets/diagrams/11_pca_svd_explained_variance.png)
+*Left: centered 2-D data with its principal directions $u_1$ (most variance) and $u_2 \perp u_1$. Right: cumulative explained variance; keep the smallest $k$ that reaches the target (here 95%).*
 
-*Redrawn from source pages 51–53: centered observations are projected onto principal directions, a rank-$k$ SVD retains the dominant singular components, and cumulative explained variance helps select the retained dimension.*
+## 11.2 Feature selection versus feature extraction
 
-## 11.2 Feature selection and feature extraction
+- **Selection** keeps a subset of the original features, which keep their meaning.
+- **Extraction** builds new features from combinations of the old ones. For example, height and cigarettes-per-day might collapse into one derived "health-risk" direction.
 
-The source identifies two broad approaches.
+PCA is extraction: every new coordinate is a linear combination of all the original features.
 
-### Feature selection
+## 11.3 Linear projection
 
-Choose a subset of the original features and discard the rest. The retained coordinates keep their original meanings.
+Pick $U=[u_1,\ldots,u_k]\in\mathbb{R}^{N\times k}$ with **orthonormal** columns,
 
-### Feature extraction
+$$ \lVert u_j\rVert=1,\qquad u_i^\top u_j=0\;(i\neq j) \qquad\Longleftrightarrow\qquad U^\top U=I_k, $$
 
-Construct new features by combining the original coordinates through linear or nonlinear transformations.
+and map each example to $y^{(i)}=U^\top x^{(i)}\in\mathbb{R}^{k}$, so $y_j^{(i)}=u_j^\top x^{(i)}$. Orthonormality means the new coordinates don't overlap and lengths are preserved within the subspace.
 
-Page 51 gives the conceptual example of combining height and cigarettes per day into a single derived direction. PCA belongs to the second category: it creates new coordinates as linear combinations of the original features.
+## 11.4 Center first
 
-## 11.3 Linear projection from $N$ dimensions to $k$ dimensions
+PCA measures spread around the mean, so subtract it:
 
-Let an input example be:
+$$ \mu=\frac{1}{n}\sum_{i}x^{(i)}, \qquad x^{(i)}\leftarrow x^{(i)}-\mu . $$
 
-$$ x^{(i)}\in\mathbb{R}^{N}. $$
-
-To represent it in $k$ dimensions, choose a matrix:
-
-$$ U\in\mathbb{R}^{N\times k}. $$
-
-The lower-dimensional representation is:
-
-$$ y^{(i)}=U^{\top}x^{(i)}\in\mathbb{R}^{k}. $$
-
-Write the columns of $U$ as:
-
-$$ U=\begin{bmatrix}u_1 & u_2 & \cdots & u_k\end{bmatrix}. $$
-
-The handwritten notes require these directions to be orthonormal:
-
-$$ \lVert u_j\rVert_2=1, \qquad u_i^{\top}u_j=0 \text{ for } i\neq j. $$
-
-Equivalently:
-
-$$ U^{\top}U=I_k. $$
-
-Each reduced coordinate is the projection onto one direction:
-
-$$ y_j^{(i)}=u_j^{\top}x^{(i)}. $$
-
-## 11.4 Centering the data
-
-The variance derivation on page 52 assumes that the data have mean zero. For the training mean:
-
-$$ \mu=\frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}x^{(i)}, $$
-
-center each example as:
-
-$$ x_c^{(i)}=x^{(i)}-\mu. $$
-
-After centering:
-
-$$ \frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}x_c^{(i)}=0. $$
-
-For the remaining PCA derivation, $x^{(i)}$ denotes a centered example unless stated otherwise.
+From here on $x^{(i)}$ is centered.
 
 ## 11.5 Projection onto one direction
 
-For a unit vector $u$, the scalar projection of example $i$ is:
-
-$$ z^{(i)}=u^{\top}x^{(i)}. $$
-
-Because $u$ has unit length, $u^{\top}x^{(i)}$ is the signed coordinate of the point along that direction. Page 52 describes it as the distance from the origin to the projected quantity.
-
-PCA asks for the direction along which these scalar projections have the greatest variance.
+For a unit vector $u$, the scalar $z^{(i)}=u^\top x^{(i)}$ is the signed coordinate of the point along $u$. PCA looks for the direction along which these coordinates spread out the most.
 
 ## 11.6 Maximizing projected variance
 
-With centered data, the projected values have mean zero. Their empirical variance is therefore:
+Because the data are centered, the projections have mean zero, and their variance is
 
-$$ \frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}\left(u^{\top}x^{(i)}\right)^2. $$
+$$ \frac{1}{n}\sum_{i}\left(u^\top x^{(i)}\right)^2=u^\top\left(\frac{1}{n}\sum_{i}x^{(i)}x^{(i)\top}\right)u=u^\top\Sigma u, $$
 
-Rewrite one term as:
+with $\Sigma$ the sample covariance matrix. The first principal direction solves
 
-$$ \left(u^{\top}x^{(i)}\right)^2=u^{\top}x^{(i)}x^{(i)\top}u. $$
+$$ u_1=\underset{\lVert u\rVert=1}{\mathrm{arg\,max}}\;u^\top\Sigma u . $$
 
-Then:
+## 11.7 The answer is an eigenvector
 
-$$ \frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}\left(u^{\top}x^{(i)}\right)^2=u^{\top}\left(\frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}x^{(i)}x^{(i)\top}\right)u. $$
+Add a Lagrange multiplier for the unit-length constraint, $\mathcal L=u^\top\Sigma u-\lambda(u^\top u-1)$, and set the gradient to zero:
 
-Define the covariance matrix used in the source derivation:
+$$ 2\Sigma u-2\lambda u=0 \quad\Longrightarrow\quad \Sigma u=\lambda u . $$
 
-$$ \Sigma=\frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}x^{(i)}x^{(i)\top}. $$
+So $u$ must be an eigenvector, and then the variance is $u^\top\Sigma u=\lambda$. To maximize it, take the eigenvector with the **largest** eigenvalue. The second direction maximizes variance subject to being orthogonal to the first, which gives the second eigenvector, and so on:
 
-The projected variance becomes:
+$$ \Sigma u_j=\lambda_ju_j, \qquad \lambda_1\geq\lambda_2\geq\cdots\geq\lambda_N\geq 0, \qquad \Sigma=\sum_{j=1}^{N}\lambda_ju_ju_j^\top . $$
 
-$$ \mathrm{Var}\left(u^{\top}x\right)=u^{\top}\Sigma u. $$
+The eigenvector gives the direction; the eigenvalue is the variance captured along it.
 
-The first principal direction solves:
+## 11.8 Keeping $k$ components and reconstructing
 
-$$ u_1=\underset{\lVert u\rVert_2=1}{\mathrm{arg\,max}}\;u^{\top}\Sigma u. $$
+$$ U_k=[u_1,\ldots,u_k], \qquad y^{(i)}=U_k^\top x^{(i)}, \qquad \hat{x}^{(i)}=U_ky^{(i)}=U_kU_k^\top x^{(i)} . $$
 
-## 11.7 The principal component is an eigenvector
+$\hat x^{(i)}$ is the orthogonal projection of $x^{(i)}$ back in the original space. The same $U_k$ that maximizes retained variance also **minimizes the average squared reconstruction error** $\frac1n\sum_i\lVert x^{(i)}-\hat x^{(i)}\rVert^2$, which equals $\sum_{j>k}\lambda_j$, the variance thrown away. Maximum variance and minimum reconstruction error are the same problem.
 
-The constrained variance maximization leads to the eigenvalue equation:
+## 11.9 Computing PCA with the SVD
 
-$$ \Sigma u=\lambda u. $$
+Any matrix factors as $A=USV^\top$ with orthogonal $U\in\mathbb R^{m\times m}$, $V\in\mathbb R^{n\times n}$ and non-negative singular values $s_1\ge s_2\ge\cdots\ge0$ on the diagonal of $S$. Then
 
-The direction with the largest achievable projected variance is the eigenvector associated with the largest eigenvalue:
+$$ A^\top A=VS^\top SV^\top, \qquad AA^\top=USS^\top U^\top, $$
 
-$$ \Sigma u_1=\lambda_1u_1, \qquad \lambda_1\geq\lambda_2\geq\cdots\geq\lambda_N\geq 0. $$
+so the columns of $V$ are eigenvectors of $A^\top A$, the columns of $U$ are eigenvectors of $AA^\top$, and both have eigenvalues $s_j^2$.
 
-The PCA figure labels its directions $v_1$ and $v_2$, while the variance derivation uses $u$. This reconstruction uses $u_j$ consistently. The figure associates:
+**Which vectors are the PCA directions?** With examples as rows (the $n\times N$ convention used here), take $A=X$ (centered). Then $\Sigma=\frac1nX^\top X$, so:
 
-- direction $u_1$ with length or importance $\lambda_1$;
-- direction $u_2$ with length or importance $\lambda_2$.
+- principal directions are the **right** singular vectors, the columns of $V$;
+- eigenvalues are $\lambda_j=s_j^2/n$;
+- scores are $XV_k=U_kS_k$.
 
-The first direction follows the dominant spread of the point cloud. The second direction is orthogonal to the first and captures the largest remaining variance. The handwritten notes also record the spectral form:
-
-$$ \Sigma=\sum_{j=1}^{N}\lambda_ju_ju_j^{\top}. $$
-
-> [!NOTE]
-> **Source terminology**
->
-> The slide labels the eigenvalue as the direction's “length.” More precisely, the eigenvector gives the direction and the eigenvalue measures the variance captured along that direction.
-
-
-## 11.8 Retaining multiple principal components
-
-Collect the first $k$ eigenvectors:
-
-$$ U_k=\begin{bmatrix}u_1 & u_2 & \cdots & u_k\end{bmatrix}. $$
-
-Then the reduced representation is:
-
-$$ y^{(i)}=U_k^{\top}x^{(i)}. $$
-
-The retained directions satisfy:
-
-$$ U_k^{\top}U_k=I_k. $$
-
-The source sketch shows a three-dimensional dataset projected onto a two-dimensional plane. In that example:
-
-$$ N=3, \qquad k=2. $$
-
-> [!NOTE]
-> **Added clarification: reconstructing in the original space**
->
-> A reduced vector can be mapped back into the original coordinate system by:
->
-> $$ \hat{x}^{(i)}=U_ky^{(i)}=U_kU_k^{\top}x^{(i)}. $$
->
-> This is the orthogonal projection of $x^{(i)}$ onto the retained $k$-dimensional subspace. This reconstruction formula is an explicit clarification of the projection geometry; it is not separately derived on pages 51–53.
-
-
-## 11.9 Singular value decomposition
-
-Page 52 introduces singular value decomposition as a numerical method commonly used to compute PCA, including in software such as scikit-learn.
-
-For a matrix $A\in\mathbb{R}^{m\times n}$:
-
-$$ A=USV^{\top}. $$
-
-The full matrices have dimensions:
-
-$$ U\in\mathbb{R}^{m\times m}, \qquad S\in\mathbb{R}^{m\times n}, \qquad V\in\mathbb{R}^{n\times n}. $$
-
-The columns of $U$ are left singular vectors, the columns of $V$ are right singular vectors, and the diagonal entries of $S$ are singular values:
-
-$$ s_1\geq s_2\geq\cdots\geq 0. $$
-
-The handwritten derivation relates SVD to an eigendecomposition:
-
-$$ AA^{\top}=USV^{\top}\left(USV^{\top}\right)^{\top}. $$
-
-Using orthogonality of $V$:
-
-$$ AA^{\top}=USS^{\top}U^{\top}. $$
-
-Therefore, the columns of $U$ are eigenvectors of $AA^{\top}$, and the corresponding eigenvalues are squared singular values.
-
-> [!NOTE]
-> **Technical note: which singular vectors are PCA directions?**
->
-> The answer depends on the orientation of the data matrix. If observations are stored as rows, PCA directions in feature space are the right singular vectors in $V$. If observations are stored as columns, they are the left singular vectors in $U$. The source writes the generic $AA^{\top}$ relation but does not fix one data-matrix orientation.
-
+(If examples are stored as columns, swap the roles of $U$ and $V$.) This is how scikit-learn's `PCA` works. It never forms $\Sigma$, which avoids squaring the condition number.
 
 ## 11.10 Truncated SVD
 
-The SVD can also be written as a sum of rank-one matrices:
+$$ A=\sum_{j=1}^{r}s_ju_jv_j^\top \quad(r=\mathrm{rank}\,A), \qquad A_k=\sum_{j=1}^{k}s_ju_jv_j^\top=U_kS_kV_k^\top . $$
 
-$$ A=\sum_{j=1}^{r}s_ju_jv_j^{\top}, $$
+For example, singular values $9,7,1$ with $k=2$ keep the first two terms and drop the third. By the Eckart–Young theorem, $A_k$ is the best rank-$k$ approximation of $A$ in both Frobenius and spectral norm. The factor shapes are $U_k\in\mathbb{R}^{m\times k}$, $S_k\in\mathbb{R}^{k\times k}$, $V_k^\top\in\mathbb{R}^{k\times n}$.
 
-where $r=\mathrm{rank}(A)$.
+## 11.11 Scale your features
 
-Truncated SVD keeps only the first $k$ singular components:
+PCA chases variance, and variance depends on units. A feature ranging over 0–500 will dominate one ranging over 0–50 even if the second carries the structure. When features have different units, standardize first:
 
-$$ A\approx A_k=\sum_{j=1}^{k}s_ju_jv_j^{\top}. $$
+$$ \tilde{x}_j^{(i)}=\frac{x_j^{(i)}-\mu_j}{s_j}, $$
 
-In matrix form:
-
-$$ A_k=U_kS_kV_k^{\top}. $$
-
-The source illustrates the retained diagonal with singular values such as $9$, $7$, and $1$, while zero rows and columns outside the truncated factors are omitted. The retained approximation has rank at most $k$.
-
-The reduced factor dimensions are:
-
-$$ U_k\in\mathbb{R}^{m\times k}, \qquad S_k\in\mathbb{R}^{k\times k}, \qquad V_k^{\top}\in\mathbb{R}^{k\times n}. $$
-
-## 11.11 Why feature scaling matters
-
-Page 53 emphasizes that PCA and SVD seek directions that capture the most variance. Variance changes when a feature is measured on a different numerical scale.
-
-For example, one coordinate ranging from $0$ to $500$ can dominate another ranging from $0$ to $50$, even when the smaller-scale feature contains meaningful structure. The principal direction may then reflect units rather than the intended relationship between variables.
-
-The source therefore recommends scaling the data to zero mean and unit variance before PCA:
-
-$$ \widetilde{x}_j^{(i)}=\frac{x_j^{(i)}-\mu_j}{s_j}, $$
-
-where:
-
-$$ \mu_j=\frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}x_j^{(i)} $$
-
-and $s_j$ is the feature's training-set standard deviation.
-
-After standardization, each feature has approximately:
-
-$$ \mathrm{mean}\left(\widetilde{x}_j\right)=0, \qquad \mathrm{Var}\left(\widetilde{x}_j\right)=1. $$
+which is the same as doing PCA on the correlation matrix instead of the covariance matrix. When all features share a unit (pixel intensities, for example), leaving them unscaled is often better.
 
 > [!WARNING]
-> **Fit scaling only on the training data**
+> **Fit the scaler and PCA on training data only**
 >
-> The source states that the data must be scaled but does not discuss data leakage. In an implementation, estimate $\mu_j$ and $s_j$ from the training set and reuse those same values for validation and test examples.
-
+> $\mu_j$, $s_j$ and $U_k$ are learned parameters. Compute them on the training split and apply them unchanged to validation, test and production data.
 
 ## 11.12 Explained variance
 
-Page 53 uses scikit-learn's `explained_variance_ratio_` and then takes its cumulative sum. The corresponding ratio for component $j$ can be written as:
+$$ r_j=\frac{\lambda_j}{\sum_{l=1}^{N}\lambda_l}, \qquad R_k=\sum_{j=1}^{k}r_j , $$
 
-$$ r_j=\frac{\lambda_j}{\sum_{l=1}^{N}\lambda_l}. $$
+where $r_j$ is the fraction of total variance on component $j$ and $R_k$ the cumulative fraction kept by the first $k$. $R_k$ rises quickly, then flattens.
 
-> [!NOTE]
-> **Added clarification: interpreting the plotted quantity**
->
-> The source shows the cumulative explained-variance plot and code but does not separately derive this ratio. The formula above makes explicit what the plotted quantity represents.
+## 11.13 Choosing $k$
 
-
-The ratios satisfy:
-
-$$ r_j\geq 0, \qquad \sum_{j=1}^{N}r_j=1. $$
-
-The cumulative explained variance after retaining $k$ components is:
-
-$$ R_k=\sum_{j=1}^{k}r_j. $$
-
-Page 53 plots $R_k$ against the number of dimensions. The curve rises quickly when the first components capture most of the variance and then flattens as additional components add less information.
-
-## 11.13 Choosing the retained dimension
-
-The source shows two related selection ideas.
-
-### Elbow heuristic
-
-Choose a point where the cumulative curve begins to flatten. Beyond this point, each additional component contributes relatively little variance.
-
-### Variance threshold
-
-Choose the smallest $k$ whose cumulative explained variance exceeds a target such as $0.95$:
-
-$$ k=\min\left\lbrace q:R_q\geq 0.95\right\rbrace. $$
-
-The source gives the following scikit-learn-style procedure:
+- **Elbow:** stop where the cumulative curve flattens.
+- **Variance threshold:** the smallest $k$ with $R_k\ge0.95$ (or 0.90, 0.99), i.e. $k=\min\lbrace q:R_q\geq 0.95\rbrace$.
 
 ```python
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 import numpy as np
 
-pca = PCA()
-pca.fit(X)
-
-cumulative_variance = np.cumsum(pca.explained_variance_ratio_)
-k = np.argmax(cumulative_variance >= 0.95) + 1
+pca = make_pipeline(StandardScaler(), PCA()).fit(X_train)
+cum = np.cumsum(pca[-1].explained_variance_ratio_)
+k = int(np.argmax(cum >= 0.95)) + 1     # +1: argmax returns a 0-based index
+# shortcut: PCA(n_components=0.95) picks k for you
 ```
 
-The added $1$ converts the zero-based array position returned by `argmax` into the number of retained components.
+If PCA feeds a supervised model, a third option is usually best: treat $k$ as a hyperparameter and pick it by validation error.
 
-## 11.14 PCA workflow from the source pages
+## 11.14 Workflow
 
-A compact workflow is:
+1. Arrange the data as $n\times N$.
+2. Center (and standardize if units differ), fitting on training data.
+3. Compute the SVD of the centered matrix.
+4. Sort directions by singular value.
+5. Choose $k$.
+6. Project: $y=U_k^\top x$, or equivalently $XV_k$ in SVD notation.
 
-1. Organize the data into $N$ original features.
-2. Center the features.
-3. Standardize them when their numerical scales differ.
-4. Compute principal directions through covariance eigendecomposition or SVD.
-5. Sort directions by decreasing eigenvalue or singular value.
-6. Choose $k$ using an elbow or explained-variance threshold.
-7. Form $U_k$ from the leading directions.
-8. Project each example with $y^{(i)}=U_k^{\top}x^{(i)}$.
+> [!NOTE]
+> **Beyond the lecture: what PCA can't do**
+>
+> PCA is linear and unsupervised. It misses curved structure (use kernel PCA or an autoencoder; see [Temporal Learning, Chapter 10](../../modern-temporal-learning/notes/10_representation_learning.md)), and the highest-variance direction isn't necessarily the one that predicts the label. If a label exists and the goal is classification, LDA (Chapter 7) or partial least squares may be better. PCA also ignores time order, which matters for sequences ([Temporal Learning, Chapter 5](../../modern-temporal-learning/notes/05_pca_and_regularization.md)).
 
 ## 11.15 Common mistakes
 
-The following review checks are added from the equations and implementation implications developed in this chapter.
+1. **Skipping centering.** The first "component" then points at the mean.
+2. **Ignoring feature scales** when units differ.
+3. **Treating components as selected original features.** They are mixtures of all features.
+4. **Using non-orthogonal directions.**
+5. **Keeping the smallest eigenvalues** instead of the largest.
+6. **Reading singular values as variances.** Variance is $s_j^2/n$.
+7. **Choosing $k$ using the test set.**
+8. **Mixing up $U$ and $V$** because of the data-matrix orientation.
 
-### Mistake 1: applying PCA before centering
+## 11.16 Summary
 
-The variance derivation assumes zero-mean data. Without centering, the direction may be influenced by the offset from the origin rather than by variation around the data mean.
+- PCA finds orthonormal directions of maximum variance: the top eigenvectors of the covariance matrix.
+- Maximum retained variance is the same as minimum reconstruction error.
+- In practice PCA is computed by the SVD of the centered data; with rows as examples, the directions are the right singular vectors and $\lambda_j=s_j^2/n$.
+- Standardize when units differ, fit on training data, and choose $k$ by explained variance or validation error.
 
-### Mistake 2: ignoring feature scales
+## 11.17 Self-check
 
-PCA maximizes variance, so large-unit features can dominate the result. Standardization is especially important when the original variables use different units.
+1. Show that projected variance equals $u^\top\Sigma u$.
+2. Why does the first principal direction have to be an eigenvector?
+3. What is the reconstruction error of keeping $k$ components?
+4. With examples as rows, which SVD factor holds the principal directions?
+5. When should you *not* standardize before PCA?
+6. How does `argmax(cum >= 0.95) + 1` choose $k$?
 
-### Mistake 3: treating principal components as selected original features
+<details>
+<summary>Answers</summary>
 
-A principal component is generally a linear combination of all original coordinates, not one original feature chosen from the dataset.
+1. $\frac1n\sum_i(u^\top x^{(i)})^2=\frac1n\sum_iu^\top x^{(i)}x^{(i)\top}u=u^\top\Sigma u$.
+2. The Lagrangian stationarity condition is $\Sigma u=\lambda u$.
+3. $\sum_{j>k}\lambda_j$, the sum of the discarded eigenvalues.
+4. $V$, the right singular vectors.
+5. When all features share a meaningful common unit and their relative variances carry information.
+6. It finds the first index where the cumulative ratio reaches 0.95; adding 1 turns the 0-based index into a count.
 
-### Mistake 4: using non-orthogonal projection directions
-
-The projection matrix in the source uses orthonormal columns. Without orthogonality, coordinates can duplicate information and the simple projection geometry no longer holds.
-
-### Mistake 5: keeping the smallest eigenvalues first
-
-PCA orders directions from greatest to least captured variance. Dimensionality reduction keeps the leading components, not the trailing ones.
-
-### Mistake 6: confusing singular values with explained variance
-
-For PCA, variance is associated with squared singular values after the appropriate normalization. A singular value itself is not directly the variance ratio.
-
-### Mistake 7: choosing $k$ from the test set
-
-The retained dimension is a modeling choice. It should be selected using training information, and validation information when task performance is part of the criterion, rather than by optimizing against the final test set.
-
-## 11.16 Chapter summary
-
-- High-dimensional spaces require increasingly many examples and can make data sparse.
-- Dimensionality reduction can select original features or construct new ones.
-- A linear reduction uses $y=U^{\top}x$ with orthonormal columns in $U$.
-- PCA chooses directions that maximize projected variance.
-- Principal directions are eigenvectors of the covariance matrix.
-- Their eigenvalues measure the variance captured along those directions.
-- SVD provides a practical route to the same principal subspaces.
-- Truncated SVD keeps the dominant rank-one components of a matrix.
-- PCA is sensitive to feature scales because it optimizes variance.
-- Explained-variance ratios and cumulative explained variance help choose the retained dimension $k$.
-
-## 11.17 Self-check questions
-
-1. What is the curse of dimensionality described on page 51?
-2. How does feature selection differ from feature extraction?
-3. What are the dimensions of $U$ when mapping $\mathbb{R}^{N}$ to $\mathbb{R}^{k}$?
-4. Why are the columns of $U$ required to be orthonormal?
-5. What scalar does $u^{\top}x^{(i)}$ represent?
-6. Why does centering simplify the projected-variance expression?
-7. Show that projected variance can be written as $u^{\top}\Sigma u$.
-8. Which eigenvector defines the first principal direction?
-9. How is a $k$-dimensional PCA representation computed?
-10. Write the full SVD of an $m\times n$ matrix.
-11. How does truncated SVD approximate the original matrix?
-12. Why can unscaled features change the principal directions?
-13. What is the explained-variance ratio of a component?
-14. How does the source select the smallest dimension that explains at least $95\%$ of the variance?
-15. When do PCA directions correspond to left versus right singular vectors?
+</details>

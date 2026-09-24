@@ -1,358 +1,202 @@
 # 3. Regularization and Probabilistic Linear Regression
 
-**Source pages:** 12–15  
-**Status:** reconstructed and equation-checked
+Chapter 2 showed that flexible models overfit. This chapter gives the standard fix, penalizing large coefficients, and compares ridge, lasso and elastic net. It then re-derives least squares from probability: minimizing squared error is maximum likelihood under Gaussian noise. That second view explains where the loss functions in the rest of the course come from, and it turns regularization into a prior.
 
-This chapter develops regularized linear regression and then gives a probabilistic interpretation of least squares. The source first uses parameter penalties to control overfitting, compares ridge, lasso, and elastic net, and then shows that minimizing residual sum of squares is equivalent to maximum-likelihood estimation under Gaussian observation noise. Page 15 ends with a brief handwritten transition toward latent-variable generative models.
+## 3.1 Why regularize?
 
-## 3.1 Why regularization is needed
+A high-capacity model can fit accidental details of the training sample. Regularization adds a penalty to the data-fitting loss:
 
-The previous chapter connected high model flexibility with the possibility of overfitting. A high-capacity model can search through many candidate hypotheses and may fit accidental details of the training sample.
+$$ L_{\text{reg}}(\theta) = L_{\text{data}}(\theta) + \lambda\,\Omega(\theta), $$
 
-The source introduces regularization as a way to constrain that search. Instead of minimizing only the data-fitting loss, training also discourages parameter values considered too complex:
-
-$$ L_{\text{regularized}}(\theta) = L_{\text{data}}(\theta) + \lambda\Omega(\theta). $$
-
-Here:
-
-- $L_{\text{data}}(\theta)$ measures disagreement between predictions and observed targets.
-- $\Omega(\theta)$ penalizes the model parameters.
-- $\lambda\geq 0$ controls the relative importance of fitting the data and keeping the parameters small.
-
-For polynomial regression, the data-fitting term remains:
-
-$$ L_{\text{data}}(\theta) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
-
-When $\lambda=0$, the objective reduces to ordinary least squares. Increasing $\lambda$ places more emphasis on the parameter penalty.
+where $L_{\text{data}}$ measures fit (for polynomial regression, $\tfrac12\sum_i(y^{(i)}-h_\theta(x^{(i)}))^2$), $\Omega(\theta)$ penalizes the parameters, and $\lambda\ge 0$ sets the trade-off. $\lambda=0$ recovers ordinary least squares; larger $\lambda$ pushes the solution toward small coefficients.
 
 > [!TIP]
-> **Review intuition**
+> **Intuition**
 >
-> Regularization does not directly reduce the number of candidate functions. It changes which candidates are preferred: two models with similar training error are no longer considered equally good if one requires much larger coefficients.
-
+> Regularization doesn't remove any function from the model class. It changes which functions are *preferred*: of two models with similar training error, the one with smaller coefficients now wins.
 
 ## 3.2 Penalty form and constraint form
 
-The source describes regularization as placing constraints on model parameters. The same idea can be written in two closely related ways.
+The same idea can be written two ways:
 
-The **penalty form** is:
+$$ \text{penalty: } \min_\theta L_{\text{data}}(\theta)+\lambda\Omega(\theta) \qquad\qquad \text{constraint: } \min_\theta L_{\text{data}}(\theta) \;\text{ s.t. }\; \Omega(\theta)\leq c. $$
 
-$$ \min_\theta L_{\text{data}}(\theta)+\lambda\Omega(\theta). $$
+For convex problems they are equivalent: for every $\lambda$ there is a $c$ giving the same solution, and vice versa (the $\lambda$ is the Lagrange multiplier of the constraint). Larger $\lambda$ corresponds to smaller $c$. The penalty form is what we optimize; the constraint form is what we draw.
 
-The **constraint form** is:
+## 3.3 Ridge regression (L2)
 
-$$ \min_\theta L_{\text{data}}(\theta) \quad \text{subject to} \quad \Omega(\theta)\leq c. $$
+$$ L_{\mathrm{ridge}}(\theta) = \frac{1}{2}\sum_{i=1}^{n}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda\sum_{j=1}^{d}\theta_j^2 . $$
 
-The penalty parameter $\lambda$ and constraint radius $c$ both control model flexibility, but in opposite directions:
+The sum starts at $j=1$: the intercept $\theta_0$ is **not** penalized, since shifting all targets by a constant shouldn't change how "complex" the model is.
 
-- Larger $\lambda$ means stronger regularization.
-- Smaller $c$ means a tighter feasible region.
+Ridge shrinks every coefficient, and it punishes large ones disproportionately: going from 1 to 2 raises the penalty from 1 to 4, going from 2 to 4 raises it from 4 to 16. On a degree-9 polynomial:
 
-> [!NOTE]
-> **Added clarification**
->
-> The source moves between the penalty and geometric constraint views when comparing $L_1$ and $L_2$ regularization. It does not derive the exact mapping between $\lambda$ and $c$; the important point is that both formulations limit parameter magnitude.
+- $\lambda=0$: wild oscillations, overfitting;
+- a small $\lambda$: a smooth curve that still follows the data;
+- a large $\lambda$: coefficients squashed toward zero, underfitting.
 
+Ridge also has a closed form (with centered data and no intercept):
 
-## 3.3 Ridge regression: the L2 penalty
+$$ \hat\theta_{\text{ridge}} = (X^\top X + 2\lambda I)^{-1}X^\top y , $$
 
-Ridge regression adds the squared L2 magnitude of the coefficients:
-
-$$ L_{\mathrm{ridge}}(\theta) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda\sum_{j=1}^{d_{\max}}\theta_j^2. $$
-
-The source starts the penalty at $j=1$, so the intercept $\theta_0$ is not included in the displayed regularization term.
-
-The corresponding constraint is:
-
-$$ \sum_{j=1}^{d_{\max}}\theta_j^2\leq c. $$
-
-Ridge regression has two effects emphasized in the notes:
-
-1. It shrinks the magnitudes of all coefficients.
-2. Large coefficients are penalized especially strongly because they are squared.
-
-For example, changing a coefficient from $1$ to $2$ increases its squared penalty from $1$ to $4$, while changing it from $2$ to $4$ increases the penalty from $4$ to $16$.
-
-The page 12 plots show the effect on a degree-nine polynomial model:
-
-- With $\lambda=0$, the model is highly oscillatory and overfits.
-- With a very small positive $\lambda$, the fitted curve becomes smoother while still following the data.
-- With a larger $\lambda$, the coefficients become too small and the model underfits.
+where the 2 comes from the $\tfrac12$ convention above. The matrix is invertible for any $\lambda>0$, which is why ridge also fixes the singular-$X^\top X$ problem from Chapter 1.
 
 > [!WARNING]
 > **Regularization can be too strong**
 >
-> The handwritten note warns against lowering the coefficients too much. Regularization trades variance for bias; it is not automatically beneficial at every strength.
+> Regularization trades variance for bias. It isn't automatically helpful at every strength; choose $\lambda$ by cross-validation.
 
+## 3.4 Lasso regression (L1)
 
-## 3.4 Lasso regression: the L1 penalty
+$$ L_{\mathrm{lasso}}(\theta) = \frac{1}{2}\sum_{i=1}^{n}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda\sum_{j=1}^{d}\left|\theta_j\right| . $$
 
-Lasso regression adds the sum of absolute coefficient values:
+Lasso shrinks selectively and can set coefficients **exactly** to zero. If $\theta_j=0$, feature $\phi_j(x)$ drops out of the model, so lasso performs feature selection as part of fitting. On a high-degree polynomial it typically keeps only a few terms.
 
-$$ L_{\mathrm{lasso}}(\theta) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda\sum_{j=1}^{d_{\max}}\left|\theta_j\right|. $$
+$|\theta_j|$ isn't differentiable at 0, so plain gradient descent doesn't apply directly. There is no closed form either. In practice lasso is solved with **coordinate descent** (each coordinate has a closed-form soft-threshold update), **proximal gradient** methods (see [SLT Chapter 10](../../statistical-learning-theory/docs/chapters/10_nonsmooth_proximal_optimization.md)), or LARS, which computes the whole path over $\lambda$. These are fast. The honest difference from ridge is the missing closed form, not speed.
 
-The corresponding constraint is:
+## 3.5 Why L1 gives sparse solutions
 
-$$ \sum_{j=1}^{d_{\max}}\left|\theta_j\right|\leq c. $$
+Let $\beta^\star$ be the unregularized minimizer. Contours of equal loss are ellipses around it, and the constrained solution is the point where the smallest contour first touches the feasible region:
 
-The source highlights three properties:
+$$ \text{L1: } |\beta_1|+|\beta_2|\leq c \;\;(\text{a diamond}), \qquad \text{L2: } \beta_1^2+\beta_2^2\leq c \;\;(\text{a disk}). $$
 
-- The L1 penalty selectively shrinks coefficients.
-- Some coefficients may become exactly zero.
-- This behavior can be used for feature selection.
+![L1 and L2 constraint geometry](assets/diagrams/03_l1_l2_geometry.svg)
 
-Suppose the model uses transformed features:
+*The expanding ellipse typically meets the diamond at a corner, where one coordinate is zero. The disk has no corners, so contact happens away from the axes and both coefficients shrink but stay nonzero.*
 
-$$ h_\theta(x) = \theta_0 + \theta_1\phi_1(x)+\theta_2\phi_2(x)+\cdots+\theta_{d_{\max}}\phi_{d_{\max}}(x). $$
+In higher dimensions the L1 ball (a cross-polytope) has corners and edges on every coordinate subspace, so sparse solutions become even more likely.
 
-If lasso drives $\theta_j$ to zero, the corresponding feature $\phi_j(x)$ no longer contributes to the prediction. The page 13 polynomial example illustrates this by showing that only a small number of transformed features remain dominant after regularization.
+## 3.6 Ridge versus lasso
 
-The source also states that lasso converges more slowly than ridge regression and notes that the absolute-value function is difficult for ordinary gradient descent.
-
-> [!NOTE]
-> **Technical note: the point at zero**
->
-> The function $|\theta_j|$ is not differentiable at $\theta_j=0$. Away from zero its derivative is the sign of $\theta_j$, but at zero optimization requires a subgradient or a solver designed for nonsmooth objectives. The handwritten notes mention specialized solver software but do not specify a complete algorithm.
-
-
-## 3.5 Why L1 produces sparse coefficients
-
-The source explains the difference geometrically using loss contours and parameter constraints.
-
-Let $\beta^{\star}$ denote the unregularized minimizer of the data-fitting loss. Around $\beta^{\star}$, equal-loss contours are drawn as ellipses. A constrained solution is the point where the smallest reachable contour first touches the feasible parameter region.
-
-For two parameters, the L1 region is diamond-shaped:
-
-$$ \left|\beta_1\right|+\left|\beta_2\right|\leq c. $$
-
-The L2 region is circular:
-
-$$ \beta_1^2+\beta_2^2\leq c. $$
-
-![Redrawn comparison of L1 and L2 regularization geometry](assets/diagrams/03_l1_l2_geometry.svg)
-
-*Redrawn from the contour argument on source page 13. The exact contact point depends on the loss surface; the diagram illustrates the source's central geometric intuition.*
-
-The L1 boundary has sharp corners on the coordinate axes. An expanding elliptical contour often reaches one of these corners first, which gives a solution with either $\beta_1=0$ or $\beta_2=0$.
-
-The L2 boundary is smooth. The first contact usually occurs away from the axes, so both coefficients are reduced but remain nonzero.
-
-> [!NOTE]
-> **Source conclusion**
->
-> The handwritten answer to “Why does the L1 penalty give a few large coefficients compared with the L2 penalty?” is that the first intersection with the L1 constraint often occurs where one parameter is zero or almost zero, while the L2 intersection usually leaves both parameters away from zero.
-
-
-## 3.6 Ridge and lasso compared
-
-| Property | Ridge regression | Lasso regression |
+| | Ridge | Lasso |
 |---|---|---|
-| Penalty | squared L2 magnitude | L1 magnitude |
-| Typical coefficient effect | shrinks all coefficients | can set selected coefficients to zero |
-| Feature selection | not directly | yes, through zero coefficients |
-| Geometry | smooth circular or spherical constraint | diamond or cross-polytope constraint with corners |
-| Optimization in the source | smooth objective | nonsmooth at zero and described as slower |
+| Penalty | $\sum_j\theta_j^2$ | $\sum_j\lvert\theta_j\rvert$ |
+| Effect | shrinks all coefficients | shrinks some, zeroes others |
+| Feature selection | no | yes |
+| Constraint shape | sphere | cross-polytope with corners |
+| Closed form | yes | no (coordinate descent / proximal methods) |
+| With correlated features | spreads weight across them | tends to pick one arbitrarily |
 
-Both methods can reduce overfitting, but they express different preferences about the parameter vector. Ridge prefers distributed small coefficients; lasso permits a smaller number of active coefficients while suppressing the others.
+## 3.7 Elastic net
 
-## 3.7 Elastic Net regularization
+Elastic net uses both penalties:
 
-Elastic Net combines the L2 and L1 penalties:
+$$ L_{\mathrm{EN}}(\theta) = \frac{1}{2}\sum_{i}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda_1\sum_{j}\theta_j^2 + \lambda_2\sum_{j}\left|\theta_j\right| . $$
 
-$$ L_{\mathrm{EN}}(\theta) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 + \lambda_1\sum_{j=1}^{d_{\max}}\theta_j^2 + \lambda_2\sum_{j=1}^{d_{\max}}\left|\theta_j\right|. $$
+Here $\lambda_1$ weights the L2 term and $\lambda_2$ the L1 term. (scikit-learn instead uses one overall strength `alpha` and a mixing ratio `l1_ratio`.) Elastic net keeps lasso's sparsity but, thanks to the L2 part, handles groups of correlated features more stably. The cost is a second hyperparameter.
 
-In the source notation, $\lambda_1$ multiplies the L2 term and $\lambda_2$ multiplies the L1 term.
+## 3.8 Regularization and bias–variance
 
-Elastic Net is presented as a compromise between ridge and lasso. It can combine broad coefficient shrinkage with selective sparsity, but it introduces an additional tuning decision: how much of the regularization should come from the L2 term and how much from the L1 term.
+As $\lambda$ increases, training fit gets worse, coefficients shrink, variance falls and bias rises. The goal is the $\lambda$ that minimizes validation error, not the smallest coefficient norm.
 
-## 3.8 Regularization and the bias–variance trade-off
+## 3.9 The probabilistic view: maximum likelihood
 
-Pages 12–13 visually continue the generalization discussion from Chapter 2. A flexible polynomial model can have low training error but high variance. Regularization reduces the effective flexibility of the fitted model by discouraging extreme coefficients.
+Switch perspectives. Suppose data come from an unknown distribution $p_{\mathrm{data}}$ and we have a parameterized model $p_{\mathrm{model}}(x;\theta)$. With i.i.d. samples $x^{(1)},\ldots,x^{(n)}$ the likelihood is
 
-As $\lambda$ increases:
+$$ L(\theta)=\prod_{i=1}^{n}p_{\mathrm{model}}\left(x^{(i)};\theta\right), \qquad \theta_{\mathrm{MLE}}=\mathrm{arg\,max}_{\theta}\,L(\theta). $$
 
-- training fit generally becomes less exact;
-- coefficient magnitudes become smaller;
-- variance can decrease;
-- bias can increase.
+A product of many numbers below 1 underflows in floating point, so we maximize the log-likelihood instead. The log is increasing, so the maximizer is the same:
 
-The goal is not to minimize the coefficient norm by itself. It is to choose a balance that improves performance on unseen data.
+$$ \ell(\theta)=\sum_{i=1}^{n}\log p_{\mathrm{model}}\left(x^{(i)};\theta\right). $$
 
-## 3.9 A probabilistic modeling setup
+## 3.10 Maximum likelihood minimizes KL divergence
 
-The handwritten notes on page 14 introduce a general statistical modeling view before specializing to linear regression.
+$$ D_{\mathrm{KL}}\left(p_{\mathrm{data}}\,\|\,p_{\mathrm{model}}\right)=\mathbb{E}_{x\sim p_{\mathrm{data}}}\left[\log p_{\mathrm{data}}(x)-\log p_{\mathrm{model}}(x;\theta)\right]. $$
 
-Let $p_{\mathrm{data}}(x)$ be the unknown data-generating distribution, and let the observed training examples be:
+The first term doesn't depend on $\theta$, so minimizing the KL divergence is the same as maximizing $\mathbb{E}_{p_{\text{data}}}[\log p_{\text{model}}(x;\theta)]$. Replace the expectation with the training average and you get exactly the log-likelihood divided by $n$. **MLE = minimizing the forward KL from the data to the model.**
 
-$$ X=\left\lbrace x^{(1)},x^{(2)},\ldots,x^{(n)}\right\rbrace. $$
+Reversing the arguments, $D_{\mathrm{KL}}(p_{\mathrm{model}}\,\|\,p_{\mathrm{data}})$, takes the expectation under the *model* and needs $\log p_{\text{data}}$, which we can't evaluate. So it doesn't give a usable training objective here. (Reverse KL does show up in variational inference, Chapter 10, where the roles are different.)
 
-A parameterized probability model is written as:
+## 3.11 Gaussian noise gives least squares
 
-$$ p_{\mathrm{model}}(x;\theta). $$
+Assume
 
-The goal is to choose $\theta$ so that the model assigns high probability to the observed data. Under an independent and identically distributed assumption, the likelihood is:
+$$ y=h_\theta(x)+\epsilon, \qquad \epsilon\sim\mathcal{N}(0,\sigma^2), $$
 
-$$ L(\theta)=\prod_{i=1}^{n}p_{\mathrm{model}}\left(x^{(i)};\theta\right). $$
+so that
 
-The maximum-likelihood estimate is:
+$$ p(y\mid x;\theta)=\frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{\left(y-h_\theta(x)\right)^2}{2\sigma^2}\right), \qquad y\mid x;\theta\sim\mathcal{N}\left(h_\theta(x),\sigma^2\right). $$
 
-$$ \theta_{\mathrm{MLE}}=\mathrm{arg\,max}_{\theta}\prod_{i=1}^{n}p_{\mathrm{model}}\left(x^{(i)};\theta\right). $$
+For each input, the model predicts the center of a Gaussian over possible targets.
 
-Products of many probabilities can become numerically extremely small. The source therefore moves to the log-likelihood:
+## 3.12 The likelihood of a regression dataset
 
-$$ \ell(\theta)=\log L(\theta)=\sum_{i=1}^{n}\log p_{\mathrm{model}}\left(x^{(i)};\theta\right). $$
+$$ \ell(\theta)=\sum_{i=1}^{n}\log p\left(y^{(i)}\mid x^{(i)};\theta\right)=-n\log\left(\sqrt{2\pi}\sigma\right)-\frac{1}{2\sigma^2}\sum_{i=1}^{n}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
 
-Because the logarithm is increasing, maximizing $L(\theta)$ and maximizing $\ell(\theta)$ give the same optimizer.
+With $\sigma$ fixed, the first term is constant and $1/(2\sigma^2)>0$, so
 
-## 3.10 Maximum likelihood and KL divergence
+$$ \mathrm{arg\,max}_{\theta}\,\ell(\theta)=\mathrm{arg\,min}_{\theta}\sum_{i=1}^{n}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2 . $$
 
-The page 14 handwritten derivation connects maximum likelihood with the forward Kullback–Leibler divergence:
+**Maximizing Gaussian likelihood is minimizing the residual sum of squares.** Squared error is the negative log-likelihood of a Gaussian noise model, not just a convenient geometric choice. (If $\sigma$ is also estimated, its MLE is the mean squared residual, $\hat\sigma^2=\frac1n\sum_i r_i^2$.)
 
-$$ D_{\mathrm{KL}}\left(p_{\mathrm{data}}\parallel p_{\mathrm{model}}\right)=\mathbb{E}_{x\sim p_{\mathrm{data}}}\left[\log p_{\mathrm{data}}(x)-\log p_{\mathrm{model}}(x;\theta)\right]. $$
-
-The first term does not depend on $\theta$. Therefore, minimizing this KL divergence with respect to $\theta$ is equivalent to maximizing:
-
-$$ \mathbb{E}_{x\sim p_{\mathrm{data}}}\left[\log p_{\mathrm{model}}(x;\theta)\right]. $$
-
-The empirical approximation based on the training examples is:
-
-$$ \mathbb{E}_{x\sim p_{\mathrm{data}}}\left[\log p_{\mathrm{model}}(x;\theta)\right] \approx \frac{1}{n}\sum_{i=1}^{n}\log p_{\mathrm{model}}\left(x^{(i)};\theta\right). $$
-
-Thus maximum likelihood can be interpreted as fitting the model distribution to the data distribution by minimizing the empirical forward KL divergence.
-
-> [!NOTE]
-> **Source boundary: the KL direction**
->
-> The handwritten page says that the “other direction,” $D_{\mathrm{KL}}(p_{\mathrm{model}}\parallel p_{\mathrm{data}})$, does not make sense for this derivation. More precisely, reversing the arguments does not produce the maximum-likelihood objective, because the expectation would be taken under the model and the dependence on $\theta$ changes. The source does not develop reverse-KL optimization further.
-
-
-## 3.11 Gaussian-noise model for linear regression
-
-The probabilistic interpretation of linear regression begins with the assumption:
-
-$$ y=h_\theta(x)+\epsilon. $$
-
-The noise is assumed Gaussian with zero mean and variance $\sigma^2$:
-
-$$ \epsilon\sim\mathcal{N}\left(0,\sigma^2\right). $$
-
-Its density is:
-
-$$ p(\epsilon)=\frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{\epsilon^2}{2\sigma^2}\right). $$
-
-Since $\epsilon=y-h_\theta(x)$, the conditional distribution of the target is:
-
-$$ p(y\mid x;\theta)=\frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{\left(y-h_\theta(x)\right)^2}{2\sigma^2}\right). $$
-
-Equivalently:
-
-$$ y\mid x;\theta\sim\mathcal{N}\left(h_\theta(x),\sigma^2\right). $$
-
-For each input $x$, the model predicts the center of a Gaussian distribution over possible targets. The source diagram places the Gaussian vertically around $h_\theta(x)$ and marks its spread using $\sigma$.
-
-## 3.12 Likelihood of the regression dataset
-
-Under the i.i.d. assumption, the conditional likelihood of all training targets is:
-
-$$ L(\theta)=\prod_{i=1}^{n_{\mathrm{train}}}p\left(y^{(i)}\mid x^{(i)};\theta\right). $$
-
-Substituting the Gaussian density gives:
-
-$$ L(\theta)=\prod_{i=1}^{n_{\mathrm{train}}}\frac{1}{\sqrt{2\pi}\sigma}\exp\left(-\frac{\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2}{2\sigma^2}\right). $$
-
-Using the logarithm turns the product into a sum:
-
-$$ \ell(\theta)=\log L(\theta)=-n_{\mathrm{train}}\log\left(\sqrt{2\pi}\sigma\right)-\frac{1}{2\sigma^2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
-
-If $\sigma$ is treated as fixed, the first term is constant with respect to $\theta$, and the factor $1/(2\sigma^2)$ is positive. Therefore:
-
-$$ \mathrm{arg\,max}_{\theta}\ell(\theta)=\mathrm{arg\,min}_{\theta}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
-
-This is the central result of page 14:
-
-> Maximizing the Gaussian log-likelihood is equivalent to minimizing residual sum of squares.
-
-The squared-error objective is therefore not only a geometric choice. It is the negative log-likelihood induced by a Gaussian-noise assumption.
-
-## 3.13 What the probabilistic interpretation adds
-
-The deterministic and probabilistic views describe the same fitted mean function but answer different questions.
-
-| View | Main object | Interpretation |
+| View | Object | Choose $\theta$ to… |
 |---|---|---|
-| Least squares | prediction function $h_\theta(x)$ | choose parameters that minimize squared residuals |
-| Probabilistic regression | conditional density $p(y\mid x;\theta)$ | choose parameters that maximize the probability of observed targets |
+| Least squares | prediction $h_\theta(x)$ | minimize squared residuals |
+| Probabilistic | density $p(y\mid x;\theta)$ | maximize the probability of the observed targets |
 
-The probabilistic view makes the modeling assumptions explicit:
+The probabilistic view makes the hidden assumptions explicit: $h_\theta(x)$ is the conditional mean, residuals are Gaussian, the variance is the same everywhere, and examples are independent. When those fail, for example with heavy-tailed noise, squared error is no longer the natural loss (Laplace noise gives absolute error, for instance).
 
-- the prediction $h_\theta(x)$ is the conditional mean;
-- residual variation is Gaussian;
-- the noise variance is the same across inputs in the displayed model;
-- training examples are conditionally independent under the model.
+## 3.13 Regularization is a prior
 
 > [!NOTE]
-> **Added clarification**
+> **Beyond the lecture: MAP estimation**
 >
-> The source derives the objective for fixed $\sigma$. If $\sigma$ were also estimated, the likelihood would additionally determine a noise-scale estimate, but that calculation is not developed on these pages.
-
-
-## 3.14 Transition sketch: latent-variable generative models
-
-Page 15 is a handwritten transition rather than a complete lecture section. It sketches high-dimensional observations such as MNIST images and audio, and introduces a latent representation $z$.
-
-The source suggests that $z$ may encode factors such as:
-
-- the digit identity;
-- handwriting style;
-- other compact attributes underlying an observation.
-
-A conditional distribution is written as:
-
-$$ p(x\mid z). $$
-
-The page draws multiple images generated from related latent information and includes a VAE-style encoder-decoder sketch in which an observation is mapped to a latent code and then reconstructed or generated.
-
-It also records an unresolved design question: when adding text or audio information, should that information enter as an input, as part of the latent representation, or as another conditioning variable?
-
-> [!NOTE]
-> **Source boundary**
+> The two halves of this chapter connect. Put a prior $p(\theta)$ on the parameters and take the **maximum a posteriori** estimate:
 >
-> Page 15 does not provide a VAE objective, encoder distribution, decoder derivation, or training algorithm. This reconstruction preserves the sketch as a transition and does not turn it into a full variational-autoencoder treatment.
+> $$ \hat\theta_{\text{MAP}}=\mathrm{arg\,max}_\theta\;\log p(y\mid X,\theta)+\log p(\theta). $$
+>
+> - Gaussian prior $\theta_j\sim\mathcal N(0,\tau^2)$ gives $\log p(\theta)=-\tfrac{1}{2\tau^2}\sum_j\theta_j^2+\text{const}$: **ridge**, with $\lambda=\sigma^2/(2\tau^2)$ under the ½-RSS convention.
+> - Laplace prior $p(\theta_j)\propto e^{-|\theta_j|/b}$ gives $\log p(\theta)=-\tfrac1b\sum_j|\theta_j|+\text{const}$: **lasso**, with $\lambda=\sigma^2/b$.
+>
+> So $\lambda$ encodes how strongly you believe coefficients are small. The Laplace density has a sharp peak at zero, which is the probabilistic counterpart of the diamond's corners.
 
+## 3.14 Preview: latent-variable generative models
+
+The same likelihood thinking extends to data that we believe are generated from hidden causes. An image of a handwritten digit, for example, is produced by a latent code $z$ describing which digit it is, the handwriting style, the stroke width, and so on. A generative model specifies $p(x\mid z)$ and a prior $p(z)$. A variational autoencoder learns both an encoder $q(z\mid x)$ and a decoder $p(x\mid z)$.
+
+A question I noted here and return to later: when extra information (text, audio) is available, should it enter as an input, as part of $z$, or as a separate conditioning variable $p(x\mid z,c)$? Conditional VAEs take the last option. The machinery for training such models, the ELBO, is developed in [Chapter 10](10_gaussian_mixture_models_and_em.md).
 
 ## 3.15 Common mistakes
 
-1. **Assuming larger $\lambda$ is always better.** Too much regularization can create underfitting.
-2. **Treating ridge and lasso as interchangeable.** Both shrink coefficients, but lasso's geometry can create exact zeros.
-3. **Ignoring whether the intercept is penalized.** The source's displayed sums begin at coefficient index one and omit $\theta_0$.
-4. **Saying lasso is differentiable everywhere.** The absolute-value penalty is nonsmooth at zero.
-5. **Interpreting small coefficients as unimportant without considering feature scale.** Coefficient magnitude depends on the numerical scaling of the corresponding feature.
-6. **Maximizing a product of probabilities directly in finite precision.** Log-likelihood is preferred because it converts the product to a sum and avoids severe underflow.
-7. **Reversing the KL divergence and claiming it is still maximum likelihood.** The forward direction used in the notes is the one whose empirical objective matches log-likelihood.
-8. **Using squared error without recognizing the modeling assumption.** The likelihood derivation depends on Gaussian residual noise with constant variance.
-9. **Treating page 15 as a complete VAE derivation.** It is only a conceptual transition sketch.
+1. **Assuming larger $\lambda$ is always better.** It eventually underfits.
+2. **Treating ridge and lasso as interchangeable.** Only lasso produces exact zeros.
+3. **Penalizing the intercept.** Usually excluded.
+4. **Regularizing unscaled features.** The penalty treats all coefficients equally, so a feature measured in millimetres is penalized differently than the same feature in metres. Standardize first.
+5. **Reading small coefficients as unimportant** without considering feature scale.
+6. **Multiplying probabilities directly.** Work in log space.
+7. **Reversing the KL and calling it maximum likelihood.**
+8. **Using squared error without noticing the Gaussian, constant-variance assumption.**
 
-## 3.16 Chapter summary
+## 3.16 Summary
 
-- Regularization adds a parameter penalty to the data-fitting objective.
-- The parameter $\lambda$ controls the trade-off between fitting the observed data and limiting model complexity.
-- Ridge regression uses an L2 penalty and broadly shrinks coefficient magnitudes.
-- Lasso regression uses an L1 penalty and can set selected coefficients exactly to zero.
-- The corner geometry of the L1 constraint explains its sparse solutions.
-- Elastic Net combines L2 shrinkage with L1 sparsity.
-- Maximum likelihood chooses model parameters that assign high probability to observed data.
-- Maximizing empirical log-likelihood corresponds to minimizing forward KL divergence from the data distribution to the model distribution.
-- Under additive Gaussian noise, maximizing the linear-regression likelihood is equivalent to minimizing residual sum of squares.
-- Page 15 briefly introduces latent-variable generative modeling but does not develop its objective.
+- Regularization adds $\lambda\Omega(\theta)$ to the data loss.
+- Ridge (L2) shrinks all coefficients and has a closed form; lasso (L1) produces sparse solutions via the corner geometry.
+- Elastic net combines them.
+- MLE minimizes the forward KL divergence from data to model.
+- Under Gaussian noise, MLE is least squares.
+- Ridge and lasso are MAP estimates under Gaussian and Laplace priors.
 
-## 3.17 Self-check questions
+## 3.17 Self-check
 
-1. What roles do $L_{\mathrm{data}}$, $\Omega(\theta)$, and $\lambda$ play in a regularized objective?
-2. Why does ridge penalize large coefficients more strongly than small coefficients?
-3. Why can lasso set coefficients exactly to zero while ridge usually does not?
-4. How are penalty and constraint formulations related conceptually?
-5. What trade-off occurs as regularization strength increases?
-6. Why is log-likelihood easier to optimize numerically than a product likelihood?
-7. Why does minimizing $D_{\mathrm{KL}}(p_{\mathrm{data}}\parallel p_{\mathrm{model}})$ lead to maximum likelihood?
-8. Which Gaussian assumptions make least squares a maximum-likelihood estimator?
-9. What information does the page 15 latent variable $z$ appear intended to represent?
+1. What roles do $L_{\text{data}}$, $\Omega$ and $\lambda$ play?
+2. Why does ridge penalize large coefficients more than small ones?
+3. Why can lasso produce exact zeros while ridge generally can't?
+4. How are the penalty and constraint forms related?
+5. Why optimize log-likelihood rather than likelihood?
+6. Why does minimizing $D_{\mathrm{KL}}(p_{\text{data}}\|p_{\text{model}})$ give MLE?
+7. Which assumptions make least squares the MLE?
+8. Which prior corresponds to lasso?
+
+<details>
+<summary>Answers</summary>
+
+1. Fit, complexity penalty, and the trade-off weight between them.
+2. The penalty is quadratic, so its marginal cost $2\lambda\theta_j$ grows with $|\theta_j|$.
+3. The L1 ball has corners on the axes; the L1 subgradient at 0 is an interval, so zero can be optimal for a range of data. L2's gradient at 0 is 0, so there's no force holding a coefficient exactly at zero.
+4. For convex problems each $\lambda$ corresponds to some radius $c$ (Lagrange duality); larger $\lambda$ ↔ smaller $c$.
+5. The log turns products into sums, avoids underflow, and keeps the same maximizer.
+6. The entropy of $p_{\text{data}}$ doesn't depend on $\theta$; what remains is the expected log-likelihood, estimated by the sample average.
+7. Additive, zero-mean Gaussian noise with constant variance, and independent examples.
+8. A zero-mean Laplace prior.
+
+</details>

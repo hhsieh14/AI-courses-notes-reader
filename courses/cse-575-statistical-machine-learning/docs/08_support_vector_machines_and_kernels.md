@@ -1,474 +1,205 @@
 # 8. Support Vector Machines and Kernels
 
-**Source pages:** 31–39  
-**Status:** reconstructed and equation-checked
+Support vector machines choose, among all separating hyperplanes, the one with the widest buffer between the classes. This chapter builds the idea from margins, relaxes it with slack variables for data that isn't separable, and then shows how kernels let a linear method draw nonlinear boundaries without ever computing the high-dimensional features. The duality and generalization theory behind SVMs is developed further in [Statistical Learning Theory, Chapters 2–5 and 7](../../statistical-learning-theory/docs/study_guide.md).
 
-This chapter develops support vector machines from the idea of choosing a separating hyperplane with a large margin. It then introduces slack variables for nonseparable or outlier-sensitive data, feature maps for nonlinear boundaries, and the kernel trick for computing feature-space inner products without explicitly constructing every transformed feature.
+## 8.1 From probabilities to margins
 
-## 8.1 From logistic regression to margin-based classification
+Logistic regression predicts class 1 when $\theta^\top x\ge0$, and it models the full probability $p(y\mid x)$ to get there. If all we need is the decision, we can instead aim directly for a boundary that separates the classes *confidently*.
 
-The source begins by returning to binary logistic regression:
+For SVMs we switch to labels $y^{(i)}\in\lbrace-1,+1\rbrace$ and write the classifier as
 
-$$ h_\theta(x)=\frac{1}{1+e^{-\theta^\top x}}. $$
+$$ h_{w,b}(x)=\mathrm{sign}\left(w^\top x+b\right), $$
 
-With a threshold of $0.5$, the prediction depends on the sign of the linear score:
+with decision boundary $w^\top x+b=0$.
 
-$$ \theta^\top x\geq 0 \Longrightarrow \hat{y}=1, $$
+## 8.2 Why maximize the margin?
 
-$$ \theta^\top x<0 \Longrightarrow \hat{y}=0. $$
+Separable data admits infinitely many separating hyperplanes. The SVM picks the one that leaves the widest gap. Two parallel hyperplanes mark the edge of the gap on each side, the training points lying on those edges are the **support vectors**, and every other point could move a little without changing the solution.
 
-Logistic regression models a class probability. The handwritten note on page 31 emphasizes a different objective for SVMs: when classification is the goal, it may be enough to learn a good separating region rather than model the complete class distributions.
+![Hard margin, soft margin and kernels](assets/diagrams/08_svm_margin_slack_kernels.svg)
 
-For SVM notation, the source changes the labels from $\lbrace 0,1\rbrace$ to:
-
-$$ y^{(i)}\in\lbrace -1,+1\rbrace. $$
-
-The classifier is written as:
-
-$$ h_{w,b}(x)=g\left(w^\top x+b\right). $$
-
-> [!NOTE]
-> **Added clarification: the decision function**
->
-> The source leaves $g$ abstract. For the binary SVM decision rule, it can be read as a sign function:
->
-> $$ g(z)=\mathrm{sign}(z). $$
-
-
-The decision boundary is the hyperplane:
-
-$$ w^\top x+b=0. $$
-
-## 8.2 Why maximize a separation margin?
-
-A linearly separable dataset can admit many separating lines or hyperplanes. The SVM preference shown on page 31 is the separator that leaves the largest buffer between the two classes.
-
-![Redrawn SVM and kernel overview](assets/diagrams/08_svm_margin_slack_and_kernels.png)
-
-*Redrawn from source pages 31–39: hard-margin separation, soft-margin slack, and nonlinear classification through a feature map and kernel inner products.*
-
-The central intuition is:
-
-- the middle hyperplane is the decision boundary;
-- two parallel hyperplanes mark the closest permitted class locations;
-- the closest training examples are the **support vectors**;
-- maximizing the distance between the two margin boundaries makes the separator less dependent on small movements of non-support-vector points.
+*Left: hard margin, with support vectors on the dashed margin lines and margin width $2/\lVert w\rVert$. Middle: soft margin, where slack lets points violate the margin. Right: points that are not linearly separable in 1-D become separable after the feature map $x\mapsto(x,x^2)$.*
 
 ## 8.3 Functional margin
 
-For a training example $\left(x^{(i)},y^{(i)}\right)$, the source defines the functional margin as:
-
 $$ \delta_{\mathrm{func}}^{(i)}=y^{(i)}\left(w^\top x^{(i)}+b\right). $$
 
-This combines both class cases:
+Using $\pm1$ labels folds both cases into one expression: the margin is positive exactly when example $i$ is classified correctly, and larger means more confident. The margin of the whole training set is the worst case, $\delta_{\mathrm{func}}=\min_i\delta_{\mathrm{func}}^{(i)}$, and the goal is $\max_{w,b}\min_i\delta_{\mathrm{func}}^{(i)}$.
 
-- if $y^{(i)}=+1$, a large positive score is desirable;
-- if $y^{(i)}=-1$, a large negative score is desirable;
-- in both cases, a correctly classified point has positive functional margin.
+## 8.4 The scaling problem
 
-The functional margin of the complete training set is the smallest example-level margin:
-
-$$ \delta_{\mathrm{func}}=\min_{i\in\lbrace 1,\ldots,n_{\mathrm{train}}\rbrace}\delta_{\mathrm{func}}^{(i)}. $$
-
-The optimization idea written in the margin note on page 32 is therefore:
-
-$$ \max_{w,b}\min_i\delta_{\mathrm{func}}^{(i)}. $$
-
-The examples attaining the minimum are the points closest to the decision boundary and become the support vectors after normalization.
-
-## 8.4 Scale ambiguity of the functional margin
-
-The decision boundary does not change if $w$ and $b$ are multiplied by the same positive constant $c$:
-
-$$ w^\top x+b=0 \Longleftrightarrow (cw)^\top x+cb=0. $$
-
-However, the functional margin is multiplied by $c$:
-
-$$ y^{(i)}\left((cw)^\top x^{(i)}+cb\right)=c\,y^{(i)}\left(w^\top x^{(i)}+b\right). $$
-
-Therefore the functional margin can be made arbitrarily large without changing the geometric boundary. This is why page 32 introduces normalization by $\lVert w\rVert_2$.
-
-> [!TIP]
-> **Review intuition**
->
-> Functional margin measures signed score, not physical distance. Dividing by $\lVert w\rVert_2$ removes the arbitrary scaling of the parameter vector.
-
+Multiplying $w$ and $b$ by $c>0$ doesn't move the boundary but multiplies every functional margin by $c$. So the functional margin can be made as large as we like without changing anything. It measures a score, not a distance, and we need to normalize.
 
 ## 8.5 Geometric margin
 
-The signed Euclidean distance from a point $x^{(i)}$ to the hyperplane is:
+The signed Euclidean distance from $x^{(i)}$ to the hyperplane is
 
-$$ \frac{w^\top x^{(i)}+b}{\lVert w\rVert_2}. $$
+$$ \delta_{\mathrm{geo}}^{(i)}=\frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert_2}, $$
 
-Including the class label gives the geometric margin:
+which is invariant to rescaling.
 
-$$ \delta_{\mathrm{geo}}^{(i)}=\frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert_2}. $$
+**Derivation.** Let $x_0$ be the orthogonal projection of $x^{(i)}$ onto the hyperplane, so $w^\top x_0+b=0$. Moving from $x^{(i)}$ toward the plane along the unit normal $\hat w=w/\lVert w\rVert$ by the distance $\delta$ gives $x_0=x^{(i)}-y^{(i)}\delta\,\hat w$. Substituting,
 
-For a correctly classified example, this quantity is positive. Unlike the functional margin, it is unchanged by positive rescaling of $w$ and $b$.
+$$ w^\top\left(x^{(i)}-y^{(i)}\delta\frac{w}{\lVert w\rVert}\right)+b=0 \;\;\Longrightarrow\;\; \delta=\frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert}, $$
 
-### Projection argument from page 33
+using $w^\top w=\lVert w\rVert^2$ and $(y^{(i)})^2=1$. The max-margin problem is then
 
-Let $x_0^{(i)}$ be the orthogonal projection of $x^{(i)}$ onto the decision hyperplane. Then:
-
-$$ w^\top x_0^{(i)}+b=0. $$
-
-The unit vector normal to the hyperplane is:
-
-$$ \hat{w}=\frac{w}{\lVert w\rVert_2}. $$
-
-The handwritten derivation represents the projected point as:
-
-$$ x_0^{(i)}=x^{(i)}-y^{(i)}\delta_{\mathrm{geo}}^{(i)}\hat{w}. $$
-
-Substituting this expression into the hyperplane equation gives:
-
-$$ w^\top\left(x^{(i)}-y^{(i)}\delta_{\mathrm{geo}}^{(i)}\frac{w}{\lVert w\rVert_2}\right)+b=0. $$
-
-Because $w^\top w=\lVert w\rVert_2^2$, the result is:
-
-$$ \delta_{\mathrm{geo}}^{(i)}=\frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert_2}. $$
-
-The geometric-margin optimization problem on page 33 is:
-
-$$ \max_{w,b,\delta}\ \delta \qquad \text{subject to}\qquad \frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert_2}\geq\delta\quad\text{for every }i. $$
+$$ \max_{w,b,\delta}\;\delta \quad\text{s.t.}\quad \frac{y^{(i)}\left(w^\top x^{(i)}+b\right)}{\lVert w\rVert}\geq\delta \;\;\forall i. $$
 
 ## 8.6 Hard-margin SVM
 
-Page 34 chooses a normalization in which the closest positive and negative examples satisfy:
+Use the scaling freedom to fix the functional margin of the closest points to 1. The margin boundaries become $w^\top x+b=\pm1$, each at distance $1/\lVert w\rVert$ from the decision boundary, so the full width is $2/\lVert w\rVert$. Maximizing the width is minimizing $\lVert w\rVert$, and we square it for a smooth convex objective:
 
-$$ w^\top x^{(i)}+b=1 \qquad \text{for a positive support vector}, $$
+$$ \min_{w,b}\;\frac{1}{2}\lVert w\rVert^2 \quad\text{s.t.}\quad y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1 \;\;\forall i. $$
 
-$$ w^\top x^{(i)}+b=-1 \qquad \text{for a negative support vector}. $$
+This is a convex quadratic program. Support vectors are the points where the constraint holds with equality, $y^{(i)}(w^\top x^{(i)}+b)=1$; the rest don't affect the solution.
 
-The two margin boundaries are therefore:
+## 8.7 One outlier can wreck a hard margin
 
-$$ w^\top x+b=1, $$
-
-$$ w^\top x+b=-1. $$
-
-Each boundary is $1/\lVert w\rVert_2$ from the central decision hyperplane, so the full margin width is:
-
-$$ \frac{2}{\lVert w\rVert_2}. $$
-
-Maximizing this width is equivalent to minimizing $\lVert w\rVert_2$ under the normalized classification constraints:
-
-$$ \min_{w,b}\ \lVert w\rVert_2 \qquad \text{subject to}\qquad y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1\quad\text{for every }i. $$
-
-> [!NOTE]
-> **Added clarification: equivalent conventional objective**
->
-> Squaring the nonnegative norm and multiplying it by a positive constant do not change the minimizer. The same hard-margin problem is often written as:
->
-> $$ \min_{w,b}\ \frac{1}{2}\lVert w\rVert_2^2 \qquad \text{subject to}\qquad y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1. $$
-
-
-A support vector lies on a margin boundary and satisfies equality:
-
-$$ y^{(i)}\left(w^\top x^{(i)}+b\right)=1. $$
-
-Points farther from the boundary satisfy a strict inequality and do not directly determine the maximum-margin hyperplane.
-
-## 8.7 Outlier sensitivity of a hard margin
-
-The lower sketches on page 34 show that a strict maximum-margin separator can be sensitive to an outlier. A single point near or inside the opposite class can rotate or shift the hyperplane substantially.
-
-Page 35 therefore states a practical tradeoff:
-
-> There is a tradeoff between the margin and the number of mistakes on the training data.
-
-A narrow separator may classify every training point correctly, while a wider separator may tolerate one or more violations and potentially give a more stable boundary.
+Hard margin requires perfect separation. A single mislabeled point close to the other class can rotate the boundary sharply or make the problem infeasible. There's a trade-off between a wide margin and making zero training mistakes.
 
 ## 8.8 Slack variables
 
-To permit margin violations, the source introduces one slack variable per training example:
+Give each example a slack $\xi_i\ge0$ and relax its constraint:
 
-$$ \xi_i\geq 0. $$
+$$ y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1-\xi_i . $$
 
-The hard-margin constraint becomes:
-
-$$ y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1-\xi_i. $$
-
-The source diagram supports the following interpretation:
-
-| Slack value | Position and classification |
+| $\xi_i$ | Where the point is |
 |---:|---|
-| $\xi_i=0$ | correctly classified and on or outside the margin boundary |
-| $0<\xi_i<1$ | correctly classified but inside the margin |
-| $\xi_i=1$ | on the decision hyperplane |
-| $\xi_i>1$ | misclassified |
+| $0$ | on or outside its margin (correct, confident) |
+| $(0,1)$ | inside the margin but on the correct side |
+| $1$ | exactly on the decision boundary |
+| $>1$ | on the wrong side (misclassified) |
 
-The slack variable measures how far the normalized margin requirement is violated.
+Since every misclassified point has $\xi_i>1$, $\sum_i\xi_i$ is an upper bound on the number of training errors.
 
 ## 8.9 Soft-margin SVM
 
-The soft-margin objective shown on page 35 is:
+$$ \min_{w,b,\xi}\;\frac12\lVert w\rVert^2+C\sum_{i=1}^{n}\xi_i \quad\text{s.t.}\quad y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1-\xi_i,\;\;\xi_i\geq 0 . $$
 
-$$ \min_{w,b,\xi}\ \lVert w\rVert_2^2+C\sum_{i=1}^{n_{\mathrm{train}}}\xi_i \qquad \text{subject to}\qquad y^{(i)}\left(w^\top x^{(i)}+b\right)\geq 1-\xi_i,\quad \xi_i\geq 0. $$
+The first term wants a wide margin; the second penalizes violations; $C$ sets the exchange rate. **Large $C$** punishes violations heavily, giving a narrow margin that fits the training data closely (lower bias, higher variance). **Small $C$** tolerates violations for a wider, smoother boundary. Choose $C$ by cross-validation.
 
-The two objective terms have different roles:
-
-- $\lVert w\rVert_2^2$ favors a wider margin;
-- $\sum_i\xi_i$ penalizes margin violations and misclassifications;
-- $C$ controls the tradeoff.
-
-Page 36 compares boundaries obtained with different values of $C$.
+| | Hard margin | Soft margin |
+|---|---|---|
+| Violations | none allowed | allowed, penalized by $C$ |
+| Needs separable data | yes | no |
+| Outlier sensitivity | high | controlled by $C$ |
 
 > [!NOTE]
-> **Added clarification: interpreting $C$**
+> **Beyond the lecture: soft-margin SVM = hinge loss + L2**
 >
-> A larger $C$ places more weight on violations, pushing the model toward fitting the training points more strictly. A smaller $C$ tolerates more violations in exchange for a wider margin. The best value is a model-selection choice rather than a fixed property of SVMs.
-
-
-| Model | Training constraints | Typical sensitivity described in the source |
-|---|---|---|
-| Hard-margin SVM | no violations allowed | sensitive to outliers and requires separability |
-| Soft-margin SVM | violations allowed through $\xi_i$ | trades margin width against violations |
+> At the optimum each slack is as small as its constraint allows, $\xi_i=\max\{0,\,1-y^{(i)}(w^\top x^{(i)}+b)\}$. Substituting removes the constraints:
+>
+> $$ \min_{w,b}\;\frac12\lVert w\rVert^2+C\sum_i\max\left\{0,\,1-y^{(i)}(w^\top x^{(i)}+b)\right\}. $$
+>
+> So an SVM is a linear model trained with the **hinge loss** and L2 regularization, the same template as ridge-regularized logistic regression but with a different loss. Hinge loss is exactly zero for confidently correct points, which is why only the support vectors matter. (Proof in [SLT Chapter 4](../../statistical-learning-theory/docs/chapters/04_soft_margin_svm.md).)
 
 ## 8.10 Nonlinear data and feature maps
 
-A linear boundary in the original input space cannot separate every dataset. The kernel-method section begins by introducing a feature map:
+A linear boundary can't separate every dataset. Map inputs to features, e.g. $\phi(x)=[1,x,x^2,x^3]^\top$, and fit a linear boundary there:
 
-$$ \phi:x\mapsto\phi(x). $$
+$$ w^\top\phi(x)+b=0 . $$
 
-For a scalar attribute $x$, page 36 gives the polynomial feature map:
+The boundary is linear in $\phi(x)$ and nonlinear in $x$. Points of one class sitting between points of the other on a line become separable by a straight line once we add $x^2$ as a second coordinate.
 
-$$ \phi(x)=\left[1,x,x^2,x^3\right]^\top. $$
+## 8.11 Everything can be written with inner products
 
-A cubic polynomial can then be written as a linear model in transformed features:
+With many features, say $\phi(x)\in\mathbb{R}^{10000}$, computing and storing them gets expensive. The key observation is that the learned weights stay in the span of the training features. Run gradient descent on squared loss in feature space,
 
-$$ \theta_0+\theta_1x+\theta_2x^2+\theta_3x^3=\theta^\top\phi(x). $$
+$$ \theta^{(k+1)}=\theta^{(k)}+\eta\sum_{i}\left(y^{(i)}-\theta^{(k)\top}\phi(x^{(i)})\right)\phi(x^{(i)}), $$
 
-The resulting function is nonlinear in the original attribute $x$ but linear in the feature vector $\phi(x)$.
+and suppose $\theta^{(k)}=\sum_j c_j\phi(x^{(j)})$ (true at $\theta^{(0)}=0$). Then $\theta^{(k+1)}$ is again such a sum, with
 
-> [!NOTE]
-> **Connection to the earlier linear-regression chapter**
->
-> The word “linear” refers to a linear combination of features. The features themselves may be nonlinear functions of the original input.
+$$ c_i^{\mathrm{new}}=c_i+\eta\left(y^{(i)}-\sum_{j}c_j\,\phi(x^{(j)})^\top\phi(x^{(i)})\right). $$
 
-
-An SVM can therefore use the feature-space decision boundary:
-
-$$ w^\top\phi(x)+b=0. $$
-
-## 8.11 Why feature-space computation can be expensive
-
-Page 37 considers a very high-dimensional transformed representation:
-
-$$ \phi(x)\in\mathbb{R}^{10000}. $$
-
-Explicitly constructing and repeatedly multiplying such feature vectors can be expensive. The source uses a gradient-descent example to show that the learned parameter vector remains a linear combination of transformed training examples.
-
-The displayed transformed-feature update is:
-
-$$ \theta^{(k+1)}\leftarrow\theta^{(k)}+\eta\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-\left(\theta^{(k)}\right)^\top\phi\left(x^{(i)}\right)\right)\phi\left(x^{(i)}\right). $$
-
-Suppose after some iterations:
-
-$$ \theta^{(k)}=\sum_{j=1}^{n_{\mathrm{train}}}c_j\phi\left(x^{(j)}\right). $$
-
-Substitution into the next update gives another expansion in the same transformed training vectors:
-
-$$ \theta^{(k+1)}=\sum_{i=1}^{n_{\mathrm{train}}}c_i^{\mathrm{new}}\phi\left(x^{(i)}\right). $$
-
-The coefficient update shown at the bottom of page 37 is:
-
-$$ c_i^{\mathrm{new}}=c_i+\eta\left(y^{(i)}-\sum_{j=1}^{n_{\mathrm{train}}}c_j\phi\left(x^{(j)}\right)^\top\phi\left(x^{(i)}\right)\right). $$
-
-The only feature-space operation needed in this expression is an inner product:
-
-$$ \phi\left(x^{(j)}\right)^\top\phi\left(x^{(i)}\right). $$
-
-> [!WARNING]
-> **Source scope of the gradient-descent derivation**
->
-> Page 37 uses a squared-error gradient-descent update to demonstrate how feature-space parameters can be represented through training examples. It is not presented as the soft-margin SVM optimization algorithm itself.
-
+The features appear only through inner products $\phi(x^{(j)})^\top\phi(x^{(i)})$. (This example uses squared loss to show the idea; the SVM itself is usually solved in its dual form, which has the same property. See [SLT Chapter 2](../../statistical-learning-theory/docs/chapters/02_hard_margin_svm.md). The general statement is the representer theorem, [SLT Chapter 5](../../statistical-learning-theory/docs/chapters/05_rkhs_and_representer.md).)
 
 ## 8.12 The kernel trick
 
-A kernel evaluates the feature-space inner product directly:
+A **kernel** computes that inner product directly:
 
-$$ K\left(x^{(i)},x^{(j)}\right)=\phi\left(x^{(i)}\right)^\top\phi\left(x^{(j)}\right). $$
+$$ K(x,z)=\phi(x)^\top\phi(z). $$
 
-This gives two computational advantages emphasized on page 38:
+Collect all pairwise values in the Gram matrix $\mathbf K_{ij}=K(x^{(i)},x^{(j)})$, which can be precomputed. Training and prediction then need only kernel evaluations:
 
-- pairwise kernel values can be precomputed;
-- the feature map does not have to be evaluated explicitly when a cheap kernel formula is available.
+$$ c_i^{\mathrm{new}}=c_i+\eta\left(y^{(i)}-\sum_{j}c_jK(x^{(j)},x^{(i)})\right), \qquad \theta^\top\phi(x)=\sum_{i}c_iK(x^{(i)},x). $$
 
-For a training set, the pairwise values form a Gram matrix:
-
-$$ \mathbf{K}_{ij}=K\left(x^{(i)},x^{(j)}\right). $$
-
-Using a kernel, the coefficient update from the previous section becomes:
-
-$$ c_i^{\mathrm{new}}=c_i+\eta\left(y^{(i)}-\sum_{j=1}^{n_{\mathrm{train}}}c_jK\left(x^{(j)},x^{(i)}\right)\right). $$
-
-A prediction can likewise be expressed using similarities to training examples:
-
-$$ \theta^\top\phi(x)=\sum_{i=1}^{n_{\mathrm{train}}}c_iK\left(x^{(i)},x\right). $$
+A prediction is a weighted sum of similarities to training points.
 
 ## 8.13 Polynomial kernels
 
-Page 38 builds an explicit monomial representation and shows how its inner product can be reduced to powers of the original-space inner product.
+For $x,z\in\mathbb R^3$, $K(x,z)=(x^\top z)^2$ equals $\phi(x)^\top\phi(z)$ with the 9 ordered products
 
-A degree-two homogeneous polynomial kernel is:
+$$ \phi(x)=\left[x_1x_1,x_1x_2,x_1x_3,x_2x_1,x_2x_2,x_2x_3,x_3x_1,x_3x_2,x_3x_3\right]^\top . $$
 
-$$ K(x,y)=\left(x^\top y\right)^2. $$
+Computing $(x^\top z)^2$ costs $O(d)$; building $\phi$ costs $O(d^2)$. For the inhomogeneous kernel $(x^\top z+c)^2$, one valid feature map is
 
-For a three-dimensional input, the page uses the ordered-product feature vector:
+$$ \phi(x)=\left[q(x)^\top,\sqrt{2c}\,x_1,\sqrt{2c}\,x_2,\sqrt{2c}\,x_3,\,c\right]^\top, \qquad \phi(x)^\top\phi(z)=(x^\top z)^2+2c\,x^\top z+c^2, $$
 
-$$ \phi(x)=\left[x_1x_1,x_1x_2,x_1x_3,x_2x_1,x_2x_2,x_2x_3,x_3x_1,x_3x_2,x_3x_3\right]^\top. $$
+with $q(x)$ the 9 products above. In general $(x^\top z+c)^p$ corresponds to all monomials up to degree $p$, which is $\binom{d+p}{p}$ features, while the kernel still costs $O(d)$.
 
-Then:
+## 8.14 The Gaussian (RBF) kernel
 
-$$ \phi(x)^\top\phi(y)=\left(x^\top y\right)^2. $$
+$$ K(x,z)=\exp\left(-\frac{\lVert x-z\rVert^2}{2\sigma^2}\right) $$
 
-The second example is the inhomogeneous degree-two kernel:
+is near 1 for nearby points and near 0 for distant ones: a similarity. In 1-D,
 
-$$ K(x,y)=\left(x^\top y+c\right)^2. $$
+$$ K(x,z)=e^{-x^2/2\sigma^2}\,e^{-z^2/2\sigma^2}\,e^{xz/\sigma^2}, \qquad e^{xz/\sigma^2}=\sum_{m=0}^{\infty}\frac{x^mz^m}{\sigma^{2m}m!}, $$
 
-Let the quadratic ordered-product block be:
+so $K(x,z)=\sum_{m=0}^\infty\phi_m(x)\phi_m(z)$ with
 
-$$ q(x)=\left[x_1x_1,x_1x_2,x_1x_3,x_2x_1,x_2x_2,x_2x_3,x_3x_1,x_3x_2,x_3x_3\right]^\top. $$
+$$ \phi_m(x)=e^{-x^2/2\sigma^2}\frac{x^m}{\sigma^m\sqrt{m!}} . $$
 
-One explicit feature map consistent with the page is:
+The RBF kernel corresponds to an **infinite**-dimensional feature space, which we never have to construct. $\sigma$ controls smoothness. A small $\sigma$ makes every point its own island (overfit); a large $\sigma$ makes the kernel nearly constant (underfit).
 
-$$ \phi(x)=\left[q(x)^\top,\sqrt{2c}\,x_1,\sqrt{2c}\,x_2,\sqrt{2c}\,x_3,c\right]^\top. $$
+## 8.15 When is a function a valid kernel?
 
-Its inner product expands as:
+$K$ must be
 
-$$ \phi(x)^\top\phi(y)=\left(x^\top y\right)^2+2c\,x^\top y+c^2=\left(x^\top y+c\right)^2. $$
+1. **symmetric**, $K(x,z)=K(z,x)$, and
+2. **positive semidefinite**: for any points $x^{(1)},\ldots,x^{(n)}$, the Gram matrix satisfies $a^\top\mathbf{K}a\geq0$ for all $a\in\mathbb R^n$.
 
-The monomial sketch on the same page extends the idea through degree three:
-
-$$ 1+\sum_i x_iy_i+\left(\sum_i x_iy_i\right)^2+\left(\sum_i x_iy_i\right)^3. $$
-
-> [!NOTE]
-> **Interpretation of repeated monomials**
->
-> The source's ordered feature lists include repeated cross terms such as $x_1x_2$ and $x_2x_1$. Those repetitions supply the multiplicities that appear when powers of $x^\top y$ are expanded.
-
-
-## 8.14 Gaussian kernel as similarity
-
-Page 39 presents the Gaussian kernel:
-
-$$ K(x,y)=\exp\left(-\frac{\lVert x-y\rVert_2^2}{2\sigma^2}\right). $$
-
-Its value depends on Euclidean distance:
-
-- if $x$ and $y$ are close, $K(x,y)$ is near $1$;
-- if they are far apart, $K(x,y)$ approaches $0$.
-
-This gives the kernel a direct similarity interpretation.
-
-The handwritten one-dimensional expansion begins with:
-
-$$ K(x,y)=\exp\left(-\frac{x^2}{2\sigma^2}\right)\exp\left(-\frac{y^2}{2\sigma^2}\right)\exp\left(\frac{xy}{\sigma^2}\right). $$
-
-Using the Taylor series:
-
-$$ e^z=1+z+\frac{z^2}{2!}+\frac{z^3}{3!}+\cdots, $$
-
-we obtain:
-
-$$ \exp\left(\frac{xy}{\sigma^2}\right)=\sum_{m=0}^{\infty}\frac{x^my^m}{\sigma^{2m}m!}. $$
-
-> [!NOTE]
-> **Added clarification: exact infinite-dimensional feature interpretation**
->
-> The handwritten note represents the Gaussian kernel conceptually using features such as $1,x,x^2,\ldots$. An exact one-dimensional feature coordinate is:
->
-> $$ \phi_m(x)=\exp\left(-\frac{x^2}{2\sigma^2}\right)\frac{x^m}{\sigma^m\sqrt{m!}}. $$
->
-> Therefore:
->
-> $$ K(x,y)=\sum_{m=0}^{\infty}\phi_m(x)\phi_m(y). $$
->
-> The scaling and exponential envelope are required for exact equality; the source sketch is illustrating the infinite-feature idea rather than listing every factor.
-
-
-## 8.15 Conditions for a valid kernel
-
-The source lists two conditions:
-
-1. symmetry;
-2. positive semidefiniteness.
-
-Symmetry means:
-
-$$ K(x,y)=K(y,x). $$
-
-> [!NOTE]
-> **Added clarification: positive-semidefinite Gram matrix**
->
-> For any finite inputs $x^{(1)},\ldots,x^{(n)}$, construct the Gram matrix $\mathbf{K}$ with entries $\mathbf{K}_{ij}=K\left(x^{(i)},x^{(j)}\right)$. Positive semidefiniteness means:
->
-> $$ a^\top\mathbf{K}a\geq 0 \qquad \text{for every }a\in\mathbb{R}^n. $$
-
-
-These conditions ensure that the kernel behaves like an inner product in some feature space.
+(Mercer's condition.) These guarantee that $K$ really is an inner product in *some* feature space. Sums, positive scalings and products of valid kernels are valid kernels, which is how new kernels are built.
 
 ## 8.16 Common mistakes
 
-1. **Using labels $0$ and $1$ inside the SVM margin formula.** The source changes SVM labels to $-1$ and $+1$ so one product represents both classes.
-2. **Treating functional margin as geometric distance.** Functional margin changes when $w$ and $b$ are rescaled; geometric margin does not.
-3. **Maximizing functional margin without a normalization.** The value can be increased arbitrarily by multiplying both $w$ and $b$ by a positive constant.
-4. **Forgetting the norm in point-to-hyperplane distance.** The geometric margin divides by $\lVert w\rVert_2$.
-5. **Confusing one-sided margin with full margin width.** Under the source normalization, the distance from the decision plane to either boundary is $1/\lVert w\rVert_2$, while the total width is $2/\lVert w\rVert_2$.
-6. **Assuming every training point determines the boundary.** The closest points, or support vectors, determine the maximum-margin separator.
-7. **Assuming hard-margin SVM is robust to an outlier.** The source explicitly illustrates its outlier sensitivity.
-8. **Interpreting every positive slack value as a misclassification.** A point with $0<\xi_i<1$ remains correctly classified but violates the margin.
-9. **Interpreting $C$ as the margin itself.** $C$ is the weight assigned to violations in the optimization objective.
-10. **Thinking nonlinear features make the model nonlinear in its parameters.** The model remains linear in $\phi(x)$.
-11. **Constructing an enormous feature vector when only its inner products are needed.** A kernel may compute those inner products directly.
-12. **Assuming any similarity function is a valid kernel.** The source requires symmetry and positive semidefiniteness.
-13. **Reading page 37 as an SVM training derivation.** It is a general gradient-descent illustration of the kernel representation.
-14. **Dropping multiplicity or scaling factors from an explicit polynomial feature map.** The kernel identity must reproduce every term in the polynomial expansion.
-15. **Treating the handwritten Gaussian feature list as an exact unscaled map.** The exact expansion also contains factorial, bandwidth, and exponential-envelope factors.
+1. **Using $\{0,1\}$ labels in the margin formula.**
+2. **Treating the functional margin as a distance.**
+3. **Maximizing the functional margin without normalization.**
+4. **Confusing the half-width $1/\lVert w\rVert$ with the full width $2/\lVert w\rVert$.**
+5. **Thinking every point shapes the boundary.** Only support vectors do.
+6. **Calling every positive slack a misclassification.** Only $\xi_i>1$.
+7. **Reading $C$ as the margin.** It is the violation penalty.
+8. **Accepting any similarity function as a kernel.** It must be PSD.
+9. **Not scaling features before an RBF kernel.** It is a Euclidean distance, as in KNN.
 
-## 8.17 Chapter summary
+## 8.17 Summary
 
-- SVMs classify according to the sign of $w^\top x+b$ and use labels in $\lbrace -1,+1\rbrace$.
-- The functional margin is $y^{(i)}\left(w^\top x^{(i)}+b\right)$.
-- Functional margin has a scale ambiguity because multiplying $w$ and $b$ leaves the boundary unchanged.
-- Dividing by $\lVert w\rVert_2$ produces the geometric margin, which equals signed Euclidean distance.
-- Under canonical normalization, the two support hyperplanes are $w^\top x+b=1$ and $w^\top x+b=-1$.
-- Their total separation is $2/\lVert w\rVert_2$.
-- Hard-margin SVM minimizes the parameter norm while requiring every normalized margin to be at least $1$.
-- Support vectors satisfy the margin constraint with equality.
-- Hard margins are sensitive to outliers and require separable data.
-- Soft-margin SVM introduces nonnegative slack variables and trades margin width against violations through $C$.
-- A feature map can make nonlinear patterns linearly separable in a transformed space.
-- High-dimensional feature-space algorithms can often be expressed using only pairwise inner products.
-- A kernel computes $\phi(x)^\top\phi(y)$ without explicitly constructing $\phi(x)$.
-- Polynomial kernels correspond to finite monomial feature spaces.
-- The Gaussian kernel measures similarity and has an infinite-dimensional feature interpretation.
-- A valid kernel is symmetric and positive semidefinite.
+- SVMs maximize the geometric margin $2/\lVert w\rVert$; with canonical scaling this is $\min\frac12\lVert w\rVert^2$ subject to $y(w^\top x+b)\ge1$.
+- Support vectors sit on the margin and determine the boundary.
+- Slack variables and $C$ give the soft margin, equivalent to hinge loss plus L2.
+- Algorithms that use only inner products can be kernelized; polynomial kernels are finite feature maps, RBF is infinite.
+- Valid kernels are symmetric and PSD.
 
-## 8.18 Self-check questions
+## 8.18 Self-check
 
-1. Why does logistic regression use a probability model while the SVM discussion focuses on a decision margin?
-2. Why are SVM labels represented as $-1$ and $+1$?
-3. What is the functional margin of one training example?
-4. Why can functional margin not be maximized without normalization?
-5. What is the geometric margin formula?
-6. How does the projection derivation connect point-to-plane distance to $w^\top x+b$?
-7. What normalization is imposed on the closest positive and negative examples?
-8. Why is the full margin width $2/\lVert w\rVert_2$?
-9. What optimization problem defines the hard-margin SVM in the source?
-10. What condition identifies a support vector?
-11. Why can one outlier cause a hard-margin separator to change substantially?
-12. What does $\xi_i=0$ mean?
-13. How do $0<\xi_i<1$, $\xi_i=1$, and $\xi_i>1$ differ?
-14. What are the two competing terms in the soft-margin objective?
-15. How does changing $C$ change the margin-versus-violation tradeoff?
-16. How can a model be nonlinear in $x$ but linear in $\phi(x)$?
-17. Why does page 37 express $\theta$ as a sum of transformed training examples?
-18. What operation remains after substituting that representation into the update?
-19. What is the definition of a kernel?
-20. How does $\left(x^\top y\right)^2$ correspond to pairwise monomial features?
-21. Why do the source's ordered polynomial feature vectors include repeated cross terms?
-22. How should the Gaussian kernel be interpreted as a similarity measure?
-23. What does the Taylor expansion reveal about the Gaussian kernel's feature space?
-24. What two validity conditions for kernels are listed by the source?
+1. Why can't the functional margin be maximized directly?
+2. Why is the margin width $2/\lVert w\rVert$?
+3. What distinguishes a support vector?
+4. Interpret $\xi_i=0.5$ and $\xi_i=1.5$.
+5. What does increasing $C$ do?
+6. Why does $(x^\top z)^2$ correspond to pairwise-product features?
+7. Why is the RBF feature space infinite-dimensional?
+
+<details>
+<summary>Answers</summary>
+
+1. Scaling $(w,b)$ scales it arbitrarily without changing the classifier.
+2. Each margin plane $w^\top x+b=\pm1$ is at distance $1/\lVert w\rVert$ from the boundary.
+3. Its constraint is active: $y(w^\top x+b)=1$ in the hard-margin case (nonzero dual variable in general).
+4. $0.5$: correct but inside the margin. $1.5$: misclassified.
+5. It penalizes violations more, giving a narrower margin, fewer training errors and potentially more overfitting.
+6. $(\sum_i x_iz_i)^2=\sum_{i,j}(x_ix_j)(z_iz_j)$.
+7. Its Taylor expansion contains every power $x^m$.
+
+</details>

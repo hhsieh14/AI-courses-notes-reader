@@ -1,30 +1,25 @@
-# CSE 575 Course Notes
+# CSE 575 Notes: Introduction
 
-These notes reconstruct the uploaded 60-page CSE575 PDF into readable Markdown while preserving the original course sequence, equations, and handwritten reasoning.
+These notes follow the order of the course. Each chapter builds on the previous ones:
 
-## Reconstruction policy
+```text
+1 linear regression ─► 2 generalization ─► 3 regularization + likelihood
+                                              │
+        ┌─────────────────────────────────────┴───────────────────────┐
+        ▼                                                             ▼
+4 KNN ─► 5 logistic/softmax ─► 6 evaluation ─► 7 generative ─► 8 SVM & kernels
+                                                                      │
+9 K-means ─► 10 GMM & EM ─► 11 PCA                                    │
+                                                                      ▼
+                                                  12 neural networks & backprop
+```
 
-The main text follows the source material. Any material added for readability is visibly labeled as one of the following:
+Chapters 1–8 are supervised learning. Chapters 9–11 are unsupervised: clustering, latent-variable models and dimensionality reduction. Chapter 12 joins the two threads: a neural network is stacked logistic regressions trained by gradient descent, and it learns its own features instead of relying on hand-designed ones.
 
-- **Added clarification** — explains a source step without changing its conclusion.
-- **Technical note** — records an implementation or mathematical detail not fully developed in the source.
-- **Review intuition** — gives a compact interpretation for study purposes.
+Three ideas recur throughout:
 
-The notes use MathJax-compatible LaTeX and conservative syntax intended to render in MkDocs and GitHub math previews.
+1. **Loss = negative log-likelihood.** Squared error (Gaussian), cross-entropy (Bernoulli/categorical) and even regularization (a prior) all come from one recipe.
+2. **Bias–variance.** Polynomial degree, $\lambda$, $k$ in KNN, $C$ in SVMs and the number of PCA components are all knobs on the same trade-off.
+3. **Linear in parameters, nonlinear in inputs.** Feature maps, kernels and hidden layers are three ways to get curved boundaries from linear machinery.
 
-## Course organization
-
-1. Supervised Learning and Linear Regression
-2. Generalization, Validation, Bias, and Variance
-3. Regularization and Probabilistic Linear Regression
-4. K-Nearest Neighbors
-5. Logistic and Softmax Regression
-6. Classification Evaluation
-7. Generative Classification
-8. Support Vector Machines and Kernels
-9. Unsupervised Learning and K-Means
-10. Gaussian Mixture Models and Expectation-Maximization
-11. Dimensionality Reduction and Principal Component Analysis
-12. Neural Networks and Backpropagation
-
-All twelve reconstructed chapters cover source pages 2–60.
+See the [chapter list](../README.md) and the [notation reference](notation.md).

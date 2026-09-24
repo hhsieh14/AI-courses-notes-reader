@@ -1,18 +1,22 @@
 # Notation
 
-This page consolidates notation introduced in the opening pages of the course notes.
+Symbols used across the chapters, grouped by topic. Local meanings are restated in each chapter when a symbol is reused (for example $\sigma$ is both the sigmoid and a standard deviation, and $\phi$ is both a feature map and a probability).
+
+**Conventions.** $n_{\mathrm{train}}$ or $n$ is the number of examples, $d$ (or $N$ in Chapter 11) the number of features, and superscript $(i)$ indexes examples while subscript $j$ indexes features.
+
+## Basics
 
 | Symbol | Meaning |
 |---|---|
-| input x with sample superscript i | input variable or feature vector for sample i |
-| output y with sample superscript i | target or output for sample i |
-| theta | model-parameter vector |
-| h sub theta | parameterized hypothesis or model |
-| n train | number of training examples |
-| X | design matrix containing the training inputs |
-| y | vector containing all training targets |
-| L | training objective or loss |
-| eta | gradient-descent learning rate |
+| $x^{(i)}$ | input (feature vector) of example $i$ |
+| $y^{(i)}$ | target of example $i$ |
+| $\theta$ | parameter vector |
+| $h_\theta$ | hypothesis / model with parameters $\theta$ |
+| $n_{\mathrm{train}}$ | number of training examples |
+| $X$ | design matrix, one example per row |
+| $y$ | vector of all targets |
+| $L$ | training objective (loss) |
+| $\eta$ | learning rate |
 
 A supervised training set is written as:
 
@@ -37,7 +41,7 @@ $$ h_\theta\left(x^{(i)}\right) = \left(\tilde{x}^{(i)}\right)^\top \theta. $$
 | $h_D=\mathcal{A}(D)$ | predictor learned from dataset $D$ |
 | $\bar{h}(x)$ | expected predictor across training datasets |
 | $\bar{y}(x)$ | conditional mean target at input $x$ |
-| $h^{\star}(x)$ | underlying target function used in the source derivation |
+| $h^{\star}(x)$ | true regression function $\mathbb E[y\mid x]$ |
 | $J_{\mathrm{CV}}$ | average cross-validation error |
 
 The average learned predictor is:
@@ -55,14 +59,14 @@ $$ \bar{y}(x) = \mathbb{E}_{y\mid x}[y]. $$
 | $\lambda$ | regularization strength |
 | $\Omega(\theta)$ | parameter-penalty function |
 | $\phi_j(x)$ | transformed feature $j$ |
-| $d_{\max}$ | number or maximum index of penalized features in the source formulas |
+| $d_{\max}$ | number of penalized features |
 | $p_{\mathrm{data}}$ | unknown data-generating distribution |
 | $p_{\mathrm{model}}(x;\theta)$ | parameterized model distribution |
 | $L(\theta)$ | likelihood function in the probabilistic sections |
 | $\ell(\theta)$ | log-likelihood |
 | $D_{\mathrm{KL}}(p\parallel q)$ | Kullback–Leibler divergence from $p$ to $q$ |
 | $\sigma^2$ | Gaussian noise variance |
-| $z$ | latent representation in the page 15 generative-model sketch |
+| $z$ | latent variable in generative models |
 
 The general regularized objective is:
 
@@ -116,7 +120,7 @@ Softmax regression uses:
 
 $$ p(y=j\mid x;\theta)=\frac{e^{\theta_j^\top x}}{\sum_{r=1}^{K}e^{\theta_r^\top x}}. $$
 
-The exponential-family form used on source page 23 is:
+The exponential-family form is:
 
 $$ p(y;\eta)=b(y)\exp\left(\eta^\top T(y)-a(\eta)\right). $$
 
@@ -295,7 +299,7 @@ $$ R_k=\sum_{j=1}^{k}r_j. $$
 |---|---|
 | $z$ | a neuron's net input or pre-activation |
 | $a$ | neuron or layer activation |
-| $W^{(l)}$ | weight matrix connecting layer $l$ to layer $l+1$ under the source row-vector convention |
+| $W^{(l)}$ | weight matrix from layer $l$ to layer $l+1$ (row-vector convention) |
 | $b^{(l)}$ | bias vector for layer $l$ |
 | $z^{(l)}$ | pre-activation vector at layer $l$ |
 | $a^{(l)}$ | activation vector at layer $l$ |

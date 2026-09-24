@@ -46,7 +46,7 @@ PCA is linear. To capture nonlinear structure, map the data into a bigger featur
 | Kernel | $K(\mathbf x_i,\mathbf x_j)$ | Hyperparameters |
 |---|---|---|
 | polynomial | $(1+\mathbf x_i^\top\mathbf x_j)^d$ | degree $d$ |
-| Gaussian / RBF | $\exp(-\gamma\|\mathbf x_i-\mathbf x_j\|^2)=\exp\!\big(-\|\mathbf x_i-\mathbf x_j\|^2/2\sigma^2\big)$ | $\gamma=1/(2\sigma^2)$ |
+| Gaussian / RBF | $\exp(-\gamma\lVert \mathbf x_i-\mathbf x_j\rVert ^2)=\exp\!\big(-\lVert \mathbf x_i-\mathbf x_j\rVert ^2/2\sigma^2\big)$ | $\gamma=1/(2\sigma^2)$ |
 | tanh (sigmoid) | $\tanh(\beta\,\mathbf x_i^\top\mathbf x_j-\delta)$ | $\beta,\delta$ (not always positive semidefinite) |
 
 **How big is the feature space?** With 50 inputs, degree 2 gives 50 linear terms, 50 squares and $\binom{50}{2}=1225$ cross products: **1,325 features** (1,326 with the constant). The kernel computes the inner product with one 50-dimensional dot product. The Gaussian kernel is the extreme case: its Taylor expansion contains monomials of **every** degree, so its feature space is **infinite-dimensional**, and it can only be used through the kernel. The same kernel trick powers SVMs ([CSE 575, Chapter 8](../../cse-575-statistical-machine-learning/docs/08_support_vector_machines_and_kernels.md)).

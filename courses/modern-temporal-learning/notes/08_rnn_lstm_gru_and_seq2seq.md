@@ -120,7 +120,7 @@ where $\gamma$ bounds $|\phi'|$. If $\gamma\|U\|<1$ the gradient from step $k$ *
 
 | Fix | For |
 |---|---|
-| gradient clipping (rescale if $\|\mathbf g\|>c$) | exploding gradients |
+| gradient clipping (rescale if $\lVert \mathbf g\rVert >c$) | exploding gradients |
 | truncated BPTT: backprop only $k$ steps | cost, and some stability; can't learn dependencies longer than $k$ |
 | gated cells (LSTM, GRU) | vanishing gradients |
 | orthogonal init of $U$, ReLU + careful init | both, partially |

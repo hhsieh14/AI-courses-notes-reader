@@ -42,7 +42,8 @@ The parameter $C>0$ controls the cost of margin violations and is selected in pr
 
 - If $\xi_{i}=0$, then the point satisfies the unit-margin constraint.
 - If $0<\xi_{i}<1$, then the point is correctly classified but lies inside the margin.
-- If $\xi_{i}\geq 1$, then the score no longer has the correct positive signed margin; in particular, sufficiently large violations can correspond to misclassification.
+- If $\xi_{i}=1$, the point lies exactly on the decision boundary.
+- If $\xi_{i}>1$, the point is misclassified. Consequently $\sum_{i}\xi_{i}$ upper-bounds the number of training mistakes.
 
 > [!TIP]
 > **What does $C$ trade off?**

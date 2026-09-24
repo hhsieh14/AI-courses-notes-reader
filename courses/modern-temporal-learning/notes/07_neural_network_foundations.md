@@ -1287,8 +1287,10 @@ This conflicts with the written data description:
 50+10\times3=80.
 ```
 
-The value 70 would correspond to 20 additional encoded columns rather
-than 30. The source is internally inconsistent.
+The value 70 corresponds to **dummy (reference-category) encoding**, which
+uses $k-1=2$ columns per three-level predictor: $50+10\times2=70$. Full
+one-hot encoding gives 80. Both are valid; dummy coding avoids a redundant
+column when the model has a bias term.
 
 Using the slide's 70-node assumption, the parameter count is:
 

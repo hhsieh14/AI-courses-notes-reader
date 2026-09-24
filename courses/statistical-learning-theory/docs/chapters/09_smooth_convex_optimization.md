@@ -412,6 +412,9 @@ Therefore,
 
 $$f\left(x^{(k)}\right)-f\left(x^{\star}\right)=O\left(\frac{1}{k^{2}}\right).$$
 
+> [!NOTE]
+> **Check the constant.** The standard guarantee for this scheme (Nesterov; Beck and Teboulle's FISTA with $h=0$) is $f(x^{(k)})-f(x^{\star})\leq\dfrac{2\lVert x^{(0)}-x^{\star}\rVert_{2}^{2}}{\eta(k+1)^{2}}$. The constant displayed above is smaller than the usual result, so treat it as the $O(1/k^{2})$ rate rather than an exact bound.
+
 The source does not prove this theorem on pages 63-64. It uses the result to compare the rates:
 
 $$\mathrm{GD}:\quad O\left(\frac{1}{k}\right),$$

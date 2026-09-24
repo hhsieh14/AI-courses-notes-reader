@@ -391,9 +391,11 @@ Start from the signed sum:
 
 $$\frac{1}{n}\sum_{i=1}^{n}\sigma_{i}f_{w,b}(x_{i})=\frac{1}{n}\sum_{i=1}^{n}\sigma_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right).$$
 
-The bias term vanishes after expectation because
+The bias term needs care. Because the supremum is taken **before** the expectation, $\sup_{b}\,\frac{b}{n}\sum_{i}\sigma_{i}$ is infinite whenever $\sum_{i}\sigma_{i}\neq 0$ and $b$ is unrestricted. The argument therefore needs $\lvert b\rvert\leq B_{b}$ (or $b$ absorbed into the feature map as a constant coordinate, so that $\lVert w\rVert_{\mathcal{H}}\leq B$ also controls it). With $\lvert b\rvert\leq B_{b}$ the bias adds at most
 
-$$\mathbb{E}[\sigma_{i}]=0.$$
+$$\mathbb{E}_{\sigma}\left[\sup_{\lvert b\rvert\leq B_{b}}\frac{b}{n}\sum_{i=1}^{n}\sigma_{i}\right]=\frac{B_{b}}{n}\mathbb{E}\left\lvert\sum_{i=1}^{n}\sigma_{i}\right\rvert\leq\frac{B_{b}}{\sqrt{n}},$$
+
+which is the same $O(1/\sqrt{n})$ order as the main term. The derivation below bounds the $w$ part.
 
 Using linearity of the inner product,
 
@@ -441,6 +443,9 @@ $$\mathfrak{R}_{n}(\mathcal{F})\leq \frac{B}{n}\sqrt{\sum_{i=1}^{n}K(x_{i},x_{i}
 Substitute the RKHS complexity bound into the hinge-loss generalization theorem. With probability at least $1-\delta$,
 
 $$R(f_{w,b})\leq \frac{1}{n}\sum_{i=1}^{n}\Phi\left(y_{i}\left(\langle w,\phi(x_{i})\rangle_{\mathcal{H}}+b\right)\right)+\frac{2B}{n}\sqrt{\sum_{i=1}^{n}K(x_{i},x_{i})}+\sqrt{\frac{\log(1/\delta)}{2n}}.$$
+
+> [!WARNING]
+> **Bounded-loss requirement.** Theorem 2 assumes $\ell\in[0,1]$, but the ordinary hinge loss is unbounded, so it cannot be used directly in the McDiarmid step. The rigorous version uses the clipped hinge $\ell_{c}(\widehat{y},y)=\min\{\max\{1-y\widehat{y},0\},1\}$, which is bounded **and** 1-Lipschitz. Because $\mathbf{1}\{y f(x)\leq 0\}\leq\ell_{c}\leq\Phi$, the misclassification probability satisfies $P(Yf(X)\leq 0)\leq R_{\ell_c}(f)\leq\widehat{R}_{n,\ell_c}(f)+2\mathfrak{R}_{n}(\mathcal{F})+\sqrt{\log(1/\delta)/(2n)}$, and $\widehat{R}_{n,\ell_c}(f)$ is at most the empirical hinge loss shown above.
 
 The bound becomes small when two quantities are controlled:
 

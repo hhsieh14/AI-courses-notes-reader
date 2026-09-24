@@ -164,7 +164,10 @@ If $w_t$ is white noise, the lag-one correlation is:
 
 | $\Delta t/T$ | 3.0 | 2.0 | 1.0 | 0.5 | 0.25 | 0.10 |
 |---:|---:|---:|---:|---:|---:|---:|
-| $\rho$ | 0.05 | 0.14 | 0.37 | 0.50 | 0.78 | 0.90 |
+| $\rho$ | 0.05 | 0.14 | 0.37 | 0.61 | 0.78 | 0.90 |
+
+> [!NOTE]
+> The slide lists $0.50$ for $\Delta t/T=0.5$, but $e^{-0.5}\approx0.61$; the table uses the value implied by the formula.
 
 > **Intuition:** Faster sampling means the system has had less time to
 > change between observations, so adjacent observations are more strongly
@@ -195,7 +198,7 @@ The sample autocorrelation shown in the notes is:
 r_k
 =
 \frac{
-\sum_{t=1}^{n-k}
+\sum_{t=k+1}^{n}
 (x_t-\bar{x})(x_{t-k}-\bar{x})
 }{
 \sum_{t=1}^{n}

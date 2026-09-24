@@ -791,7 +791,9 @@ The slide states:
 ### 23.2 Symmetry
 
 The page states that orthogonal wavelets with compact support are not
-symmetric.
+symmetric. The one exception is the Haar wavelet, which is orthogonal,
+compactly supported, and (anti)symmetric; this is why symmetric
+alternatives such as biorthogonal wavelets are used in image coding.
 
 It notes that symmetry is especially relevant for image processing.
 
@@ -883,11 +885,13 @@ The slide briefly lists basis-selection strategies:
 
 The page marks these topics as beyond the course's immediate scope.
 
-### Review note
+### Correction
 
-The phrases "ridge-like" and the relation among the listed pursuit methods
-are preserved as slide wording. No external optimization definitions have
-been substituted.
+Basis pursuit is an $\ell_1$ method, not a ridge ($\ell_2$) method. It
+solves $\min_{\boldsymbol{\beta}}\|\boldsymbol{\beta}\|_1$ subject to
+$W\boldsymbol{\beta}=\mathbf{y}$ (or a noisy relaxation, basis-pursuit
+denoising), which is the constrained form of the lasso. Matching pursuit
+is the greedy counterpart that adds one dictionary atom at a time.
 
 **Source:** CSE598MTL.pdf, p. 30
 

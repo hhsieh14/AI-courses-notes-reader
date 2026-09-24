@@ -1,1421 +1,254 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 11
-title: "Transformers and Temporal Applications"
-source_pages: "92-100"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 11. Transformers and Temporal Applications
 
-# Transformers and Temporal Applications
+[Chapter 8](08_rnn_lstm_gru_and_seq2seq.md) ended with attention as a patch on top of an RNN encoder–decoder. The transformer (Vaswani et al., 2017, "Attention Is All You Need") removes the recurrence and builds the whole model from attention plus position-wise feed-forward layers. There are two reasons:
 
-## 1. Chapter overview
-
-This chapter introduces the transformer as a sequence model built around
-attention rather than recurrent hidden-state updates.
-
-The course emphasizes:
-
-- encoder and decoder stacks;
-- self-attention;
-- query, key, and value transformations;
-- scaled dot-product attention;
-- multi-head attention;
-- feed-forward sublayers;
-- masked decoder attention;
-- encoder-decoder attention;
-- autoregressive decoding;
-- embeddings and positional encoding;
-- residual connections and normalization;
-- parallel training;
-- teacher forcing;
-- BERT and time-series adaptations.
-
-The central design shift is:
+- **long-range dependencies:** in an RNN, information from step 1 reaches step 500 through 499 multiplications (Chapter 8, §4). In self-attention, any two positions are connected directly, in one layer;
+- **parallelism:** an RNN must compute $\mathbf h_{t-1}$ before $\mathbf h_t$. Attention computes all positions of a layer at once, which suits GPUs.
 
 ```text
-RNN:
-information moves sequentially through hidden states
-
-Transformer:
-every sequence element can attend directly to other relevant elements
-within one attention layer
+RNN:          information moves step by step through a hidden state
+Transformer:  every element attends directly to every relevant element, in one layer
 ```
 
-**Sources:** CSE598MTL.pdf, pp. 92-100
+The price is $O(T^2)$ cost in sequence length, which matters a lot for long time series (§8).
 
----
+## 1. The architecture
 
-## 2. Learning objectives
+![Transformer overview](../assets/clean_diagrams/transformer_overview.png)
 
-After this chapter, the reader should be able to:
+*Encoder stack (left) and decoder stack (right). Every decoder block cross-attends to the output of the final encoder block.*
 
-1. explain why transformers were designed for ordered sequence data;
-2. describe the encoder-decoder transformer stack;
-3. distinguish self-attention from encoder-decoder attention;
-4. define query, key, and value vectors;
-5. write scaled dot-product attention;
-6. explain why softmax attention weights sum to one;
-7. describe multi-head attention;
-8. explain the role of the output projection $W_O$;
-9. write the transformer feed-forward network;
-10. describe the encoder block;
-11. explain masked decoder self-attention;
-12. explain decoder cross-attention to encoder outputs;
-13. describe autoregressive decoder operation using start- and end-of-sequence tokens;
-14. distinguish training mode from test/inference mode;
-15. explain teacher forcing as presented on page 98;
-16. describe token embeddings and positional encoding;
-17. explain residual and normalization sublayers;
-18. summarize BERT pretraining at the level presented in the notes;
-19. identify common transformer modifications for time-series data;
-20. explain why low-rank and hierarchical attention are considered for long temporal sequences.
+- The **encoder** maps the embedded input $X=(\mathbf x_1,\ldots,\mathbf x_T)$ to representations $Z=(\mathbf z_1,\ldots,\mathbf z_T)$ through $N$ identical blocks ($N=6$ in the original). Each block has **multi-head self-attention** and a **position-wise feed-forward network**, each wrapped in a residual connection and layer normalization.
+- The **decoder** produces $R=(\mathbf r_1,\ldots,\mathbf r_{T'})$ through $N$ blocks of **masked self-attention**, **cross-attention** to the encoder output, and a feed-forward network, again each with residual + norm. A final linear layer and softmax give output probabilities.
 
-**Sources:** CSE598MTL.pdf, pp. 92-100
+Every decoder block receives the **final** encoder output, not the output of the encoder block at the same depth.
 
----
+## 2. Self-attention
 
-## 3. Why transformers?
-
-The introduction states that transformers were originally designed for
-sequential data, especially sequence-to-sequence models.
-
-Sequences are ordered lists of elements, such as tokens in natural
-language processing.
-
-The page gives several motivations:
-
-- improve limitations of RNN and LSTM models;
-- address long-term dependencies;
-- allow non-parallel training limitations of recurrent models to be reduced;
-- support performance across sequential tasks;
-- provide relatively new opportunities for simplification, reduced
-  computation, and improved performance.
-
-A handwritten note beside the page says long-range information may not
-propagate well through many recurrent steps.
-
-**Source:** CSE598MTL.pdf, p. 92
-
----
-
-## 4. Transformer stack
-
-The transformer contains multiple encoder and decoder blocks, with the
-page giving an example of six blocks each.
-
-The final encoder output becomes input information available to the
-decoder stack.
-
-Each encoder contains:
-
-- a multi-head self-attention layer;
-- a feed-forward layer;
-- support layers such as residual connections and normalization.
-
-For an input sequence:
+Each element $\mathbf x_i$ gets three learned projections:
 
 ```math
-X=(x_1,x_2,\ldots,x_T),
+\mathbf q_i=W_Q\mathbf x_i,\qquad\mathbf k_i=W_K\mathbf x_i,\qquad\mathbf v_i=W_V\mathbf x_i,\qquad d_q=d_k .
 ```
 
-each element is embedded as:
+Think of it as information retrieval:
 
-```math
-\mathbf{x}_i.
-```
+- **query:** what position $i$ is looking for;
+- **key:** what each position $j$ advertises about itself;
+- **value:** the content $j$ hands over if it's attended to.
 
-The encoder transforms:
-
-```math
-X
-\longrightarrow
-Z=(z_1,z_2,\ldots,z_T).
-```
-
-The decoder transforms the encoder representation into an output
-sequence:
+Score every key against the query, normalize with softmax, and average the values:
 
 ```math
-R=(r_1,r_2,\ldots,r_{T'}).
+s_{ij}=\frac{\mathbf q_i^\top\mathbf k_j}{\sqrt{d_k}},\qquad
+w_{ij}=\frac{\exp s_{ij}}{\sum_{\ell=1}^T\exp s_{i\ell}},\qquad
+\mathbf z_i=\sum_{j=1}^Tw_{ij}\mathbf v_j .
 ```
 
-The page states that computations within a layer can be completed in
-parallel.
+For each query the weights are non-negative and sum to 1, so $\mathbf z_i$ is a **convex combination of values**: a content-dependent weighted average over the whole sequence. In matrix form, $Z=\mathrm{softmax}(QK^\top/\sqrt{d_k})\,V$.
 
-**Source:** CSE598MTL.pdf, p. 92
+**Why divide by $\sqrt{d_k}$?** If the components of $\mathbf q$ and $\mathbf k$ are independent with mean 0 and variance 1, then $\mathbf q^\top\mathbf k$ has variance $d_k$. At $d_k=512$ raw scores have standard deviation about 23, so softmax saturates to one-hot and its gradients vanish. Dividing by $\sqrt{d_k}$ brings the standard deviation back to 1 (I checked this numerically: 22.6 before scaling, 1.0 after).
 
----
+```python
+import numpy as np
 
-## 5. Encoder-decoder information flow
+def attention(Q, K, V, causal=False):
+    d_k = Q.shape[-1]
+    S = Q @ K.T / np.sqrt(d_k)                      # (T_q, T_k) scaled scores
+    if causal:                                      # position i may see j <= i only
+        S = np.where(np.tril(np.ones_like(S)) == 1, S, -np.inf)
+    W = np.exp(S - S.max(axis=1, keepdims=True))
+    W /= W.sum(axis=1, keepdims=True)               # softmax over keys: rows sum to 1
+    return W @ V, W
 
-The stack diagram shows:
-
-- an input sequence entering the bottom encoder;
-- encoder outputs flowing upward through the encoder stack;
-- the final encoder block supplying information to all decoder blocks;
-- decoder outputs generated sequentially.
-
-```text
-Input embeddings
-    -> encoder 1
-    -> encoder 2
-    -> ...
-    -> final encoder representation
-
-Shifted output embeddings
-    -> decoder 1
-    -> decoder 2
-    -> ...
-    -> output probabilities
+rng = np.random.default_rng(0)
+T, d_model, d_k = 5, 16, 8
+X = rng.normal(size=(T, d_model))
+W_Q, W_K, W_V = (rng.normal(size=(d_model, d_k)) / np.sqrt(d_model) for _ in range(3))
+Z, W = attention(X @ W_Q, X @ W_K, X @ W_V, causal=True)
+print(Z.shape, W.sum(axis=1).round(6), np.triu(W, 1).max())   # (5, 8) [1. 1. 1. 1. 1.] 0.0
 ```
 
-The handwritten note indicates that decoder blocks receive information
-from the final encoder output, not only from the corresponding encoder
-depth.
+**Example.** In "The animal didn't cross the street because it was too tired," a trained model's attention from **it** puts high weight on **animal** and less on **street**. Change "tired" to "wide" and the weight shifts to **street**. The same weights $W_Q,W_K$ produce different attention patterns depending on content.
 
-**Source:** CSE598MTL.pdf, p. 92
+## 3. Multi-head attention
 
----
-
-## 6. Transformer architecture
-![Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization](../assets/clean_diagrams/transformer_overview.png)
-
-*Redrawn course diagram — Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization.*
-
-
-The architecture includes:
-
-### Encoder side
-
-- input embedding;
-- positional encoding;
-- multi-head self-attention;
-- add and normalize;
-- feed-forward network;
-- add and normalize;
-- repeated $N$ times.
-
-### Decoder side
-
-- shifted output embedding;
-- positional encoding;
-- masked multi-head self-attention;
-- add and normalize;
-- encoder-decoder multi-head attention;
-- add and normalize;
-- feed-forward network;
-- add and normalize;
-- repeated $N$ times;
-- linear output layer;
-- softmax probabilities.
-
-The page cites the original “Attention Is All You Need” architecture.
-
-**Source:** CSE598MTL.pdf, p. 93
-
----
-
-## 7. Self-attention
-
-For every sequence element, self-attention learns which other elements in
-the sequence are most relevant.
-
-For each transformed sequence element $\mathbf{x}_i$, construct:
-
-- query:
+One set of $W_Q,W_K,W_V$ gives one notion of relevance. With $H$ heads, each with its own projections into a smaller space ($d_k=d_v=d_{\text{model}}/H$), attention runs in parallel:
 
 ```math
-\mathbf{q}_i;
+\boldsymbol\zeta_i^{(h)}=\sum_jw_{ij}^{(h)}\mathbf v_j^{(h)},\qquad
+w_{ij}^{(h)}=\mathrm{softmax}_j\!\left(\frac{\mathbf q_i^{(h)\top}\mathbf k_j^{(h)}}{\sqrt{d_k}}\right),\qquad
+\mathbf z_i=W_O\,\mathrm{Concat}\big(\boldsymbol\zeta_i^{(1)},\ldots,\boldsymbol\zeta_i^{(H)}\big).
 ```
 
-- key:
+The original model used $d_{\text{model}}=512$ and $H=8$, so $d_k=64$. Splitting keeps the total cost about the same as one full-width head. $W_O\in\mathbb R^{d_{\text{model}}\times Hd_v}$ mixes the heads back to $d_{\text{model}}$. All of $W_Q^{(h)},W_K^{(h)},W_V^{(h)},W_O$ are learned. Different heads tend to specialize (one tracks the previous token, one links pronouns to nouns, one follows syntax), though they aren't forced to.
 
-```math
-\mathbf{k}_i;
-```
+![Multi-head attention](../assets/clean_diagrams/multihead_attention.png)
 
-- value:
+*Left: attention from "it" in the example sentence. Right: $H$ parallel query/key/value projections, concatenated and projected by $W_O$.*
 
-```math
-\mathbf{v}_i.
-```
+**Weight sharing.** $W_Q,W_K,W_V$ are the same for every position in a sequence (like a convolution filter, or an RNN's weights shared over time) but differ between heads and layers. That's why one model handles any length $T$.
 
-The page states that these have dimensions:
+## 4. Feed-forward, residuals and normalization
 
-```math
-d_q,\ d_k,\ d_v,
-```
-
-with the common setup:
+After attention, every position goes through the same two-layer MLP independently:
 
 ```math
-d_q=d_k.
+\mathrm{FFN}(\mathbf x)=W_2\,\mathrm{ReLU}(W_1\mathbf x+\mathbf b_1)+\mathbf b_2,\qquad d_{\text{model}}=512,\;d_{\text{ff}}=2048 .
 ```
 
-**Source:** CSE598MTL.pdf, p. 93
+**Attention mixes information across positions; the FFN transforms each position on its own.** Per encoder layer that's about $4d^2\approx1.05$M attention parameters and $2d\,d_{\text{ff}}\approx2.10$M FFN parameters, so most of the weights are in the FFN.
 
----
-
-## 8. Query, key, and value transformations
-
-For one attention head:
+Each sublayer is wrapped as
 
 ```math
-\mathbf{q}_i=W_Q\mathbf{x}_i,
+\mathbf x\leftarrow\mathrm{LayerNorm}\big(\mathbf x+\mathrm{Sublayer}(\mathbf x)\big)
 ```
+
+("post-LN", as in the original). Most modern models use **pre-LN**, $\mathbf x+\mathrm{Sublayer}(\mathrm{LayerNorm}(\mathbf x))$, which trains more stably in deep stacks without a learning-rate warm-up.
+
+![Residual learning block](../assets/clean_diagrams/residual_learning_block.png)
+
+*A residual block outputs $\mathcal F(\mathbf x)+\mathbf x$.*
+
+**Why residuals?** He et al. (2016) argued it's easier to learn a *correction* $\mathcal F(\mathbf x)=\mathcal H(\mathbf x)-\mathbf x$ than the full mapping $\mathcal H$. If the best thing a layer can do is nothing, it only has to push $\mathcal F$ to zero. The identity path also carries information and gradients unchanged through dozens of layers, the same role the LSTM cell line plays across time.
+
+## 5. The decoder
+
+Each decoder block has three sublayers:
+
+1. **Masked self-attention** over the decoder's own sequence. Position $i$ may attend to positions $\le i$ only. Scores for $j>i$ are set to $-\infty$ before the softmax, so their weights are exactly 0.
+2. **Cross-attention** (encoder–decoder attention): **queries from the decoder**, **keys and values from the final encoder output**. This is Bahdanau attention (Chapter 8, §8) without the RNN. Each output step looks at the input positions it needs.
+3. **Feed-forward network**, as in the encoder.
+
+![Decoder and generation](../assets/clean_diagrams/transformer_decoder_generation.png)
+
+*Masked self-attention, cross-attention to the encoder and autoregressive generation.*
+
+| Layer | Queries | Keys / values | Can see |
+|---|---|---|---|
+| encoder self-attention | encoder positions | encoder positions | the whole input |
+| decoder masked self-attention | decoder positions | decoder positions $\le i$ | only the past outputs |
+| cross-attention | decoder positions | final encoder output | the whole input |
+
+**Output.** A linear layer maps each $\mathbf r_j$ to $V$ logits (the vocabulary size) and a softmax gives $P(y_j\mid y_{<j},X)$. For multivariate forecasting the output layer instead has one unit per target variable (or per distribution parameter), with no softmax.
+
+**Shifted inputs and indexing.** The decoder input is the target sequence **shifted right** by one, with $\langle\mathrm{BOS}\rangle$ prepended: $(\langle\mathrm{BOS}\rangle,y_1,\ldots,y_{T'-1})$. Position $j$ reads $y_{<j}$ and predicts $y_j$. The mask lets position $j$ see its own input (which is $y_{j-1}$) but nothing later.
+
+### Training vs inference
+
+| | Training (teacher forcing) | Inference (autoregressive) |
+|---|---|---|
+| decoder input | the true target sequence, shifted | the model's own previous outputs |
+| positions | all computed **in parallel**, the mask enforces causality | generated **one at a time** until $\langle\mathrm{EOS}\rangle$ |
+| risk | never sees its own mistakes during training | errors compound (exposure bias) |
+
+Teacher forcing makes training fast and stable. Its downside is that train–test mismatch, which scheduled sampling or sequence-level fine-tuning can reduce. At inference, a **KV cache** stores the keys and values of already-generated positions, so each new step only computes one new query row instead of re-running the whole prefix.
+
+## 6. Embeddings and positional encoding
+
+**Embeddings.** Tokens map to $d_{\text{model}}=512$ vectors through a learned $V\times512$ matrix (the original used a shared byte-pair vocabulary of about 37K tokens for English–German and a 32K word-piece vocabulary for English–French). The same matrix was **tied** across the encoder input, the decoder input and the pre-softmax output layer. For time series, the "embedding" is usually a linear layer applied to each time step's feature vector, or to a patch of steps.
+
+**Position.** Attention is **permutation-equivariant**: shuffle the inputs and the outputs shuffle the same way. On its own it has no idea of order. A positional encoding with the same shape as the embeddings is **added** to them. The original used fixed sinusoids,
 
 ```math
-\mathbf{k}_i=W_K\mathbf{x}_i,
+\mathrm{PE}(pos,2i)=\sin\!\big(pos/10000^{2i/d_{\text{model}}}\big),\qquad
+\mathrm{PE}(pos,2i+1)=\cos\!\big(pos/10000^{2i/d_{\text{model}}}\big),
 ```
 
-```math
-\mathbf{v}_i=W_V\mathbf{x}_i.
-```
+a bank of frequencies from fast to slow. A fixed offset $k$ becomes a linear transformation of the encoding, so relative positions are easy to learn. Alternatives: **learned** position embeddings, **relative** or rotary encodings (RoPE), and for time series **timestamp encodings** (hour-of-day, day-of-week, holiday flags) that carry calendar meaning.
 
-The matrices:
+## 7. BERT
 
-```math
-W_Q,\ W_K,\ W_V
-```
+**BERT** (Devlin et al., 2019) is an **encoder-only** transformer pretrained on unlabeled text, then fine-tuned. It reads the whole sentence at once, so each word's representation uses context on **both** sides. Pretraining had two tasks:
 
-are learned.
+1. **Masked language modeling:** select 15% of tokens and predict them. Of the selected tokens, 80% are replaced by `[MASK]`, 10% by a random token and 10% left unchanged, so the model can't rely on seeing `[MASK]`, which never appears at fine-tuning time.
+2. **Next-sentence prediction:** does sentence B actually follow sentence A?
 
-The handwritten interpretation uses an information-retrieval analogy:
+Later work (RoBERTa, 2019) found next-sentence prediction adds little and dropped it. The idea that stayed is **pretrain with a self-supervised task, then fine-tune**, the same pattern as contrastive pretraining in [Chapter 10](10_representation_learning.md). GPT-style models are the other branch: **decoder-only** with causal masking, trained to predict the next token.
 
-```text
-query:
-what the current element is looking for
+## 8. Transformers for time series
 
-key:
-what each candidate element offers or identifies
+![Time-series transformer taxonomy](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
 
-value:
-the information retrieved if that candidate receives attention
-```
+*Time-series transformers vary by positional encoding, attention module and architecture, and are applied to forecasting, anomaly detection and classification.*
 
-This is an explanatory analogy rather than a separate equation.
+Surveys such as Wen et al.'s "Transformers in Time Series" organize the field along two axes:
 
-**Sources:** CSE598MTL.pdf, pp. 93-95
+- **network modifications:** positional encoding (vanilla, learnable, timestamp), the attention module (sparse, low-rank, frequency-domain), and architecture-level changes (hierarchical, patching);
+- **applications:** forecasting (univariate, spatio-temporal, event), anomaly detection, classification.
 
----
+Two problems drive most of the modifications:
 
-## 9. Scaled dot-product similarity
+- **Cost.** Full attention is $O(T^2)$ in time and memory. A year of hourly data is $T=8{,}760$, so $\sim7.7\times10^7$ scores per head per layer. **Low-rank** attention (Linformer projects keys and values to $k\ll T$ rows) and **sparse** attention (Informer's ProbSparse, $O(T\log T)$) cut this down.
+- **Multiple time scales.** **Hierarchical / multiresolution** designs (Pyraformer's pyramidal attention; Autoformer and FEDformer's trend–seasonal decomposition) process the series at several resolutions. It's the same idea as the wavelet pyramid in [Chapter 4](04_wavelets.md) and the growing receptive field of a [TCN](09_temporal_convolutional_networks.md). **Patching** (PatchTST) treats a window of, say, 16 steps as one token, which cuts $T$ by 16× and gives each token local context.
 
-The similarity between query $\mathbf{q}_i$ and key
-$\mathbf{k}_j$ is:
+> [!WARNING]
+> **Check the simple baseline first**
+>
+> Zeng et al. (2023), "Are Transformers Effective for Time Series Forecasting?", showed that a one-layer linear model on a trend/remainder decomposition (DLinear) matched or beat several specialized forecasting transformers on standard long-horizon benchmarks. Permutation-equivariant attention can lose the ordering information that matters most in forecasting. Always compare against ARIMA/ETS ([Chapters 2–3](02_classical_time_series_models.md)), a linear model and a TCN before claiming a transformer helps.
 
-```math
-s_{ij}
-=
-\frac{
-\mathbf{q}_i^\top\mathbf{k}_j
-}{
-\sqrt{d_k}
-}.
-```
-
-The page explains that the square-root scaling normalizes the magnitude
-of the dot product.
-
-The handwritten notes connect a larger query-key dot product with a
-stronger attention relationship.
-
-**Source:** CSE598MTL.pdf, p. 93
-
----
-
-## 10. Attention weights
-
-Apply softmax over the candidate keys:
-
-```math
-w_{ij}
-=
-\frac{
-\exp(s_{ij})
-}{
-\sum_{\ell=1}^{T}
-\exp(s_{i\ell})
-}.
-```
-
-Equivalently, the page writes:
-
-```math
-w_{ij}
-=
-\mathrm{softmax}
-\left(
-\frac{
-\mathbf{q}_i^\top\mathbf{k}_j
-}{
-\sqrt{d_k}
-}
-\right),
-\qquad
-j=1,\ldots,T.
-```
-
-For one query $i$:
-
-```math
-w_{ij}\geq0,
-```
-
-and:
-
-```math
-\sum_{j=1}^{T}w_{ij}=1.
-```
-
-The weights therefore form a normalized distribution over sequence
-elements.
-
-**Source:** CSE598MTL.pdf, p. 93
-
----
-
-## 11. Attention output
-
-The hidden output for sequence element $i$ is the weighted average of
-the value vectors:
-
-```math
-\mathbf{z}_i
-=
-\sum_{j=1}^{T}
-w_{ij}\mathbf{v}_j.
-```
-
-The page describes $\mathbf{z}_i$ as the similarity-weighted average of
-the values.
-
-Each output representation can therefore combine information from
-multiple sequence positions.
-
-The attention score for every sequence element can be calculated in
-parallel.
-
-**Source:** CSE598MTL.pdf, p. 93
-
----
-
-## 12. Attention interpretation example
-
-Page 94 displays the phrase:
-
-```text
-The animal didn't cross the street because it was too tired.
-```
-
-Attention lines connect the word **it** with earlier words such as:
-
-- animal;
-- street.
-
-The page uses this example to illustrate that attention can identify which
-earlier element is relevant to the current word.
-
-The handwritten interpretation says different attention heads may focus
-on different linguistic relationships.
-![Sentence-level attention interpretation and parallel multi-head query-key-value projections](../assets/clean_diagrams/multihead_attention.png)
-
-*Redrawn course diagram — Sentence-level attention interpretation and parallel multi-head query-key-value projections.*
-
-
-**Source:** CSE598MTL.pdf, p. 94
-
----
-
-## 13. Why multiple heads?
-
-A single set of query, key, and value matrices may not capture every
-important relationship.
-
-The page therefore constructs:
-
-```math
-H
-```
-
-different attention heads.
-
-For head $h$:
-
-```math
-\mathbf{q}_i^{(h)}
-=
-W_Q^{(h)}\mathbf{x}_i,
-```
-
-```math
-\mathbf{k}_i^{(h)}
-=
-W_K^{(h)}\mathbf{x}_i,
-```
-
-```math
-\mathbf{v}_i^{(h)}
-=
-W_V^{(h)}\mathbf{x}_i.
-```
-
-Each head can learn a different representation subspace or relationship.
-
-The page gives a typical example:
-
-```math
-H=8.
-```
-
-**Source:** CSE598MTL.pdf, p. 94
-
----
-
-## 14. Per-head attention
-
-For head $h$, compute:
-
-```math
-w_{ij}^{(h)}
-=
-\mathrm{softmax}
-\left(
-\frac{
-\left(\mathbf{q}_i^{(h)}\right)^\top
-\mathbf{k}_j^{(h)}
-}{
-\sqrt{d_k}
-}
-\right).
-```
-
-Then:
-
-```math
-\boldsymbol{\zeta}_i^{(h)}
-=
-\sum_{j=1}^{T}
-w_{ij}^{(h)}
-\mathbf{v}_j^{(h)}.
-```
-
-The page uses $\boldsymbol{\zeta}$ or a similar symbol for the per-head
-result.
-
-### Notation review
-
-The page alternates among:
-
-- $d_q,d_k,d_v$;
-- $d_{q/h}$-style per-head dimensions;
-- $d_{\text{model}}/H$.
-
-The conceptual point is clear: each head uses a lower-dimensional query,
-key, and value space, and the head results are concatenated. The exact
-symbol convention should be standardized before implementation.
-
-**Source:** CSE598MTL.pdf, p. 94
-
----
-
-## 15. Concatenation and output projection
-
-Concatenate the outputs of all heads:
-
-```math
-\boldsymbol{\zeta}_i
-=
-\mathrm{Concat}
-\left(
-\boldsymbol{\zeta}_i^{(1)},
-\boldsymbol{\zeta}_i^{(2)},
-\ldots,
-\boldsymbol{\zeta}_i^{(H)}
-\right).
-```
-
-Apply an output matrix:
-
-```math
-\mathbf{z}_i
-=
-W_O
-\boldsymbol{\zeta}_i.
-```
-
-The output is returned to the model dimension:
-
-```math
-d_{\text{model}},
-```
-
-with the page giving:
-
-```math
-d_{\text{model}}=512
-```
-
-as the original transformer example.
-
-The page emphasizes that:
-
-```math
-W_Q^{(h)},W_K^{(h)},W_V^{(h)},W_O
-```
-
-are all trained.
-
-**Sources:** CSE598MTL.pdf, pp. 94-95
-
----
-
-## 16. Matrix form of multi-head attention
-
-The diagram on page 95 shows:
-
-```text
-Q -> linear projection
-K -> linear projection
-V -> linear projection
-       |
-scaled dot-product attention
-       |
-multiple heads
-       |
-concatenate
-       |
-linear output projection
-```
-
-The handwritten notes emphasize that:
-
-- every word or time point obtains query, key, and value vectors;
-- each query compares against all keys;
-- the weighted values form a new representation;
-- query and key dimensions must be compatible.
-
-**Source:** CSE598MTL.pdf, p. 95
-
----
-
-## 17. Weight sharing through sequence positions
-
-The page states that the transformation matrices:
-
-```math
-W_Q,\ W_K,\ W_V
-```
-
-are the same for all sequence elements.
-
-Their values are shared through the sequence but trained separately by
-layer and head.
-
-Similarly, the feed-forward layer uses the same transformation for all
-sequence positions within one block.
-
-This gives:
-
-- position-wise shared computation;
-- different trained weights across layers.
-
-**Source:** CSE598MTL.pdf, p. 95
-
----
-
-## 18. Feed-forward layer
-
-After multi-head attention, each encoder position is sent through a
-position-wise feed-forward network.
-
-The page gives:
-
-```math
-\mathrm{FFN}(\mathbf{x})
-=
-W_2
-\mathrm{ReLU}
-\left(
-W_1\mathbf{x}+\mathbf{b}_1
-\right)
-+
-\mathbf{b}_2.
-```
-
-For the original transformer example:
-
-```math
-d_{\text{model}}=512,
-```
-
-and the hidden feed-forward dimension is:
-
-```math
-d_{\text{ff}}=2048.
-```
-
-The same feed-forward transformation is applied independently to every
-sequence element.
-
-Each output is then sent to the next encoder block.
-
-**Source:** CSE598MTL.pdf, p. 95
-
----
-
-## 19. Encoder block
-
-An encoder block consists conceptually of:
-
-```text
-input representations
-    -> multi-head self-attention
-    -> residual + normalization
-    -> position-wise feed-forward
-    -> residual + normalization
-    -> next encoder block
-```
-
-The page's diagram shows the model dimension remaining:
-
-```math
-d_{\text{model}}=512
-```
-
-across the block.
-
-The attention operation mixes information across sequence positions.
-The feed-forward layer transforms each position independently.
-
-**Source:** CSE598MTL.pdf, p. 95
-
----
-
-## 20. Decoder overview
-
-Decoder operation is described as similar to the encoder, but each decoder
-block contains:
-
-1. masked multi-head self-attention;
-2. multi-head attention over encoder outputs;
-3. feed-forward layer.
-
-The masked self-attention attends only to previous decoder outputs.
-
-The encoder-decoder attention attends to the final encoder-stack outputs.
-![Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation](../assets/clean_diagrams/transformer_decoder_generation.png)
-
-*Redrawn course diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.*
-
-
-**Source:** CSE598MTL.pdf, p. 96
-
----
-
-## 21. Autoregressive decoder operation
-
-All decoder blocks receive information from the final encoder block.
-
-The decoder begins with:
-
-- information from the last encoder block;
-- a beginning-of-sequence token, written approximately as:
-
-```math
-\langle BOS\rangle.
-```
-
-For each output element $i$, the previous decoder output:
-
-```math
-\hat{y}_{i-1}
-```
-
-is input to the bottom decoder layer.
-
-The decoder continues until an end-of-sequence token:
-
-```math
-\langle EOS\rangle
-```
-
-is produced.
-
-The page's translation example uses:
-
-```text
-Estoy
-Cansada/o
-```
-
-as decoder outputs.
-
-**Source:** CSE598MTL.pdf, p. 96
-
----
-
-## 22. Masked decoder self-attention
-
-To estimate output step $i$, the decoder's masked attention uses only:
-
-```math
-\hat{y}_1,\hat{y}_2,\ldots,\hat{y}_{i-1}.
-```
-
-Future target positions are masked.
-
-The page states that query, key, and value transformations are constructed
-from the available decoder sequence, similarly to encoder self-attention.
-
-### Purpose of masking
-
-```text
-training:
-prevent target token i from attending to itself or later target tokens
-
-inference:
-later tokens do not yet exist
-```
-
-The slide says train/test operation differences are postponed to the next
-section.
-
-**Source:** CSE598MTL.pdf, p. 96
-
----
-
-## 23. Encoder-decoder attention
-
-The decoder contains a second multi-head attention layer.
-
-For decoder block $b$:
-
-- queries come from the masked decoder self-attention output;
-- keys and values come from the final encoder block.
-
-The page writes a form such as:
-
-```math
-\mathbf{q}_i^{(h)}
-=
-W_Q^{(h)}
-\mathbf{z}_i^{(\text{decoder})},
-```
-
-```math
-\mathbf{k}_j^{(h)}
-=
-W_K^{(h)}
-\mathbf{r}_j^{(\text{encoder})},
-```
-
-```math
-\mathbf{v}_j^{(h)}
-=
-W_V^{(h)}
-\mathbf{r}_j^{(\text{encoder})}.
-```
-
-The exact superscripts vary on the page, but the source relationship is
-clear:
-
-```text
-decoder query
-    attends to
-encoder keys and values
-```
-
-This lets each decoder output focus on important encoder positions.
-
-**Source:** CSE598MTL.pdf, p. 97
-
----
-
-## 24. Decoder feed-forward layer
-
-After encoder-decoder attention, the decoder applies a feed-forward
-network similar to the encoder's position-wise layer.
-
-Each decoder element is transformed independently with shared weights
-within that block.
-
-The page describes the sequence of representations as:
-
-```text
-masked self-attention output
-    -> encoder-decoder attention output
-    -> feed-forward output
-    -> next decoder block
-```
-
-Operations inside one layer can be computed in parallel across currently
-available positions.
-
-**Source:** CSE598MTL.pdf, p. 97
-
----
-
-## 25. Decoder output block
-
-The final decoder representation is transformed with an element-wise
-linear layer:
-
-```math
-\mathbf{o}_j
-=
-W_O\mathbf{r}_j+\mathbf{b}_O.
-```
-
-The output dimension depends on the application.
-
-For NLP, it is often:
-
-```math
-V,
-```
-
-the vocabulary size.
-
-Apply softmax to obtain probabilities over output tokens.
-
-The predicted token is:
-
-```math
-\hat{y}_j
-=
-\mathrm{arg\,max}
-\left[
-\mathrm{softmax}(\mathbf{o}_{j-1})
-\right]
-```
-
-in the slide's indexing.
-
-### Indexing review
-
-The page's $\mathbf{o}_{j-1}$ indexing reflects prediction from previous
-decoder information, but the exact output-position convention should be
-checked when implementing.
-
-For multivariate time series, the output dimension can instead equal the
-number of target attributes.
-
-**Source:** CSE598MTL.pdf, p. 97
-
----
-
-## 26. Original transformer embeddings
-
-The original NLP transformer used element-wise input dimensions of:
-
-```math
-512.
-```
-
-The page gives vocabulary sizes such as:
-
-```math
-V=32K
-```
-
-and:
-
-```math
-V=37K.
-```
-
-Embedding matrices transform:
-
-- source tokens;
-- target tokens;
-- decoder output tokens.
-
-The learned embedding matrices have dimensions approximately:
-
-```math
-512\times V.
-```
-
-The page states that tied embeddings were used, sharing these matrices.
-
-The feed-forward hidden layer uses dimension:
-
-```math
-2048.
-```
-
-**Source:** CSE598MTL.pdf, p. 98
-
----
-
-## 27. Parallel computation
-
-The page states:
-
-- encoder positions are computed in parallel within a layer;
-- encoder layers execute sequentially by depth;
-- decoder positions can be computed in parallel during training when the
-  complete target sequence is known and masked appropriately;
-- decoder layers execute sequentially by depth.
-
-A pasted TensorFlow note adds an inference optimization:
-
-- a model can produce next-token distributions for all positions in one
-  pass;
-- during inference, only the last prediction is needed for the next
-  generated token;
-- calculating only the final prediction can reduce redundant inference
-  computation.
-
-This is preserved as pasted implementation commentary.
-
-**Source:** CSE598MTL.pdf, p. 98
-
----
-
-## 28. Training mode and teacher forcing
-
-The page distinguishes test mode from training mode.
-
-### Test mode
-
-The decoder output from step:
-
-```math
-j-1
-```
-
-is used as the input at step:
-
-```math
-j.
-```
-
-Generation is sequential.
-
-### Training mode
-
-The target sequence, not the model-generated output sequence, is input to
-the decoder.
-
-Because the target values are known:
-
-- masked attention prevents use of later target positions;
-- decoder calculations within one layer can be parallelized.
-
-The page calls the use of the target sequence:
-
-> teacher forcing.
-
-A handwritten note adds:
-
-> with some pluses and minuses.
-
-The source does not enumerate those advantages and disadvantages here.
-
-**Source:** CSE598MTL.pdf, p. 98
-
----
-
-## 29. Positional encoding
-
-Attention alone does not inherently encode sequence order.
-
-The page states that positional encoding represents the order of sequence
-elements.
-
-For input sequence:
-
-```math
-x_1,\ldots,x_T,
-```
-
-with embedding matrix:
-
-```math
-X,
-```
-
-a positional-encoding matrix of the same shape is added.
-
-The combined input is then normalized and passed through residual-style
-layers.
-
-The page notes that:
-
-- positional encodings may be fixed;
-- positional encodings may be learned.
-
-### Handwritten interpretation
-
-The handwriting says positional encodings put positions into the same
-embedding dimension and add them to the token or time-point embedding.
-
-**Source:** CSE598MTL.pdf, p. 99
-
----
-
-## 30. Residual and normalization layers
-
-The original transformer used residual sublayers described on the page as:
-
-```math
-\mathrm{LayerNorm}
-\left(
-\mathbf{x}
-+
-\mathrm{Sublayer}(\mathbf{x})
-\right).
-```
-
-The page states:
-
-- sublayer $\mathbf{x}$ is the output of the multi-head attention or
-  feed-forward sublayer;
-- the residual adds the original mapping;
-- the result is normalized.
-
-The residual-learning illustration motivates learning:
-
-```math
-\mathcal{F}(\mathbf{x})
-```
-
-and returning:
-
-```math
-\mathcal{F}(\mathbf{x})+\mathbf{x}.
-```
-![Residual learning block from the course page](../assets/clean_diagrams/residual_learning_block.png)
-
-*Redrawn course diagram — A residual block adds the learned correction $F(x)$ to the identity path $x$.*
-
-**Source:** CSE598MTL.pdf, p. 99
-
----
-
-## 31. Residual-learning interpretation
-
-The page quotes the residual-learning hypothesis:
-
-> It is easier to optimize the residual mapping than the original
-> unreferenced mapping.
-
-If the optimal mapping were the identity, setting the residual to zero
-would leave:
-
-```math
-\mathbf{x}.
-```
-
-The handwritten note asks whether residual connections help carry
-important information into deeper layers.
-
-The course presents this as the intuition for residual sublayers in the
-transformer.
-
-**Source:** CSE598MTL.pdf, p. 99
-
----
-
-## 32. NLP applications
-
-The page states that the best-known transformer applications are in NLP.
-
-It introduces:
-
-> Bidirectional Encoder Representations from Transformers (BERT).
-
-The page describes BERT pretraining with two tasks:
-
-1. randomly mask approximately:
-
-```math
-15\%
-```
-
-of tokens and predict the masked token;
-2. predict whether one sentence is likely to follow another.
-
-It also states that BERT learns words in context and can be refined for a
-language or domain.
-
-### Scope caveat
-
-This chapter preserves the course's description of the original BERT
-pretraining setup. It does not use outside material to discuss later BERT
-variants that omit next-sentence prediction.
-
-**Source:** CSE598MTL.pdf, p. 100
-
----
-
-## 33. Transformers in time series
-
-The page reproduces a taxonomy of time-series transformer research.
-
-The taxonomy organizes work by:
-
-### Network modifications
-
-- positional encoding;
-- attention module;
-- architecture level.
-
-Examples shown include:
-
-- vanilla encoding;
-- learnable encoding;
-- timestamp encoding;
-- sparse or modified attention;
-- structural architecture changes.
-
-### Application domains
-
-- forecasting;
-- anomaly detection;
-- classification.
-
-The application branch further includes examples such as:
-
-- time-series forecasting;
-- spatial-temporal forecasting;
-- event forecasting.
-![Taxonomy of transformer methods for time-series modeling](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
-
-*Redrawn course diagram — Time-series transformers vary in representation, attention, architecture, and application.*
-
-**Source:** CSE598MTL.pdf, p. 100
-
----
-
-## 34. Time-series architecture modifications
-
-The page says recent research modifies the original transformer for time
-series.
-
-Two specific directions are highlighted.
-
-### 34.1 Low-rank attention approximation
-
-Approximate attention matrices with lower-rank structure.
-
-The motivation is especially relevant for long time series, where a full
-attention matrix grows quadratically with sequence length.
-
-The handwritten note says this is intended for large time-series lengths.
-
-### 34.2 Hierarchical multiresolution architecture
-
-Use hierarchical structures to model multiple temporal resolutions.
-
-The handwritten note compares this idea with temporal convolutional
-networks and wavelets.
-
-This connects transformer adaptation to earlier course topics:
-
-- wavelet multiresolution;
-- TCN receptive-field hierarchy.
-
-**Source:** CSE598MTL.pdf, p. 100
-
----
-
-## 35. End-to-end transformer workflow
+## 9. The whole pipeline
 
 ```mermaid
 flowchart TD
-    A[Input sequence] --> B[Embedding]
-    B --> C[Add positional encoding]
-    C --> D[Encoder self-attention]
-    D --> E[Residual + normalization]
-    E --> F[Position-wise feed-forward]
-    F --> G[Residual + normalization]
-    G --> H[Final encoder representation]
-
+    A[Input sequence] --> B[Embedding + positional encoding]
+    B --> C[Encoder × N: self-attention → add & norm → FFN → add & norm]
+    C --> H[Final encoder output]
     I[Shifted target sequence] --> J[Embedding + positional encoding]
-    J --> K[Masked decoder self-attention]
-    K --> L[Encoder-decoder attention]
-    H --> L
-    L --> M[Decoder feed-forward]
-    M --> N[Linear output + softmax]
+    J --> K[Decoder × N: masked self-attention → cross-attention → FFN]
+    H --> K
+    K --> N[Linear → softmax / regression head]
     N --> O{Training or inference?}
-    O -- Training --> P[Use target sequence with masking]
-    O -- Inference --> Q[Feed previous generated output back]
+    O -- training --> P[Teacher forcing: all positions in parallel]
+    O -- inference --> Q[Generate one step, append, repeat until EOS / horizon]
 ```
 
-This diagram is synthesized from pages 92-99.
-
-**Sources:** CSE598MTL.pdf, pp. 92-99
-
----
-
-## 36. Main comparisons
-
-### 36.1 RNN versus transformer
-
-| Dimension | RNN/LSTM/GRU | Transformer |
-|---|---|---|
-| Temporal information | Recurrent hidden state | Attention plus positional encoding |
-| Position computation | Sequential | Parallel within a layer |
-| Long-range path | Many recurrent steps | Direct attention connection |
-| Main training issue in notes | BPTT and gradient propagation | Attention cost and sequence order |
-| Memory structure | Hidden/cell state | Query-key-value interactions |
-
-### 36.2 Encoder self-attention versus decoder masked attention versus cross-attention
-
-| Layer | Queries | Keys/values | Visibility |
+| | RNN / LSTM / GRU | TCN | Transformer |
 |---|---|---|---|
-| Encoder self-attention | Encoder positions | Encoder positions | Entire input sequence |
-| Decoder masked self-attention | Decoder positions | Earlier decoder positions | No future output positions |
-| Encoder-decoder attention | Decoder states | Final encoder representations | Entire encoded input |
+| how time enters | recurrent state | causal convolution | attention + positional encoding |
+| path length between two steps | $O(T)$ | $O(\log T)$ with dilation | $O(1)$ |
+| parallel over positions | no | yes | yes |
+| cost per layer | $O(Td^2)$ | $O(Tkd^2)$ | $O(T^2d+Td^2)$ |
+| data appetite | moderate | moderate | high |
 
-### 36.3 One attention head versus multiple heads
+## 10. Common confusions
 
-| Dimension | Single head | Multi-head |
-|---|---|---|
-| Learned subspaces | One | Several |
-| Query/key/value matrices | One set | One set per head |
-| Output | One weighted value sum | Concatenate head outputs then project |
-| Intended benefit | One relationship pattern | Multiple relationship patterns |
+- **Self- vs cross-attention:** same-sequence Q/K/V vs decoder queries against encoder keys/values.
+- **Attention weight vs value:** a scalar coefficient vs the vector being averaged.
+- **Masking vs positional encoding:** "what may I look at" vs "where am I".
+- **Heads vs layers:** heads run in parallel inside one layer; layers are stacked.
+- **Parallel training vs sequential generation:** teacher forcing parallelizes; inference doesn't.
+- **Attention vs FFN:** mixes across positions vs transforms each position.
+- **BERT vs the original transformer:** encoder-only and bidirectional vs a full encoder–decoder for translation.
 
-### 36.4 Training versus inference decoding
+## 11. Questions and answers
 
-| Dimension | Training | Inference |
-|---|---|---|
-| Decoder input | Known target sequence | Previous generated outputs |
-| Parallel across target positions | Yes with masking | No, generation is sequential |
-| Name in notes | Teacher forcing | Test mode/autoregressive decoding |
-| Exposure to own mistakes | Limited during training | Errors can propagate |
+<details><summary>Encoder-only, decoder-only or encoder–decoder for forecasting?</summary>
 
-The last row is an inference from the training/test distinction; the page
-does not explicitly use the phrase “error propagation” here.
+Encoder-only with a linear head that outputs all $H$ steps at once (PatchTST-style) is the simplest and currently strong. Encoder–decoder fits when future-known covariates should feed the decoder. Decoder-only (GPT-style) suits foundation models that forecast by continuing the sequence.
+</details>
 
-### 36.5 Full attention versus low-rank/hierarchical time-series designs
+<details><summary>What value is used for masked positions?</summary>
 
-| Dimension | Original full attention | Time-series modification |
-|---|---|---|
-| Attention matrix | Dense | Low-rank or sparse approximation |
-| Long-sequence cost | High | Reduced target cost |
-| Temporal scales | One architecture level | Hierarchical multiresolution |
-| Course connection | Original transformer | Wavelet/TCN-style temporal hierarchy |
+$-\infty$ (in practice a large negative number like $-10^9$, or the dtype's minimum) added to the scores before the softmax, so $e^{-\infty}=0$. Using 0 instead would not mask anything.
+</details>
 
-**Sources:** CSE598MTL.pdf, pp. 92-100
+<details><summary>How do transformers handle missing values and irregular timestamps?</summary>
 
----
+Add a mask channel (observed or not) to the input and use continuous-time encodings of the actual timestamps instead of integer positions. Attention doesn't need equally spaced inputs, which is one real advantage over RNNs and TCNs here.
+</details>
 
-## 37. Common confusions
+<details><summary>Post-LN or pre-LN?</summary>
 
-### Self-attention versus cross-attention
+Pre-LN is the default for deep models because it trains without careful warm-up. Post-LN can reach slightly better final quality when it trains stably.
+</details>
 
-Self-attention obtains queries, keys, and values from the same sequence.
-Cross-attention obtains decoder queries but encoder keys and values.
+<details><summary>How do I choose which efficient attention to use?</summary>
 
-### Attention weight versus value vector
-
-The weight is a scalar similarity-derived coefficient.
-The value is the information vector being combined.
-
-### Masking versus positional encoding
-
-Masking prevents access to future outputs.
-Positional encoding tells the model where elements occur in the sequence.
-
-### Multi-head attention versus multiple transformer layers
-
-Heads operate in parallel within one attention layer.
-Layers are stacked sequentially by depth.
-
-### Parallel training versus parallel generation
-
-Decoder positions can be parallelized during teacher-forced training.
-Autoregressive inference generates outputs one step at a time.
-
-### Feed-forward layer versus attention
-
-Attention mixes information across positions.
-The feed-forward sublayer transforms each position independently with
-shared weights.
-
-### Residual connection versus attention connection
-
-Residual connections skip network sublayers.
-Attention connects sequence elements according to learned weights.
-
-### Token embeddings versus positional encodings
-
-Token or input embeddings represent content.
-Positional encodings represent order.
-
-### BERT versus the encoder-decoder transformer
-
-The page presents BERT as an NLP application based on bidirectional
-encoder representations, not as the original full translation
-encoder-decoder architecture.
-
-**Sources:** CSE598MTL.pdf, pp. 92-100
+First ask whether you need long raw context at all. Patching or downsampling often solves the length problem. If you do, use sparse or local attention for local structure, low-rank when the attention matrix is smooth, and FlashAttention (exact, memory-efficient) when $T$ is in the low thousands.
+</details>
 
 ---
 
-## 38. Questions preserved for later discussion
-
-1. Which exact transformer variant was implemented in the course?
-2. Was attention normalized by $\sqrt{d_k}$ in all code examples?
-3. How were query, key, and value dimensions divided across heads?
-4. Does page 94 use $d_k=d_v=d_{\text{model}}/H$, or different
-   dimensions?
-5. Were encoder and decoder weights shared anywhere besides embeddings?
-6. Was layer normalization applied before or after each sublayer?
-7. What masking value was used before softmax?
-8. Did decoder cross-attention use every encoder block or only the final
-   block?
-9. How was sequence termination handled for numerical time-series output?
-10. Was teacher forcing used with a schedule or always applied?
-11. Which positional encoding—fixed sinusoidal, learned, or timestamp
-    encoding—was used for time series?
-12. Were embeddings tied in the course implementation?
-13. How was inference caching handled?
-14. Did the time-series transformer use an encoder-only, decoder-only, or
-    encoder-decoder architecture?
-15. Which low-rank attention approximation was intended on page 100?
-16. What multiresolution hierarchy was used for long time series?
-17. How were missing values and irregular timestamps represented?
-18. Which BERT pretraining details were included only as historical
-    context versus used in assignments?
-
-These questions arise from implementation details or notation not fully
-specified in the source pages.
-
----
-
-## 39. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 92 | Transformer motivation, encoder-decoder stack and parallel computation |
-| 93 | Original architecture, self-attention, queries, keys, values and scaled weights |
-| 94 | Attention example, multi-head transformations, concatenation and output |
-| 95 | Trained attention matrices, feed-forward layer and encoder block |
-| 96 | Decoder block, autoregressive operation and masked self-attention |
-| 97 | Encoder-decoder attention, decoder feed-forward and output block |
-| 98 | Embeddings, parallel training, test mode and teacher forcing |
-| 99 | Positional encoding, residual layers and normalization |
-| 100 | BERT, time-series taxonomy, low-rank and hierarchical modifications |
-
-## Review status
-
-- Transformer-stack description: `[VERIFIED]`
-- Scaled dot-product attention: `[VERIFIED]`
-- Page-94 per-head dimension notation: `[INCONSISTENT SYMBOLS]`
-- Feed-forward equation: `[VERIFIED]`
-- Decoder masked-attention behavior: `[VERIFIED]`
-- Cross-attention source roles: `[VERIFIED]`
-- Decoder output indexing: `[NEEDS IMPLEMENTATION CHECK]`
-- Teacher forcing: `[VERIFIED AS SLIDE WORDING]`
-- Positional-encoding form: `[CONCEPT VERIFIED, EXACT FORM NOT GIVEN]`
-- Residual/normalization order: `[VERIFIED AS PAGE DESCRIPTION]`
-- BERT pretraining summary: `[VERIFIED AS ORIGINAL COURSE DESCRIPTION]`
-- Time-series transformer modifications: `[VERIFIED AT HIGH LEVEL]`
+[← Previous: Representation Learning](10_representation_learning.md) · [Course map](../course_map.md) · [Next: Derivations Appendix →](12_handwritten_appendix.md)

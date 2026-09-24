@@ -1,489 +1,222 @@
 # 12. Neural Networks and Backpropagation
 
-**Source pages:** 54–60  
-**Status:** reconstructed and equation-checked
-
-This chapter introduces feedforward neural networks from the source's biological motivation, connects a single sigmoid neuron to logistic regression, and develops the forward and backward computations used for training. The final pages explain vanishing gradients and compare sigmoid, hyperbolic tangent, ReLU, and leaky ReLU activations.
+This last chapter builds feed-forward neural networks from the single neuron up. A sigmoid neuron turns out to be logistic regression; stacking neurons in layers gives nonlinear decision boundaries; and backpropagation, which is just the chain rule applied carefully, computes every gradient in one backward pass. It ends with why sigmoid networks suffer vanishing gradients and how ReLU-type activations help.
 
 ## 12.1 Biological motivation
 
-Page 54 begins with a simplified analogy to biological neural systems. The source states that the human brain contains approximately $86$ billion neurons and that each neuron connects to roughly $1{,}000$ others. It describes biological neurons as receiving electrochemical inputs, producing spikes when a voltage threshold is exceeded, and passing signals to other neurons. The response is presented as approximately all-or-nothing.
+The brain has about 86 billion neurons, each connected to roughly a thousand others. A biological neuron sums electrochemical inputs and fires a spike when a voltage threshold is crossed, a response that is roughly all-or-nothing. The artificial neuron keeps only the useful abstraction: combine inputs, decide how strongly to activate, pass the result on. Arranging many of them in layers lets the model represent far more than a single linear boundary.
 
-The purpose of the analogy is not to reproduce the biology exactly. It motivates a mathematical unit that:
+![Neuron, layers and activations](assets/diagrams/12_nn_neuron_activations.svg)
 
-- receives signals from previous units;
-- combines those signals;
-- decides how strongly to activate;
-- passes its output to units in the next layer.
+*Left: a neuron computes $z=b+\sum_iw_ix_i$ and outputs $a=\sigma(z)$. Right: sigmoid ($\sigma(0)=0.5$, range $(0,1)$), tanh (range $(-1,1)$), ReLU (kink at 0) and leaky ReLU ($\alpha=0.1$).*
 
-By arranging many units in layers, the model can represent a more complicated input-output relationship than a single linear decision boundary.
+## 12.2 The artificial neuron
 
-![Redrawn neural-network forward pass, backpropagation, and activation overview](assets/diagrams/12_neural_networks_forward_and_backpropagation.png)
+For inputs $x_1,\ldots,x_m$, weights $w_1,\ldots,w_m$ and bias $b$:
 
-*Redrawn from source pages 54–60: each neuron computes a weighted sum followed by an activation, layers compose these computations in the forward direction, and backpropagation sends loss derivatives in the reverse direction.*
+$$ z=b+\sum_{i=1}^{m}x_iw_i=b+x^\top w, \qquad a=\sigma(z). $$
 
-## 12.2 The basic artificial neuron
-
-For inputs $x_1,\ldots,x_m$, weights $w_1,\ldots,w_m$, and bias $b$, the source defines the net input:
-
-$$ z=b+\sum_{i=1}^{m}x_iw_i. $$
-
-In vector notation:
-
-$$ z=b+x^{\top}w. $$
-
-An activation function $\sigma$ transforms this net input into the neuron's output:
-
-$$ a=\sigma(z). $$
-
-The source uses the following terminology:
-
-| Quantity | Meaning |
+| Symbol | Name |
 |---|---|
-| $z$ | net input or pre-activation |
-| $b$ | bias term |
+| $z$ | net input / pre-activation |
+| $b$ | bias (a weight on a constant input of 1) |
 | $\sigma$ | activation function |
-| $a$ | output passed to the next layer |
-
-The bias can be represented as a weight attached to a constant input of $1$:
-
-$$ z=x_1w_1+\cdots+x_mw_m+1\cdot b. $$
+| $a$ | activation, passed to the next layer |
 
 ## 12.3 A sigmoid neuron is logistic regression
 
-When the activation is the logistic sigmoid:
+With $\sigma(z)=1/(1+e^{-z})$ the neuron computes $a=\sigma(b+x^\top w)$, which is exactly the logistic-regression model from [Chapter 5](05_logistic_and_softmax_regression.md): the weights are the coefficients and the bias is the intercept. A network is many logistic regressions feeding into each other.
 
-$$ \sigma(z)=\frac{1}{1+e^{-z}}, $$
+## 12.4 The sigmoid derivative
 
-the neuron computes:
+$$ \sigma'(z)=\frac{e^{-z}}{(1+e^{-z})^2}=\frac{(1+e^{-z})-1}{(1+e^{-z})^2}=\frac{1}{1+e^{-z}}-\frac{1}{(1+e^{-z})^2}=\sigma(z)\left(1-\sigma(z)\right). $$
 
-$$ a=\sigma\left(b+x^{\top}w\right). $$
+This is convenient for backpropagation: the derivative comes straight from the activation value already computed in the forward pass.
 
-This is the same functional form used by binary logistic regression. The source makes the following correspondence:
+## 12.5 A worked neuron
 
-- neural-network weights correspond to logistic-regression coefficients;
-- neural-network inputs correspond to predictor variables;
-- the bias corresponds to the constant or intercept term.
+$$ x=[0.9,\;0.2,\;0.3], \qquad w=[2,\;3,\;-1], \qquad b=0.5, $$
 
-A single sigmoid neuron is therefore a logistic-regression unit. A neural network becomes more expressive by composing many such units across layers.
+$$ z=(0.9)(2)+(0.2)(3)+(0.3)(-1)+0.5=2.6, \qquad a=\sigma(2.6)=\frac{1}{1+e^{-2.6}}\approx0.93 . $$
 
-## 12.4 Derivative of the sigmoid function
+## 12.6 Why more than one neuron?
 
-Page 55 derives a useful identity. Starting from:
-
-$$ \sigma(z)=\frac{1}{1+e^{-z}}, $$
-
-its derivative is:
-
-$$ \sigma'(z)=\frac{e^{-z}}{\left(1+e^{-z}\right)^2}. $$
-
-Rewrite the numerator as:
-
-$$ e^{-z}=\left(1+e^{-z}\right)-1. $$
-
-Then:
-
-$$ \sigma'(z)=\frac{1}{1+e^{-z}}-\frac{1}{\left(1+e^{-z}\right)^2}. $$
-
-Factoring the sigmoid gives:
-
-$$ \sigma'(z)=\sigma(z)\left(1-\sigma(z)\right). $$
-
-This identity is especially useful in backpropagation because the derivative can be computed from the already available activation value.
-
-## 12.5 Numerical neuron example
-
-The source evaluates a sigmoid neuron with:
-
-$$ x=\begin{bmatrix}0.9 & 0.2 & 0.3\end{bmatrix}, \qquad w=\begin{bmatrix}2 & 3 & -1\end{bmatrix}, \qquad b=0.5. $$
-
-The net input is:
-
-$$ z=(0.9)(2)+(0.2)(3)+(0.3)(-1)+0.5=2.6. $$
-
-The output is approximately:
-
-$$ a=\sigma(2.6)=\frac{1}{1+e^{-2.6}}\approx 0.93. $$
-
-The neuron therefore passes a value near $0.93$ to the next layer.
-
-## 12.6 Why use more than one neuron?
-
-Page 56 asks why a larger network is needed when one neuron already performs logistic regression. A single sigmoid neuron uses:
-
-$$ \sigma\left(b+x^{\top}w\right), $$
-
-so its threshold is determined by a linear equation:
-
-$$ b+x^{\top}w=0. $$
-
-It can therefore produce only a linear decision boundary in the original feature space. The source argues that many real-world relationships are more complicated. Hidden layers create intermediate representations that allow the final prediction to depend on nonlinear combinations of the original inputs.
+A single sigmoid neuron's decision boundary is $b+x^\top w=0$, a hyperplane. It can't learn XOR, for example. A hidden layer computes new features, each a nonlinear function of the input, and the output layer draws a linear boundary in *that* space. The boundary in input space becomes nonlinear.
 
 > [!NOTE]
-> **Source scope**
+> **Beyond the lecture: how expressive?**
 >
-> The source motivates greater representational capacity but does not state or prove a universal-approximation theorem. This chapter therefore keeps the claim at the source's level: layered neurons can construct more complex models than a single linear classifier.
+> The universal approximation theorem (Cybenko 1989; Hornik 1991) says one hidden layer with enough units and a non-polynomial activation can approximate any continuous function on a compact set to any accuracy. It says nothing about how many units that takes or whether gradient descent will find them. In practice, depth buys the same expressiveness with far fewer units.
 
+## 12.7 A layer in matrix form
 
-## 12.7 Matrix representation of a layer
+I use a **row-vector** convention: an example is a row and $W^{(l)}$ maps layer $l$ to layer $l+1$. With 3 inputs and 4 hidden units, $W^{(1)}\in\mathbb{R}^{3\times4}$ and
 
-The source uses a row-vector convention for its first layer. Let the input also be the activation of layer $1$:
+$$ a^{(1)}=x, \qquad z^{(2)}=a^{(1)}W^{(1)}+b^{(2)}, \qquad a^{(2)}=\sigma\left(z^{(2)}\right)\in\mathbb R^{4}, $$
 
-$$ x=a^{(1)}. $$
-
-For three inputs and four neurons in the next layer:
-
-$$ W^{(1)}\in\mathbb{R}^{3\times 4}. $$
-
-The pre-activation vector is:
-
-$$ z^{(2)}=a^{(1)}W^{(1)}+b^{(2)}, $$
-
-and the activation vector is:
-
-$$ a^{(2)}=\sigma\left(z^{(2)}\right). $$
-
-Thus:
-
-$$ z^{(2)},a^{(2)}\in\mathbb{R}^{4}. $$
-
-The activation is applied elementwise:
-
-$$ a_j^{(2)}=\sigma\left(z_j^{(2)}\right). $$
-
-> [!NOTE]
-> **Added clarification: vector conventions**
->
-> The source stores examples and activations as row vectors, so $W^{(l)}$ maps layer $l$ to layer $l+1$. Many textbooks store activations as columns and transpose the weight matrices. Both conventions describe the same computation, but matrix dimensions and transpose locations must remain consistent. This chapter keeps the source's row-vector convention.
-
+with $\sigma$ applied elementwise. Stacking a mini-batch of $B$ examples as the rows of $A^{(1)}\in\mathbb R^{B\times3}$ makes the same formula compute the whole batch at once. Many textbooks use columns and write $Wx$ instead; both work as long as you stay consistent about transposes.
 
 ## 12.8 Forward propagation
 
-A feedforward network computes layer after layer from the input toward the prediction. Begin with:
+$$ a^{(1)}=x, \qquad z^{(l+1)}=a^{(l)}W^{(l)}+b^{(l+1)}, \qquad a^{(l+1)}=\sigma^{(l+1)}\left(z^{(l+1)}\right), \qquad \hat{y}=a^{(L)} . $$
 
-$$ a^{(1)}=x. $$
+A forward pass is a chain of affine maps and elementwise nonlinearities. Keep every $z^{(l)}$ and $a^{(l)}$; the backward pass needs them.
 
-For each connection $l=1,\ldots,L-1$:
+## 12.9 Training loop
 
-$$ z^{(l+1)}=a^{(l)}W^{(l)}+b^{(l+1)}, $$
-
-$$ a^{(l+1)}=\sigma^{(l+1)}\left(z^{(l+1)}\right). $$
-
-The final activation is the prediction:
-
-$$ \hat{y}=a^{(L)}. $$
-
-A forward pass therefore consists of repeated affine transformations and activation functions.
-
-## 12.9 Training with gradient descent
-
-Page 57 reviews the training loop:
-
-1. Make a prediction.
-2. Calculate the loss.
-3. Calculate the gradient of the loss with respect to the parameters.
-4. Move the parameters in the direction that lowers the loss.
-5. Repeat.
-
-Let the neural network define a function:
-
-$$ F:X\longrightarrow Y. $$
-
-Its weights determine the particular function represented by the network. For a loss $J(y,F(x))$, training requires the derivative with respect to every weight:
-
-$$ \frac{\partial J}{\partial W_k}. $$
-
-Gradient descent updates a parameter matrix as:
-
-$$ W^{(l)}\leftarrow W^{(l)}-\eta\frac{\partial J}{\partial W^{(l)}}, $$
-
-where $\eta$ is the learning rate.
+1. Predict (forward pass).
+2. Compute the loss $J(y,\hat y)$.
+3. Compute $\partial J/\partial W^{(l)}$ for every layer (backward pass).
+4. Update $W^{(l)}\leftarrow W^{(l)}-\eta\,\partial J/\partial W^{(l)}$.
+5. Repeat over mini-batches and epochs.
 
 ## 12.10 The chain rule
 
-Backpropagation is repeated application of the chain rule through a computation graph. If:
+For $y=g(x)$ and $f=f(y)$, $\dfrac{df}{dx}=\dfrac{df}{dy}\dfrac{dy}{dx}$. For a longer chain $f(x)=f^{(3)}(f^{(2)}(f^{(1)}(x)))$, multiply the local derivatives along the path.
 
-$$ y=g(x), \qquad f=f(y), $$
+**Worked example.** $a=e^x$, $b=a+1$, $c=1/b$, so $c=1/(e^x+1)$. At $x=-1$:
 
-then:
+| Step | Forward value | Local derivative |
+|---|---|---|
+| $a=e^x$ | $0.368$ | $\partial a/\partial x=e^x=0.368$ |
+| $b=a+1$ | $1.368$ | $\partial b/\partial a=1$ |
+| $c=1/b$ | $0.731$ | $\partial c/\partial b=-1/b^2=-0.534$ |
 
-$$ \frac{df}{dx}=\frac{df}{dy}\frac{dy}{dx}. $$
+$$ \frac{\partial c}{\partial x}=(-0.534)(1)(0.368)\approx-0.197 . $$
 
-For a longer composition:
+That is the whole mechanism: store forward values, compute each local derivative, multiply backward.
 
-$$ f(x)=f^{(3)}\left(f^{(2)}\left(f^{(1)}(x)\right)\right), $$
+## 12.11 Backpropagation for a feed-forward network
 
-the derivative is:
+Define the **error signal** at layer $l$ as $\delta^{(l)}=\partial J/\partial z^{(l)}$ (a row vector). Then:
 
-$$ \frac{df}{dx}=\frac{\partial f}{\partial f^{(3)}}\frac{\partial f^{(3)}}{\partial f^{(2)}}\frac{\partial f^{(2)}}{\partial f^{(1)}}\frac{\partial f^{(1)}}{\partial x}. $$
-
-Page 58 illustrates this with the composition:
-
-$$ f^{(1)}(x)=e^x, \qquad f^{(2)}(a)=a+1, \qquad f^{(3)}(b)=\frac{1}{b}. $$
-
-Thus:
-
-$$ f(x)=\frac{1}{e^x+1}. $$
-
-At $x=-1$, the forward values in the source are approximately:
-
-$$ a=e^{-1}\approx 0.37, \qquad b=a+1\approx 1.37, \qquad c=\frac{1}{b}\approx 0.73. $$
-
-The local derivatives are:
-
-$$ \frac{\partial c}{\partial b}=-\frac{1}{b^2}, \qquad \frac{\partial b}{\partial a}=1, \qquad \frac{\partial a}{\partial x}=e^x. $$
-
-Multiplying them gives:
-
-$$ \frac{\partial c}{\partial x}=-\frac{e^x}{\left(e^x+1\right)^2}\approx -0.20 \quad \text{at } x=-1. $$
-
-The example shows the central mechanism: save forward values, compute each local derivative, and multiply derivatives backward along the path.
-
-## 12.11 Backpropagation through a feedforward network
-
-Page 57 gives dependency-chain expressions for a network with several weight matrices. In the source's scalar-style notation, the last-layer derivative has the form:
-
-$$ \frac{\partial J}{\partial W^{(3)}}=(\hat{y}-y)\,a^{(3)}. $$
-
-Moving one layer earlier introduces the next weight and the activation derivative:
-
-$$ \frac{\partial J}{\partial W^{(2)}}=(\hat{y}-y)\,W^{(3)}\,\sigma'\left(z^{(3)}\right)\,a^{(2)}. $$
-
-For an earlier layer, another weight and activation derivative are added:
-
-$$ \frac{\partial J}{\partial W^{(1)}}=(\hat{y}-y)\,W^{(3)}\,\sigma'\left(z^{(3)}\right)\,W^{(2)}\,\sigma'\left(z^{(2)}\right)\,x. $$
-
-These expressions emphasize the chain of dependencies. Each earlier gradient includes every downstream derivative between that parameter and the loss.
-
-> [!WARNING]
-> **Source notation and matrix shapes**
->
-> The slide's “punchline” suppresses transposes, outer products, and elementwise products so that the dependency chain is visible. It should not be copied directly as dimension-complete matrix code.
-
-
-A dimension-explicit row-vector form defines the error signal at layer $l$ as:
-
-$$ \delta^{(l)}=\frac{\partial J}{\partial z^{(l)}}. $$
-
-For the output layer:
+**Output layer:**
 
 $$ \delta^{(L)}=\nabla_{a^{(L)}}J\odot\sigma^{(L)\prime}\left(z^{(L)}\right). $$
 
-For a hidden layer $l=L-1,\ldots,2$:
+**Hidden layers**, going backward for $l=L-1,\ldots,2$:
 
-$$ \delta^{(l)}=\delta^{(l+1)}\left(W^{(l)}\right)^{\top}\odot\sigma^{(l)\prime}\left(z^{(l)}\right). $$
+$$ \delta^{(l)}=\left(\delta^{(l+1)}\left(W^{(l)}\right)^{\top}\right)\odot\sigma^{(l)\prime}\left(z^{(l)}\right). $$
 
-Because $W^{(l)}$ connects layer $l$ to layer $l+1$, the parameter gradients are:
+**Parameter gradients:**
 
-$$ \frac{\partial J}{\partial W^{(l)}}=\left(a^{(l)}\right)^{\top}\delta^{(l+1)}, $$
+$$ \frac{\partial J}{\partial W^{(l)}}=\left(a^{(l)}\right)^{\top}\delta^{(l+1)}, \qquad \frac{\partial J}{\partial b^{(l+1)}}=\delta^{(l+1)} . $$
 
-$$ \frac{\partial J}{\partial b^{(l+1)}}=\delta^{(l+1)}. $$
+Read the hidden-layer rule as: send the error back through the weights that carried the signal forward, then scale by how sensitive each unit's activation was. The weight gradient is an outer product of the layer's input activation and the error at its output.
 
-Here $\odot$ denotes elementwise multiplication. These equations make explicit the transposes, elementwise products, and outer products hidden by the source's compact chain notation.
+> [!TIP]
+> **A handy special case**
+>
+> With a sigmoid output and binary cross-entropy loss, or a softmax output and categorical cross-entropy, the output error simplifies to $\delta^{(L)}=\hat y-y$. The $\sigma'$ factor cancels, just as in the logistic-regression gradient. This is one reason cross-entropy, not squared error, is the standard classification loss.
 
-## 12.12 Forward and backward passes together
+Written as a scalar chain for a 3-weight-layer network, the same result reads
 
-Training one example can be summarized as follows.
+$$ \frac{\partial J}{\partial W^{(1)}}\;\propto\;(\hat y-y)\,W^{(3)}\,\sigma'\left(z^{(3)}\right)\,W^{(2)}\,\sigma'\left(z^{(2)}\right)\,x, $$
 
-### Forward pass
+which hides the transposes and elementwise products but makes the key point visible: **an early layer's gradient contains a product of every downstream weight and activation derivative.**
 
-For $l=1,\ldots,L-1$:
+```python
+import numpy as np
+# Two-layer network, row-vector convention, sigmoid hidden + sigmoid output, BCE loss.
+sig = lambda z: 1 / (1 + np.exp(-z))
+def forward_backward(X, y, W1, b2, W2, b3):
+    z2 = X @ W1 + b2;  a2 = sig(z2)
+    z3 = a2 @ W2 + b3; a3 = sig(z3)
+    d3 = a3 - y                          # output error (sigmoid + BCE)
+    d2 = (d3 @ W2.T) * a2 * (1 - a2)     # hidden error
+    # gradients of the summed BCE loss; checked against finite differences
+    return a3, (X.T @ d2, d2.sum(0), a2.T @ d3, d3.sum(0))
+```
 
-$$ z^{(l+1)}=a^{(l)}W^{(l)}+b^{(l+1)}, $$
+## 12.12 Forward and backward together
 
-$$ a^{(l+1)}=\sigma^{(l+1)}\left(z^{(l+1)}\right). $$
+**Forward:** compute and store $z^{(l)}$, $a^{(l)}$ for all layers, then the loss.
+**Backward:** compute $\delta^{(L)}$; propagate with $(W^{(l)})^\top$; multiply by $\sigma'(z^{(l)})$; form the weight gradients as outer products; update.
 
-Then calculate:
-
-$$ J\left(y,a^{(L)}\right). $$
-
-### Backward pass
-
-1. Compute $\delta^{(L)}$ from the loss and the output activation.
-2. Propagate error signals backward with $\left(W^{(l)}\right)^{\top}$.
-3. Multiply by the local activation derivative.
-4. Form each weight gradient as an outer product with the previous activation.
-5. Update the weights and biases.
-
-The forward pass evaluates the network. The backward pass efficiently reuses intermediate derivatives to evaluate all parameter gradients.
+The backward pass costs about the same as the forward pass. That is why training a network with millions of parameters is feasible. Computing each gradient separately would multiply the cost by the number of parameters.
 
 ## 12.13 Vanishing gradients
 
-Page 59 recalls the early-layer dependency chain:
+For the sigmoid, $\sigma'(z)=\sigma(z)(1-\sigma(z))\le\tfrac14$, with the maximum at $z=0$. The early-layer gradient multiplies one such factor per layer, so with 10 sigmoid layers the activation part alone can shrink the gradient by up to $4^{-10}\approx10^{-6}$. Early layers barely learn. It gets worse when units saturate ($|z|$ large, $\sigma'\approx0$). The weights also enter the product: large weights can instead make gradients **explode**.
 
-$$ \frac{\partial J}{\partial W^{(1)}}=(\hat{y}-y)\,W^{(3)}\,\sigma'\left(z^{(3)}\right)\,W^{(2)}\,\sigma'\left(z^{(2)}\right)\,x. $$
+## 12.14 tanh
 
-For the sigmoid function:
+$$ \tanh(z)=\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}, \qquad \tanh(0)=0, \qquad \tanh(z)\to\pm1, \qquad \frac{d}{dz}\tanh(z)=1-\tanh^2(z)\le1 . $$
 
-$$ \sigma'(z)=\sigma(z)\left(1-\sigma(z)\right). $$
+tanh is zero-centered, which helps optimization compared with the always-positive sigmoid, but it still saturates, so it still suffers vanishing gradients in deep stacks.
 
-Because $0<\sigma(z)<1$:
+## 12.15 ReLU
 
-$$ 0<\sigma'(z)\leq\frac{1}{4}. $$
+$$ \mathrm{ReLU}(z)=\max(0,z), \qquad \mathrm{ReLU}'(z)=\begin{cases}1 & z>0\\ 0 & z<0\end{cases} $$
 
-As more sigmoid layers are added, the backward chain repeatedly multiplies by factors no larger than $0.25$. The source explains that gradients reaching early layers can become very small. This is the **vanishing-gradient problem**.
-
-> [!NOTE]
-> **Added clarification**
->
-> The complete gradient also contains weight matrices, so the exact magnitude depends on both weights and activation derivatives. The source's main point is that repeated small sigmoid derivatives strongly encourage shrinking gradients, especially when units are saturated.
-
-
-## 12.14 Hyperbolic tangent activation
-
-The hyperbolic tangent activation is:
-
-$$ \tanh(z)=\frac{\sinh(z)}{\cosh(z)}=\frac{e^{2z}-1}{e^{2z}+1}. $$
-
-The source records:
-
-$$ \tanh(0)=0, $$
-
-$$ \lim_{z\to\infty}\tanh(z)=1, $$
-
-$$ \lim_{z\to-\infty}\tanh(z)=-1. $$
-
-Unlike the sigmoid, tanh is centered around zero. It is still a saturating activation, so its derivative can also become small for inputs with large magnitude.
-
-> [!NOTE]
-> **Added derivative for review**
->
-> The source plots and defines tanh but does not derive its derivative. For reference:
->
-> $$ \frac{d}{dz}\tanh(z)=1-\tanh^2(z). $$
-
-
-## 12.15 Rectified linear unit
-
-The rectified linear unit is:
-
-$$ \mathrm{ReLU}(z)=\max(0,z). $$
-
-It returns $0$ for negative inputs and $z$ for nonnegative inputs.
-
-The source highlights:
-
-$$ \mathrm{ReLU}(0)=0, $$
-
-$$ \mathrm{ReLU}(z)=z \quad \text{for large positive } z, $$
-
-$$ \mathrm{ReLU}(-z)=0 \quad \text{for } z>0. $$
-
-For positive inputs, the slope is $1$, so the activation does not introduce the same repeated factor of at most $0.25$ as the sigmoid.
+(at $z=0$ pick either value). On the active side the slope is exactly 1, so ReLU doesn't contribute the repeated $\le\frac14$ factors. It is also cheap to compute. This is the default hidden activation in modern networks.
 
 ## 12.16 Leaky ReLU
 
-Leaky ReLU replaces the zero negative branch with a small nonzero slope:
+$$ \mathrm{LReLU}(z)=\max(\alpha z,z), \qquad 0<\alpha<1 \;(\text{e.g. }\alpha=0.1), $$
 
-$$ \mathrm{LReLU}(z)=\max(\alpha z,z), \qquad 0<\alpha<1. $$
-
-It returns $\alpha z$ for negative inputs and $z$ for nonnegative inputs.
-
-The source's graph uses an example value:
-
-$$ \alpha=0.1. $$
-
-Its negative-side derivative is $\alpha$ rather than $0$.
+whose slope is $\alpha$ instead of 0 for $z<0$.
 
 ## 12.17 Dying ReLU
 
-Page 60 explains a failure mode of ordinary ReLU. A ReLU unit is described as **dead** when its pre-activation remains negative for all relevant examples, so it always outputs:
+A ReLU unit is **dead** if its pre-activation is negative for every input. It always outputs 0, its gradient is 0, and it never recovers. Common causes are a learning rate that's too high (one big step pushes the bias very negative) or a large negative bias.
 
-$$ a=0. $$
-
-The negative-side slope is also zero:
-
-$$ \frac{d}{dz}\mathrm{ReLU}(z)=0 \quad \text{for } z<0. $$
-
-Consequently, that unit receives no gradient through the activation and may fail to recover. The source states that this is more likely when:
-
-- the learning rate is too high;
-- the unit has a large negative bias.
-
-The notes also clarify why ReLU can still train despite its zero negative slope. A stochastic-gradient step normally contains multiple examples. As long as some examples place the unit on the positive side, the batch can still produce a nonzero gradient.
-
-Leaky ReLU addresses the dead-unit problem because its negative branch has a nonzero slope. The source also states that it may speed training because its activations can be more balanced around zero. It briefly connects this claim to smaller off-diagonal entries in the Fisher information matrix but explicitly says that this detail can be ignored for the course discussion.
+ReLU networks still train despite the zero slope because a unit only needs to be positive for *some* examples in a mini-batch to receive gradient. Leaky ReLU (and relatives like ELU and GELU) removes the dead zone entirely. Its outputs are also more centered around zero, which tends to speed up optimization.
 
 ## 12.18 Activation comparison
 
-| Activation | Output range | Negative-side behavior | Main source observation |
-|---|---|---|---|
-| Sigmoid | $(0,1)$ | positive but can be very small | derivative is at most $0.25$; repeated factors can vanish |
-| Tanh | $(-1,1)$ | smooth and saturating | centered at zero |
-| ReLU | $[0,\infty)$ | exactly zero for $z<0$ | avoids sigmoid-style saturation on the positive side but can die |
-| Leaky ReLU | $(-\infty,\infty)$ | slope $\alpha$ for $z<0$ | reduces the dying-ReLU problem |
+| Activation | Range | Max slope | Negative side | Main issue |
+|---|---|---|---|---|
+| Sigmoid | $(0,1)$ | $0.25$ | small positive slope | vanishing gradients; not zero-centered |
+| tanh | $(-1,1)$ | $1$ | saturates at $-1$ | still saturates |
+| ReLU | $[0,\infty)$ | $1$ | exactly 0 | dying units |
+| Leaky ReLU | $(-\infty,\infty)$ | $1$ | slope $\alpha$ | one more hyperparameter |
+
+> [!NOTE]
+> **Beyond the lecture: the rest of the toolkit against vanishing and exploding gradients**
+>
+> Activation choice is one lever. The others: **initialization** scaled to layer width (He initialization for ReLU, Xavier/Glorot for tanh) so activations keep a steady variance through depth; **normalization** layers (batch norm, layer norm); **residual connections** $a^{(l+1)}=a^{(l)}+F(a^{(l)})$, which give gradients an identity path; and **gradient clipping** against explosions. Recurrent networks face the same problem across time steps, which is what LSTM gates address ([Temporal Learning, Chapter 8](../../modern-temporal-learning/notes/08_rnn_lstm_gru_and_seq2seq.md)).
 
 ## 12.19 Common mistakes
 
-### Mistake 1: forgetting the bias
+1. **Forgetting the bias.** Every boundary is then forced through the origin.
+2. **Applying the activation before the weighted sum.**
+3. **Mixing row- and column-vector conventions.**
+4. **Coding the scalar chain formula directly.** Matrices need the transposes and elementwise products of §12.11.
+5. **Differentiating only the local layer.** An early weight's gradient includes every later layer.
+6. **Recomputing forward values during the backward pass** instead of caching them.
+7. **Assuming ReLU solves everything.** Dead units and exploding gradients remain.
+8. **Pairing a sigmoid output with squared error** for classification. Use cross-entropy.
 
-A neuron computes an affine transformation before activation. Omitting $b$ restricts every decision surface to pass through the origin.
+## 12.20 Summary
 
-### Mistake 2: applying activation before the weighted sum
+- A neuron computes an affine function followed by a nonlinearity; a sigmoid neuron is logistic regression.
+- Hidden layers create nonlinear features, and hence nonlinear boundaries.
+- Backpropagation applies the chain rule backward, reusing stored forward values, to get all gradients in one pass.
+- Sigmoid derivatives are at most 1/4, so deep sigmoid networks suffer vanishing gradients.
+- ReLU's unit slope avoids this but can produce dead units; leaky ReLU, good initialization, normalization and residual connections help further.
 
-The source computation is:
+## 12.21 Self-check
 
-$$ z=b+x^{\top}w, \qquad a=\sigma(z). $$
+1. Why is a sigmoid neuron equivalent to logistic regression?
+2. Reproduce the worked neuron: $z=2.6$, $a\approx0.93$.
+3. Why can't a single neuron learn XOR?
+4. What shape is $W^{(1)}$ for 3 inputs and 4 hidden units in the row convention?
+5. Write the hidden-layer error-signal recursion.
+6. Why is $\partial J/\partial W^{(l)}$ an outer product?
+7. What is the maximum of $\sigma'$, and why does it matter?
+8. What makes a ReLU unit die?
 
-The activation is applied after combining the inputs.
+<details>
+<summary>Answers</summary>
 
-### Mistake 3: mixing row- and column-vector conventions
+1. It computes $\sigma(b+x^\top w)$, the logistic-regression hypothesis.
+2. $1.8+0.6-0.3+0.5=2.6$; $1/(1+e^{-2.6})=0.931$.
+3. Its boundary is a single hyperplane, and XOR's classes aren't linearly separable.
+4. $3\times4$.
+5. $\delta^{(l)}=(\delta^{(l+1)}W^{(l)\top})\odot\sigma'(z^{(l)})$.
+6. Each weight $W^{(l)}_{jk}$ connects input unit $j$ to output unit $k$, so its gradient is $a^{(l)}_j\,\delta^{(l+1)}_k$.
+7. $1/4$ at $z=0$; repeated multiplication shrinks gradients exponentially with depth.
+8. Its pre-activation becomes negative for all inputs (often after a large update), so it gets zero gradient forever.
 
-Both conventions are valid, but switching conventions without adjusting matrix dimensions and transposes produces incorrect formulas.
-
-### Mistake 4: treating the source's scalar chain as matrix-ready code
-
-The slide intentionally emphasizes dependency factors. Matrix gradients require transposes, elementwise products, and outer products.
-
-### Mistake 5: differentiating only the local layer
-
-An early weight affects the loss through every later layer. Its derivative must include the entire downstream chain.
-
-### Mistake 6: recomputing forward quantities during every derivative
-
-Backpropagation reuses stored activations and pre-activations from the forward pass. This reuse is what makes the procedure efficient.
-
-### Mistake 7: assuming ReLU always prevents vanishing gradients
-
-ReLU has derivative $1$ on its positive side, but it has derivative $0$ on its negative side. Units that remain negative can become inactive.
-
-### Mistake 8: treating activation choice as independent of optimization
-
-The source links sigmoid to vanishing gradients and ReLU to dead units. Activation behavior directly affects how gradients move through the network.
-
-## 12.20 Chapter summary
-
-- A neuron computes a weighted sum plus bias and then applies an activation.
-- A sigmoid neuron has the same form as logistic regression.
-- The sigmoid derivative is $\sigma(z)(1-\sigma(z))$.
-- Hidden layers compose many neuron computations to represent more complex relationships.
-- Forward propagation evaluates affine transformations and activations layer by layer.
-- Backpropagation applies the chain rule in reverse to obtain every parameter gradient.
-- Earlier-layer gradients contain all downstream weight and activation-derivative factors.
-- Repeated sigmoid derivatives can produce vanishing gradients.
-- Tanh is zero-centered but still saturates.
-- ReLU has a unit positive-side slope but can suffer from dying units.
-- Leaky ReLU provides a nonzero negative-side slope and reduces the dying-ReLU problem.
-
-## 12.21 Self-check questions
-
-1. What biological properties motivate the artificial-neuron abstraction in the source?
-2. Write the scalar and vector forms of a neuron's net input.
-3. How is the output activation computed from the net input?
-4. Why is a sigmoid neuron equivalent to a logistic-regression unit?
-5. Derive $\sigma'(z)=\sigma(z)(1-\sigma(z))$.
-6. Reproduce the source's numerical neuron example and its output.
-7. Why can a single sigmoid neuron create only a linear decision boundary?
-8. Under the source's row-vector convention, what are the dimensions of $W^{(1)}$ for three inputs and four next-layer units?
-9. Write the forward-propagation equations for layer $l$.
-10. What five steps form the gradient-descent training loop?
-11. How does the chain rule operate through a composed computation graph?
-12. What quantities should be stored during the forward pass for backpropagation?
-13. Define the error signal $\delta^{(l)}$.
-14. How is a hidden-layer error signal computed from the next layer?
-15. Why is $\partial J/\partial W^{(l)}$ an outer product in the source's row-vector convention?
-16. Why can repeated sigmoid layers produce vanishing gradients?
-17. What is the maximum value of the sigmoid derivative?
-18. How do sigmoid and tanh output ranges differ?
-19. Define ReLU and leaky ReLU.
-20. What causes a ReLU unit to become dead, and how does leaky ReLU address the problem?
+</details>

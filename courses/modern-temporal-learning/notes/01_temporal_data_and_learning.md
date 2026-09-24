@@ -1,613 +1,161 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 1
-title: "Temporal Data and Temporal Learning"
-source_pages: "2-4"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 1. Temporal Data and Temporal Learning
 
-# Temporal Data and Temporal Learning
+Most of classical machine learning treats rows as independent draws. Time-ordered data breaks that assumption: today's value depends on yesterday's. This chapter defines the kinds of temporal data, the learning tasks we pose on them, and the main ways to represent a sequence before a model sees it. Representation is a theme that returns throughout the course.
 
-## 1. Chapter overview
+> [!TIP]
+> **The one idea to take from this chapter**
+>
+> In ordinary ML, rows are treated as independent. In a time series, observations are related, so order, lag, spacing and sampling rate all carry information. Shuffle a time series and you destroy the thing you're trying to model.
 
-This opening section defines temporal data, distinguishes time series from
-event sequences, introduces the main temporal-learning tasks, and surveys
-several ways to represent a temporal sequence before applying a learning
-algorithm.
+## 1. Temporal data
 
-The course begins with an important structural difference between ordinary
-tabular machine learning and temporal learning:
+Temporal data are elements ordered in time. Their values can be numeric or categorical, univariate or multivariate. Examples: sensor streams, stock prices, EEG, purchases and card transactions, medical records, web logs, traffic and gestures.
 
-> **Handwritten annotation:** Rows or instances are usually treated as
-> independent in ordinary machine learning, but observations within a time
-> series are related.
+### Total versus partial order
 
-This dependence is the reason that temporal order, lag, interval, and
-sampling structure matter.
+A time series has a **total order**: any two observations can be compared, $a<b<c<d$. Some event data have only a **partial order**, with precedence constraints like $a<b$ and $c<d$ but no relation between the pairs (think of steps in parallel workflows). Most methods in this course assume a total order.
 
-**Sources:** CSE598MTL.pdf, pp. 2-4
+## 2. Time series and stochastic processes
 
----
-
-## 2. Learning objectives
-
-After this chapter, the reader should be able to:
-
-1. distinguish time series, event sequences, streaming data, and
-   spatiotemporal data;
-2. explain why temporal ordering can be total or partial;
-3. describe a time series as observed values of a stochastic process;
-4. distinguish outliers, change points, and online process changes;
-5. compare instance-based and feature-based learning from time series;
-6. describe symbolic, piecewise, feature, and landmark representations.
-
-**Sources:** CSE598MTL.pdf, pp. 2-4
-
----
-
-## 3. Temporal data
-
-### 3.1 General definition
-
-Temporal data are sequences whose elements have an ordering in time.
-The primary values may be numerical, categorical, univariate,
-multivariate, or composite.
-
-Examples listed in the course include:
-
-- sensor measurements;
-- stock prices;
-- EEG signals;
-- purchases and credit-card transactions;
-- medical records;
-- message traces and web logs;
-- traffic and gesture-recognition data.
-
-**Source:** CSE598MTL.pdf, p. 2
-
-### 3.2 Total and partial ordering
-
-The course emphasizes **total ordering**, rather than only partial
-ordering, as a common property of temporal elements.
-
-A total order can be represented as:
-
-```text
-a < b < c < d
-```
-
-Every pair of elements is comparable.
-
-A partial order may specify only some relations:
-
-```text
-a < b       c < d
-```
-
-The relation between the two pairs may be unspecified.
-
-> **Handwritten annotation:** “Total ordering vs. partial ordering.”
-
-### Clarification
-
-Time-series observations normally follow a single timeline and therefore
-have a total order. Some event systems instead contain only precedence
-constraints, so not every event pair has to be comparable.
-
-**Source:** CSE598MTL.pdf, p. 2
-
----
-
-## 4. Time series and stochastic processes
-
-### 4.1 Time series
-
-The slide defines a time series as a sequence of real values observed at
-successive, equally spaced points in time:
+A **time series** is a sequence of real values observed at successive, usually equally spaced times:
 
 ```math
-x = (x_1, x_2, \ldots, x_n)
+x = (x_1, x_2, \ldots, x_n).
 ```
 
-### 4.2 Stochastic process
+A **stochastic process** is a family of random variables indexed by time, $X=(x_t:t\in T)$: discrete if $T\subseteq\mathbb Z$, continuous if $T$ is an interval of $\mathbb R$. The time series is one observed **realization** of the process. The process is the probabilistic mechanism, and the series is the single sample path we actually see. That is why stationarity (Chapter 2) matters so much: it is what lets one path teach us about the mechanism.
 
-A real stochastic process $X$ is a family of real random variables:
+## 3. Describing time
+
+- **Point versus interval:** `08:00:00, 1 Jan 2022` versus `1 Jan 2022`.
+- **Granularity:** milliseconds up to years. Mixing granularities is a common source of bugs.
+- **Absolute versus relative anchors:** a calendar timestamp versus "5 days after discharge".
+- **Interval relations** (Allen's interval algebra): before, meets, overlaps, starts, during, finishes, equals, and their inverses. These matter for event data such as "did medication A overlap with symptom B?"
+
+## 4. Forms of temporal data
+
+| Form | Typical sampling | Examples |
+|---|---|---|
+| Time series | regular | sensors, prices, vitals |
+| Event sequence | irregular | transactions, appointments, clicks |
+| Stream | unbounded, arrives continuously | logs, IoT feeds |
+| Spatiotemporal / video | time × space or pixels | traffic, gestures |
+
+## 5. Learning tasks
+
+- **Clustering:** group series with similar behavior (patients, sessions, weeks of demand, machines, sensors).
+- **Classification:** assign a label to a whole sequence (arrhythmia or not).
+- **Anomaly detection**, in three flavors that are easy to confuse:
+
+| | What it is | When it's detected |
+|---|---|---|
+| **Outlier** | one or a few unusual observations (e.g. a 20-minute glitch) | anytime |
+| **Change point** | the generating process itself changes (a new mean, variance or dynamics) | retrospectively, after the data are in |
+| **Process control** | detect a change as soon as it happens | online, in real time (heart arrhythmia, tool failure, demand spikes) |
+
+- **Forecasting:** predict future values over a **horizon**. Short-range forecasts drive inventory, staffing and bed counts; long-range forecasts drive capacity planning.
+- **Sequential pattern mining:** frequent ordered patterns, such as peanut butter → jelly, drug → side effect, page-view paths, intrusion steps.
+
+## 6. Learning from time series
+
+### Instance-based
+
+Compare sequences directly and feed the similarities to a method like KNN. Distances include Euclidean,
 
 ```math
-X = (x_t : t \in T)
+d(x,y)=\sqrt{\sum_{t=1}^{T}(x_t-y_t)^2},
 ```
 
-where $T$ is the index set.
+absolute and maximum difference, and the **longest common subsequence** (LCSS). Euclidean distance needs equal lengths and aligned timing. A one-step shift can make two identical shapes look far apart. **Dynamic time warping** (DTW) fixes this by finding the best monotone alignment between the two series before summing differences, at $O(T^2)$ cost.
 
-- If $T \subseteq \mathbb{Z}$, the process is discrete.
-- If $T$ is an interval of $\mathbb{R}$, the process is continuous.
-- A time series is the set of observed values of a stochastic process.
+### Feature-based
 
-> **Handwritten annotation:** A stochastic process is a series of random
-> variables generated over time.
-
-### Clarification
-
-The stochastic process is the underlying probabilistic mechanism.
-The time series is the finite realization that is actually observed.
-
-**Source:** CSE598MTL.pdf, p. 2
-
----
-
-## 5. Temporal data language
-
-The meaning of a temporal measurement depends on how time is represented.
-
-### 5.1 Time point and interval
-
-A record may refer to:
-
-- a specific time point, such as `08:00:00, January 1, 2022`;
-- a calendar interval, such as `January 1, 2022`.
-
-### 5.2 Granularity
-
-Granularity, or resolution, describes the temporal precision:
-
-- milliseconds;
-- seconds;
-- minutes;
-- hours;
-- days;
-- years.
-
-### 5.3 Absolute and relative anchors
-
-An observation can be anchored to:
-
-- an absolute date and time;
-- a time relative to an event, such as five days after hospital discharge;
-- a relative calendar unit, such as a month, day, or year.
-
-### 5.4 Qualitative temporal relations
-
-The course page also lists interval relations such as:
-
-- before;
-- overlaps;
-- during;
-- meets;
-- starts;
-- finishes;
-- equals;
-- after;
-- contains;
-- started by;
-- finished by.
-
-These relations describe how two intervals are positioned relative to
-one another.
-
-**Source:** CSE598MTL.pdf, p. 2
-
----
-
-## 6. Forms of temporal data
-
-### 6.1 Time series
-
-Time series are usually regularly sampled numerical sequences, although
-the underlying information can be univariate, multivariate, or composite.
-
-### 6.2 Event sequences
-
-Event sequences are often irregularly spaced. Examples include:
-
-- transaction data;
-- credit-card purchases;
-- health appointments;
-- web-log pages.
-
-### 6.3 Streaming data
-
-Streaming data are not stored as a complete fixed dataset before
-processing. Observations arrive continuously.
-
-### 6.4 Spatiotemporal data and video
-
-These data combine time with location or image structure. Examples on the
-page include traffic and gesture recognition.
-
-**Source:** CSE598MTL.pdf, p. 2
-
----
-
-## 7. Temporal-learning tasks
-
-### 7.1 Clustering
-
-Clustering groups temporal objects with similar behavior.
-
-Course examples include:
-
-- patients with similar health conditions, activity, or medication doses;
-- web sessions with similar page views;
-- weeks or locations with similar product demand;
-- tools with similar performance or maintenance conditions;
-- sensors with similar measurements.
-
-### 7.2 Classification
-
-Classification assigns outcomes or labels to temporal sequences.
-
-### 7.3 Anomaly detection
-
-The course separates several forms of unusual behavior.
-
-#### Outliers
-
-An outlier is one or a few unusual observations.
-
-> **Handwritten example:** A short batch of about 20 minutes may be treated
-> as an outlying segment.
-
-#### Change points
-
-A change point indicates that the stochastic process generating the data
-has changed. It is detected retrospectively after the observations are
-available.
-
-> **Handwritten annotation:** A change point is more than only a few points
-> being far away from the rest of the data; it represents a distributional
-> change.
-
-#### Process control
-
-Process control seeks to detect a change as soon as possible in real time.
-
-Examples listed include:
-
-- heart arrhythmia;
-- tool failure;
-- maintenance problems;
-- unusual demand;
-- supply shortage.
-
-### Clarification
-
-A useful distinction in the notes is:
+Summarize each sequence as a feature vector, then use any standard model:
 
 ```text
-Outlier:
-    isolated or short unusual observation
-
-Change point:
-    persistent change in the generating process,
-    typically detected retrospectively
-
-Process control:
-    online detection of process change
+sequence → segment / transform → feature vector → clustering or classification
 ```
 
-**Source:** CSE598MTL.pdf, p. 2
+Features range from global statistics (mean, standard deviation, slope) to per-segment statistics, distances to reference patterns, and learned representations (Chapter 10).
 
-### 7.4 Prediction
+Should segments be mutually exclusive? Not necessarily. Non-overlapping windows give independent-looking features and fewer rows. Overlapping (sliding) windows give more training rows and smoother coverage, but adjacent rows become correlated, so validation must use time-blocked splits (Chapter 8).
 
-Prediction includes forecasting future values.
+## 7. Symbolic representations
 
-The course distinguishes:
-
-- short-range forecasts for inventory, scheduling, staffing, or available beds;
-- long-range forecasts for capacity planning, real estate, material sources,
-  or hospital capacity;
-- a forecast horizon, which specifies how far into the future predictions extend.
-
-### 7.5 Sequential pattern mining
-
-Sequential pattern mining looks for recurring ordered behavior.
-
-Course examples include:
-
-- peanut-butter purchases followed by jelly purchases;
-- drugs followed by side effects;
-- cancer-treatment regimens;
-- website page-view order;
-- intrusion-detection operations.
-
-**Source:** CSE598MTL.pdf, p. 2
-
----
-
-## 8. Learning from time series
-
-### 8.1 Ordinary machine-learning assumption
-
-The page asks what machine learning usually assumes about instances of
-data. The handwritten response is that rows or instances are generally
-treated as independent.
-
-For temporal data, adjacent and lagged values are usually related.
-A model must therefore preserve or explicitly represent this dependence.
-
-**Source:** CSE598MTL.pdf, p. 3
-
-### 8.2 Instance-based learning
-
-Instance-based methods use the original sequence, or a direct comparison
-between original sequences, as the model input.
-
-The course lists several similarity measures:
-
-- Euclidean distance;
-- absolute difference;
-- maximum difference;
-- longest common subsequence (LCSS).
-
-For equal-length time series $x$ and $y$, Euclidean distance is:
-
-```math
-d(x,y) =
-\sqrt{\sum_{t=1}^{T}(x_t-y_t)^2}
-```
-
-The slide associates this type of distance with methods such as K-nearest
-neighbors.
-
-### Clarification
-
-A direct distance requires the sequences to be comparable. Different
-lengths, shifts, local timing differences, and irregular sampling may
-require a more specialized measure.
-
-**Source:** CSE598MTL.pdf, p. 3
-
-### 8.3 Feature-based learning
-
-Feature-based methods transform a sequence into a smaller feature vector.
-
-The course lists examples such as:
-
-- mean;
-- standard deviation;
-- slope;
-- global features;
-- features computed over several segments;
-- edit distance;
-- differences after threshold-based tokenization;
-- dynamic time warping;
-- learned representations.
-
-A generic representation is:
-
-```text
-Original sequence
-    -> temporal segmentation or transformation
-    -> feature vector
-    -> clustering or classification model
-```
-
-The page raises an open design question:
-
-> Should segments be mutually exclusive?
-
-This is preserved as a course-design question rather than resolved here.
-
-**Source:** CSE598MTL.pdf, p. 3
-
----
-
-## 9. Symbolic representations
-
-A numerical series can be converted into a sequence of symbols by applying
-thresholds or discretization rules.
-
-Example symbolic sequence shown on the page:
+Discretize values into symbols with thresholds and compare strings:
 
 ```text
 B A B B B A A B B A C A A C
 ```
 
-A second symbolic sequence can be compared using edit distance.
+Edit distance (match cost 0, mismatch 1) then measures dissimilarity. SAX (symbolic aggregate approximation) is the standard version: PAA first (below), then map levels to symbols using Gaussian quantiles. Symbols throw away numeric detail but make string tools such as edit distance, suffix trees and pattern mining available.
 
-The slide uses:
+## 8. Piecewise approximation
 
-- match cost $= 0$;
-- mismatch cost $= 1$.
-
-### Clarification
-
-A symbolic representation reduces numerical detail but allows sequence
-comparison through methods originally designed for strings or event
-sequences.
-
-**Source:** CSE598MTL.pdf, p. 4
-
----
-
-## 10. Piecewise approximation
-
-### 10.1 Piecewise aggregate approximation
-
-Piecewise aggregate approximation (PAA) divides a sequence into windows
-and replaces each window with its average.
-
-For a segment $S_j$, a conceptual form is:
+**Piecewise aggregate approximation** (PAA) replaces each window by its mean:
 
 ```math
-\bar{x}_j =
-\frac{1}{|S_j|}
-\sum_{t \in S_j} x_t
+\bar{x}_j=\frac{1}{|S_j|}\sum_{t\in S_j}x_t .
 ```
 
-The course example averages groups of three values.
-
 ```text
-Original points:
 x1 x2 x3 | x4 x5 x6 | x7 x8 x9 | ...
-
-PAA values:
-mean(1:3) | mean(4:6) | mean(7:9) | ...
+mean     | mean     | mean     | ...
 ```
 
-### 10.2 Shape-description language
+A **shape language** instead labels local movement, e.g. `up → stable → down → up`. PAA keeps coarse level; shape labels keep direction.
 
-The page also shows a qualitative representation that labels local
-movement with terms such as:
+## 9. Custom features
 
-```text
-up -> stable -> down -> up
-```
+Domain-specific features often beat generic ones. For a peaky signal, represent each series by the heights and widths of its peaks, and plot series as points in that 2-D feature space. You can summarize a whole series (mean peak height) or keep several values (the three largest peaks). The first is compact; the second preserves more structure.
 
-### Clarification
+## 10. Landmarks and segmentation
 
-PAA preserves coarse level information. Shape labels preserve qualitative
-direction. Both reduce the original sequence to a smaller representation.
+**Landmarks** are meaningful time points used to anchor features: R-peaks in an ECG, stimulus onsets in EEG. Between landmarks, a segment can be approximated as constant, linear or a spline, with fixed or adaptive length. Artifacts and noise complicate landmark detection.
 
-**Source:** CSE598MTL.pdf, p. 4
+(In survival analysis, "landmark analysis" means something different: pick a landmark time and analyze only subjects still at risk then. Same word, different idea.)
 
----
+## 11. Choosing a representation
 
-## 11. Custom features
-
-The course proposes representing each sequence with engineered features.
-
-One illustrated example is a scatter plot in which each time series is
-summarized by:
-
-- the widths of its peaks;
-- the heights of its peaks.
-
-```text
-Time series
-    -> detect peaks
-    -> measure peak width and height
-    -> represent each series as points in feature space
-```
-
-The page asks whether the measurements should summarize the entire
-sequence or retain several feature values. This remains an open
-representation-design choice.
-
-**Source:** CSE598MTL.pdf, p. 4
-
----
-
-## 12. Landmarks and segmentation
-
-### 12.1 Landmark features
-
-The slide asks whether features should be extracted from intervals between
-landmarks.
-
-Examples include:
-
-- electrocardiograms, with beats and multiple channels;
-- electroencephalograms, with multiple channels;
-- signals containing artifacts and noise.
-
-### 12.2 Fixed or adaptive segments
-
-Segments may have:
-
-- fixed length;
-- adaptive length.
-
-Within a segment, the signal can be approximated as:
-
-- piecewise constant;
-- piecewise linear;
-- a spline function.
-
-### 12.3 Landmark-analysis definition on the page
-
-The pasted definition states:
-
-> Landmark analysis designates a time point during follow-up, called the
-> landmark time, and analyzes only subjects who have survived until that
-> time.
-
-### Clarification
-
-That definition comes from survival-analysis usage. In the surrounding
-course slide, “landmarks” are also discussed more generally as meaningful
-temporal locations used to define intervals and extract features.
-The two uses should not be silently treated as identical.
-
-**Source:** CSE598MTL.pdf, p. 4
-
----
-
-## 13. Representation choices
-
-The first three academic pages introduce a spectrum of representations:
-
-| Representation | Preserves | Loses or simplifies |
+| Representation | Keeps | Loses |
 |---|---|---|
-| Raw sequence | Original values and order | May be high-dimensional and difficult to align |
-| Pairwise distance | Direct sequence similarity | Depends strongly on the selected distance |
-| Global features | Compact summary | Local order and events may disappear |
-| Segment features | Some local structure | Depends on segmentation |
-| Symbolic sequence | Order of coarse states | Numerical detail |
-| PAA | Coarse levels over windows | Fine-scale fluctuations |
-| Landmark features | Event-centered structure | Requires meaningful landmarks |
-| Learned representation | Task-adapted information | Interpretation may be more difficult |
+| Raw sequence | everything | may be long, hard to align |
+| Pairwise distance | similarity | depends entirely on the distance chosen |
+| Global features | compact summary | local order and events |
+| Segment features | some local structure | depends on segmentation |
+| Symbolic | order of coarse states | numeric detail |
+| PAA | coarse level | fine fluctuations |
+| Landmark features | event-centered structure | needs meaningful landmarks |
+| Learned representation | task-relevant information | interpretability |
 
-**Sources:** CSE598MTL.pdf, pp. 3-4
+## 12. Common confusions
 
----
+- **Outlier ≠ change point.** One extreme value isn't a change in the process.
+- **Process ≠ series.** The process is the random mechanism; the series is one realization.
+- **Feature extraction vs temporal model.** Hand-made features can discard order before learning; sequence models (Chapters 8–11) learn from the ordered data directly.
 
-## 14. Common confusions
+## 13. Questions and answers
 
-### Outlier versus change point
+<details><summary>When should I use the raw sequence instead of engineered features?</summary>
 
-An outlier is not automatically a change point. A change point represents
-a change in the process or distribution, not merely one extreme value.
+When there's enough data for a sequence model to learn its own features and the relevant patterns are hard to specify by hand. With little data or strong domain knowledge, engineered features usually win.
+</details>
 
-### Time series versus stochastic process
+<details><summary>How do I tell a short anomaly from a persistent change?</summary>
 
-A stochastic process is the probabilistic family of random variables.
-A time series is an observed realization.
+Look at what happens afterward. An outlier returns to the old distribution; after a change point the new statistics persist. Change-point methods (CUSUM, likelihood-ratio tests, Bayesian online change-point detection) formalize "persists".
+</details>
 
-### Feature representation versus temporal model
+<details><summary>Which distances work for sequences of unequal length or shifted timing?</summary>
 
-Feature extraction may remove temporal structure before learning.
-A temporal model instead attempts to learn directly from the ordered
-sequence.
+DTW and LCSS (they align before comparing), or distances between fixed-length representations (features, PAA/SAX, embeddings).
+</details>
 
-### Landmark terminology
+<details><summary>How do I pick landmarks when there's no natural event?</summary>
 
-The page combines a survival-analysis definition with a broader
-signal-segmentation discussion. Their relationship requires care.
-
-**Sources:** CSE598MTL.pdf, pp. 2-4
-
----
-
-## 15. Questions preserved for later discussion
-
-1. When should a raw sequence be used instead of engineered features?
-2. Should temporal segments be mutually exclusive or overlapping?
-3. When does a symbolic representation discard too much numerical detail?
-4. How should landmarks be selected when no natural event boundary exists?
-5. How can we distinguish a short anomalous interval from a persistent
-   distributional change?
-6. Which distances remain meaningful when sequences have unequal length
-   or shifted timing?
-
-These questions are motivated by the slides and annotations but are not
-fully answered on pages 2-4.
+Use data-driven change points or peaks, fixed windows, or skip landmarks and use a representation that is shift-tolerant (wavelets, convolutional features).
+</details>
 
 ---
 
-## 16. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 2 | Temporal data, stochastic processes, temporal language, data types, learning tasks |
-| 3 | Independence assumption, instance-based and feature-based learning |
-| 4 | Symbolic representation, PAA, custom features, landmarks and segmentation |
-
-## Review status
-
-- Printed slide content: `[VERIFIED]`
-- Major handwritten annotations: `[VERIFIED]`
-- Small handwritten examples and abbreviated marks: `[INTERPRETED]`
-- Landmark terminology relationship: `[NEEDS REVIEW]`
+[Course map](../course_map.md) · [Next: Stationarity and Classical Models →](02_classical_time_series_models.md)

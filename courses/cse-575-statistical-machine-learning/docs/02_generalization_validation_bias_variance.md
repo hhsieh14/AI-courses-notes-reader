@@ -1,346 +1,225 @@
 # 2. Generalization, Validation, Bias, and Variance
 
-**Source pages:** 7–11  
-**Status:** reconstructed and equation-checked
-
-This chapter asks a central question: after fitting a model to the available examples, how well will it predict new data? The source develops this question through model complexity, data splitting, cross-validation, and the bias–variance decomposition of expected test error.
+A model that fits its training data is easy to build. The real question is how well it predicts data it has never seen. This chapter covers the tools for answering that question (train/validation/test splits and cross-validation) and the bias–variance decomposition that explains *why* flexible models can predict worse.
 
 ## 2.1 Model complexity and generalization
 
-The previous chapter introduced polynomial feature construction:
+Take the polynomial model from Chapter 1,
 
-$$ h_\theta(x) = \theta_0 + \theta_1x + \theta_2x^2 + \theta_3x^3 + \cdots. $$
+$$ h_\theta(x) = \theta_0 + \theta_1x + \theta_2x^2 + \cdots + \theta_dx^d, $$
 
-Increasing the polynomial degree increases the model's flexibility. The source compares three representative cases:
+and fit it with degree 1, a moderate degree, and degree 15 to the same noisy sample from a curved function:
 
-| Model behavior | Training fit | Prediction on unseen data |
+| Degree | Training fit | New data |
 |---|---|---|
-| Low complexity | poor | poor |
-| Intermediate complexity | good | potentially best |
-| Very high complexity | very good | potentially poor |
+| 1 | poor, misses the curve | poor |
+| moderate | good | usually best |
+| 15 | almost perfect, oscillates through every point | poor |
 
-A low-degree model may fail to represent the shape of the data. A very high-degree model may follow small fluctuations in the training sample rather than the underlying pattern.
+Three terms describe what we are doing here:
 
-The source uses three related terms:
-
-- **Generalization:** prediction performance measured on unseen data.
-- **Model selection:** estimating the performance of multiple candidate models in order to choose one.
-- **Model assessment:** after choosing a final model, estimating its prediction or generalization error on new unseen data.
+- **Generalization:** how well a model predicts unseen data.
+- **Model selection:** comparing candidate models (degrees, $\lambda$ values, architectures) to pick one.
+- **Model assessment:** after picking, estimating the chosen model's error on new data.
 
 > [!TIP]
-> **Review intuition**
+> **Intuition**
 >
-> Training error answers, “How well did this model fit the examples it saw?” Generalization error asks, “How well will the learned rule work on examples it did not see?”
-
+> Training error answers "how well did the model memorize what it saw?" Generalization error answers "how well does the rule it learned work on what it didn't see?" Only the second one matters in deployment.
 
 ## 2.2 Underfitting and overfitting
 
-The source labels the low-complexity case **underfitting** and the high-complexity case **overfitting**.
-
-### Underfitting
-
-An underfit model is too restricted to capture the relevant structure. It performs poorly even on the training data and also predicts poorly on new data.
-
-### Overfitting
-
-An overfit model follows the training sample very closely but does not reproduce the same performance on unseen examples. Its training error can be small while its generalization error remains large.
-
-### A useful comparison
-
-| Regime | Training error | Validation or test error | Main issue |
+| Regime | Training error | Validation/test error | Diagnosis |
 |---|---:|---:|---|
-| Underfitting | high | high | model is not flexible enough |
-| Appropriate complexity | lower | lower | model captures useful structure |
-| Overfitting | very low | higher | model is too sensitive to the observed sample |
+| Underfitting | high | high | model too restricted to capture the structure |
+| Good fit | low | low | captures the signal, ignores the noise |
+| Overfitting | very low | high | model follows noise specific to this sample |
 
-The source's polynomial plots make the distinction visual: degree 1 misses the curved trend, a moderate degree follows it, and degree 15 oscillates strongly around individual points.
+## 2.3 Training, validation and test sets
 
-## 2.3 Training, validation, and test sets
+With a single train/test split you fit on the training data and measure error on the held-out test data. That is enough to *assess* one model, but not to *choose* among many and then report an honest number. For that we need three sets:
 
-The source first presents a two-way training/test split:
+- **Training set:** fit the parameters.
+- **Validation set:** choose between models or hyperparameters.
+- **Test set:** touched once, at the end, to estimate the error of the chosen model.
 
-- **Training data:** fit the model.
-- **Test data:** predict the held-out labels, compare predictions with the actual values, and measure error.
-
-It then introduces a three-way split so that model selection and final assessment are separated:
-
-- **Training set:** fit model parameters.
-- **Validation set:** select a model based on prediction error.
-- **Test set:** assess the generalization error of the selected final model.
-
-The source gives example proportions of 50/25/25 and 70/20/10 for training, validation, and test data.
+Typical splits are 50/25/25 or 70/20/10, depending on how much data there is.
 
 > [!WARNING]
-> **Why the test set has a separate role**
+> **Why the test set must stay untouched**
 >
-> If test performance is repeatedly used to choose the model, then the test set becomes part of the selection process. It no longer provides an independent final assessment. The source's three-way split prevents this role confusion.
-
+> If you look at test error to pick a model, the test set has become part of model selection, and the number you report is optimistically biased. With enough comparisons you can overfit the test set just as you overfit a training set.
 
 ## 2.4 K-fold cross-validation
 
-K-fold cross-validation divides the available model-selection data into $K$ folds. Each fold is held out once, while the remaining folds are used for fitting. The held-out errors are then averaged.
+When data is scarce, holding out a fixed validation set wastes examples. K-fold cross-validation splits the model-selection data into $K$ folds, trains $K$ times (each time holding out one fold) and averages the held-out errors:
 
-Let $J_{\text{holdout}}^{(j)}$ denote the error measured when fold $j$ is held out. The average cross-validation error is:
+$$ J_{\mathrm{CV}}(m) = \frac{1}{K}\sum_{j=1}^{K} J_{\text{holdout}}^{(j)}(m), $$
 
-$$ J_{\mathrm{CV}} = \frac{1}{K}\sum_{j=1}^{K} J_{\text{holdout}}^{(j)}. $$
+where $m$ is the candidate setting (for example a polynomial degree). Pick the $m$ with the smallest $J_{\mathrm{CV}}(m)$, retrain on all the model-selection data, and only then evaluate on the test set.
 
-For a candidate model setting $m$, such as a polynomial degree, the comparison can be written as:
+```text
+fold 1:  [hold] [train] [train] [train]
+fold 2:  [train] [hold] [train] [train]
+fold 3:  [train] [train] [hold] [train]
+fold 4:  [train] [train] [train] [hold]
+                          → average the four held-out errors
+```
 
-$$ J_{\mathrm{CV}}(m) = \frac{1}{K}\sum_{j=1}^{K} J_{\text{holdout}}^{(j)}(m). $$
-
-The source's diagram uses four folds. In each row, one quarter is marked as the held-out split and the other three quarters are training splits. The final cross-validation result is the average of the four held-out results.
-
-> [!NOTE]
-> **Added clarification: the diagram's label**
->
-> The source labels each held-out fold “Test Split.” In a three-way workflow, these rotating folds serve the validation or model-selection role. A separate untouched test set is still needed for final model assessment.
-
-
-## 2.5 Model complexity versus error
-
-The source shows the classical relationship between model complexity and error:
-
-- Training error usually decreases as complexity increases.
-- Cross-validation or test error initially decreases because the model becomes less underfit.
-- After an intermediate point, cross-validation or test error may increase because the model becomes more sensitive to the particular training sample.
-
-Using the source notation, training error is written as $J_{\mathrm{train}}(\theta)$ and cross-validation error as $J_{\mathrm{CV}}(\theta)$.
-
-The model-selection goal is not to minimize training error alone. It is to choose a complexity with low estimated generalization error.
+The rotating held-out fold plays the **validation** role, even though it is often called a "test fold". A separate test set is still needed for the final number.
 
 > [!NOTE]
-> **Handwritten extension: the overparameterized regime**
+> **Beyond the lecture: when shuffled K-fold is wrong**
 >
-> The handwritten sketch on page 9 extends the classical U-shaped test-error curve. It suggests that near an interpolation threshold, test error may rise and then decrease again as the model becomes heavily overparameterized. This is a second-descent or double-descent pattern. The note therefore cautions that the relationship between a raw parameter count and generalization need not always be a single U-shaped curve.
+> K-fold assumes examples are exchangeable. For time series, or data with groups (several rows per patient or per user), shuffled folds leak information from the future or from the same group into training. Use forward-chaining splits for time (see [Temporal Learning, Chapter 8](../../modern-temporal-learning/notes/08_rnn_lstm_gru_and_seq2seq.md)) and group K-fold for clustered data.
 
+## 2.5 Complexity versus error
 
-## 2.6 The learned model depends on the sampled training set
+As model complexity grows:
 
-Suppose the training dataset is sampled from an underlying distribution:
+- training error $J_{\mathrm{train}}$ keeps going down;
+- cross-validation error $J_{\mathrm{CV}}$ first goes down (less underfitting), then up (more overfitting).
 
-$$ D \sim P^n. $$
+The goal is the complexity at the bottom of the $J_{\mathrm{CV}}$ curve, not the one with the lowest training error.
 
-Let a learning algorithm $\mathcal{A}$ map the dataset to a fitted predictor:
+> [!NOTE]
+> **Beyond the lecture: double descent**
+>
+> The U-shaped curve is not the whole story for heavily over-parameterized models. As the number of parameters passes the point where the model can exactly interpolate the training set, test error can peak and then *decrease again*. This "double descent" (Belkin et al., 2019) is one reason large neural networks generalize despite having far more parameters than examples. It does not contradict bias–variance; it shows that parameter count is a poor measure of effective complexity.
 
-$$ h_D = \mathcal{A}(D). $$
+## 2.6 The learned model is random
 
-Because $D$ is random, the learned parameters and the learned function are also random. Different training samples can produce different parameter estimates:
-
-$$ \hat{\theta}_1, \qquad \hat{\theta}_2, \qquad \hat{\theta}_3, \qquad \ldots $$
-
-and therefore different fitted functions:
-
-$$ f(x;\hat{\theta}_1), \qquad f(x;\hat{\theta}_2), \qquad f(x;\hat{\theta}_3), \qquad \ldots $$
-
-The source's linear-regression examples compare repeated fits on different sampled datasets:
-
-- **Low variability:** the fitted curves remain similar across samples.
-- **High variability:** the fitted curves change substantially across samples.
-
-This variability is a property of the learning procedure together with its model class, not merely of one fitted curve.
+The training set is a random sample, $D\sim P^n$, and the learning algorithm $\mathcal{A}$ maps it to a predictor $h_D=\mathcal{A}(D)$. So $h_D$ is itself random: draw a different training set and you get different parameters $\hat\theta_1,\hat\theta_2,\ldots$ and different fitted curves. A low-degree polynomial fitted to many resampled datasets gives nearly the same line every time; a high-degree one gives wildly different curves. That spread is what "variance" means below. It is a property of the model class *plus* the learning algorithm, not of any single fitted curve.
 
 ## 2.7 Bias and variance
 
-For a scalar parameter estimate $\hat{\theta}$ of a true parameter $\theta$, the source defines bias as:
+For an estimator $\hat\theta$ of a true parameter $\theta$:
 
-$$ \mathrm{Bias}(\hat{\theta}) = \mathbb{E}_D[\hat{\theta}] - \theta. $$
+$$ \mathrm{Bias}(\hat{\theta}) = \mathbb{E}_D[\hat{\theta}] - \theta, \qquad \mathrm{Var}(\hat{\theta}) = \mathbb{E}_D\left[\left(\hat{\theta}-\mathbb{E}_D[\hat{\theta}]\right)^2\right]. $$
 
-Its variance is:
+For predictions we use the same ideas pointwise. Let $\bar{h}(x) = \mathbb{E}_D[h_D(x)]$ be the average prediction over training sets and $h^\star(x)$ the true regression function. Then
 
-$$ \mathrm{Var}(\hat{\theta}) = \mathbb{E}_D\left[\left(\hat{\theta}-\mathbb{E}_D[\hat{\theta}]\right)^2\right]. $$
+$$ \mathrm{Bias}_h(x) = \bar{h}(x) - h^{\star}(x), \qquad \mathrm{Var}_h(x) = \mathbb{E}_D\left[\left(h_D(x)-\bar{h}(x)\right)^2\right]. $$
 
-The same ideas can be applied directly to predictions. Define the average predictor at input $x$ as:
+Flexible models make fewer assumptions and have lower bias, but depend more on the particular sample, which means higher variance.
 
-$$ \bar{h}(x) = \mathbb{E}_D[h_D(x)]. $$
+## 2.8 Setting up the decomposition
 
-If $h^{\star}(x)$ denotes the underlying target function, the prediction bias at $x$ is:
+Data come from a joint distribution $p(x,y)=p(y\mid x)p(x)$. At a fixed $x$ the best possible squared-error prediction is the conditional mean
 
-$$ \mathrm{Bias}_h(x) = \bar{h}(x) - h^{\star}(x). $$
+$$ \bar{y}(x) = \mathbb{E}_{y\mid x}[y] = \int y\,p(y\mid x)\,dy, $$
 
-The prediction variance at $x$ is:
+and we write $y = h^\star(x) + \epsilon$ with $h^\star(x)=\bar y(x)$ and $\mathbb{E}[\epsilon\mid x]=0$.
 
-$$ \mathrm{Var}_h(x) = \mathbb{E}_D\left[\left(h_D(x)-\bar{h}(x)\right)^2\right]. $$
+## 2.9 Error of a model versus error of an algorithm
 
-The source summarizes the classical trade-off as follows:
+The expected test error of one fitted model is
 
-- More complex models generally make fewer restrictive assumptions and can have lower bias.
-- The same flexibility can make the learned result depend more strongly on the sampled dataset, producing higher variance.
+$$ R(h_D) = \mathbb{E}_{(x,y)\sim P}\left[\left(y-h_D(x)\right)^2\right] = \int_x\int_y \left(y-h_D(x)\right)^2p(x,y)\,dy\,dx. $$
 
-> [!NOTE]
-> **Added clarification: parameter variance versus prediction variance**
->
-> Page 9 introduces bias and variance using parameter estimates, while pages 10–11 decompose prediction error using fitted functions. These are related but distinct objects. The expected test-error decomposition below uses prediction bias and prediction variance.
+To judge the *algorithm*, average over training sets too:
 
+$$ R(\mathcal{A}) = \mathbb{E}_{D\sim P^n}\,\mathbb{E}_{(x,y)\sim P}\left[\left(y-h_D(x)\right)^2\right]. $$
 
-## 2.8 Expected targets and expected predictors
+Conceptually: sample a training set, train, sample a fresh test point, measure the squared error, and repeat forever.
 
-The handwritten derivation begins from a joint data distribution:
+## 2.10 Decomposing expected test error
 
-$$ p(x,y) = p(y\mid x)p(x). $$
-
-For a fixed input $x$, define the expected target:
-
-$$ \bar{y}(x) = \mathbb{E}_{y\mid x}[y] = \int y\,p(y\mid x)\,dy. $$
-
-The source also writes the target as:
-
-$$ y = h^{\star}(x) + \epsilon. $$
-
-In the decomposition, $h^{\star}(x)$ and $\bar{y}(x)$ play the role of the conditional mean target, while $\epsilon$ represents the remaining target noise.
-
-The expected predictor averages the outputs of models learned from different possible training datasets:
-
-$$ \bar{h}(x) = \mathbb{E}_{D\sim P^n}[h_D(x)]. $$
-
-> [!NOTE]
-> **Source terminology**
->
-> The handwritten page sometimes calls $h_D$ a “classifier,” but the displayed derivation uses real-valued targets and squared error. Mathematically, it is a squared-error predictor or regressor in this section.
-
-
-## 2.9 Expected error of a fitted model and of a learning algorithm
-
-For one fixed learned model $h_D$, its expected squared test error is:
-
-$$ R(h_D) = \mathbb{E}_{(x,y)\sim P}\left[\left(y-h_D(x)\right)^2\right]. $$
-
-The handwritten notes also express this expectation as an integral:
-
-$$ R(h_D) = \int_x\int_y \left(y-h_D(x)\right)^2p(x,y)\,dy\,dx. $$
-
-However, a learning algorithm can output different models when it receives different training datasets. To evaluate the algorithm itself, the source also averages over possible datasets:
-
-$$ R(\mathcal{A}) = \mathbb{E}_{D\sim P^n}\mathbb{E}_{(x,y)\sim P}\left[\left(y-h_D(x)\right)^2\right]. $$
-
-Conceptually, this means repeating the following experiment:
-
-1. Sample a training dataset $D$.
-2. Train $h_D=\mathcal{A}(D)$.
-3. Sample a new test pair $(x,y)$.
-4. Measure squared prediction error.
-5. Average over repetitions.
-
-The expected error of the algorithm therefore describes the stability and accuracy of the learning procedure across possible training samples, not only the result of one observed run.
-
-## 2.10 Decomposition of expected test error
-
-The source decomposes expected squared test error into three components: noise, squared bias, and variance.
-
-### Step 1: separate target noise from model error
-
-Start with:
-
-$$ \mathbb{E}_{D,(x,y)}\left[\left(y-h_D(x)\right)^2\right]. $$
-
-Add and subtract the underlying target function $h^{\star}(x)$:
+**Step 1: separate noise from model error.** Add and subtract $h^\star(x)$:
 
 $$ y-h_D(x) = \left(y-h^{\star}(x)\right) + \left(h^{\star}(x)-h_D(x)\right). $$
 
-After squaring and taking expectations, the source sets the cross term to zero because the test noise has conditional mean zero and the sampled test example is independent of the training dataset. This gives:
+Square and take expectations. The cross term vanishes because $\mathbb{E}[y-h^\star(x)\mid x]=0$ and the test point is independent of $D$:
 
-$$ \mathbb{E}_{D,(x,y)}\left[\left(y-h_D(x)\right)^2\right] = \mathbb{E}_{x,y}\left[\left(y-h^{\star}(x)\right)^2\right] + \mathbb{E}_{D,x}\left[\left(h^{\star}(x)-h_D(x)\right)^2\right]. $$
+$$ \mathbb{E}_{D,(x,y)}\left[\left(y-h_D(x)\right)^2\right] = \underbrace{\mathbb{E}_{x,y}\left[\left(y-h^{\star}(x)\right)^2\right]}_{\text{noise}} + \mathbb{E}_{D,x}\left[\left(h^{\star}(x)-h_D(x)\right)^2\right]. $$
 
-The first term is target noise. The second term is error caused by the learned predictor differing from the underlying target function.
-
-### Step 2: decompose model error around the average predictor
-
-Add and subtract $\bar{h}(x)=\mathbb{E}_D[h_D(x)]$:
+**Step 2: split model error around the average predictor.** Add and subtract $\bar h(x)$:
 
 $$ h^{\star}(x)-h_D(x) = \left(h^{\star}(x)-\bar{h}(x)\right) + \left(\bar{h}(x)-h_D(x)\right). $$
 
-The cross term again vanishes because:
+The cross term vanishes because $\mathbb{E}_D[\bar h(x)-h_D(x)]=0$, giving
 
-$$ \mathbb{E}_D\left[\bar{h}(x)-h_D(x)\right] = 0. $$
+$$ \mathbb{E}_{D,x}\left[\left(h^{\star}(x)-h_D(x)\right)^2\right] = \underbrace{\mathbb{E}_x\left[\left(h^{\star}(x)-\bar{h}(x)\right)^2\right]}_{\text{bias}^2} + \underbrace{\mathbb{E}_{D,x}\left[\left(h_D(x)-\bar{h}(x)\right)^2\right]}_{\text{variance}}. $$
 
-Therefore:
-
-$$ \mathbb{E}_{D,x}\left[\left(h^{\star}(x)-h_D(x)\right)^2\right] = \mathbb{E}_x\left[\left(h^{\star}(x)-\bar{h}(x)\right)^2\right] + \mathbb{E}_{D,x}\left[\left(\bar{h}(x)-h_D(x)\right)^2\right]. $$
-
-The first term is squared bias and the second term is variance.
-
-### Final decomposition
-
-Combining the two steps yields:
-
-$$ \mathbb{E}_{D,(x,y)}\left[\left(y-h_D(x)\right)^2\right] = \mathbb{E}_{x,y}\left[\left(y-h^{\star}(x)\right)^2\right] + \mathbb{E}_x\left[\left(h^{\star}(x)-\bar{h}(x)\right)^2\right] + \mathbb{E}_{D,x}\left[\left(h_D(x)-\bar{h}(x)\right)^2\right]. $$
-
-In compact form:
+**Result:**
 
 $$ \text{expected test error} = \text{noise} + \text{bias}^2 + \text{variance}. $$
 
-The source marks the noise term as uncontrollable because it comes from variability in the data-generating process. Bias and variance arise from the model class and learning algorithm.
-
-> [!NOTE]
-> **Fixed-target version**
->
-> The handwritten summary also gives “fixed target error = bias squared + variance.” This corresponds to measuring prediction error relative to the conditional mean target $h^{\star}(x)$ rather than relative to a noisy observed value $y$.
-
+The noise term cannot be reduced by any model; it comes from the data-generating process. Bias and variance are what our modeling choices trade against each other. If we measure error against $h^\star(x)$ instead of the noisy $y$, the noise term drops out and error $=$ bias$^2$ + variance.
 
 ## 2.11 Why the cross terms disappear
 
-The page 11 derivation explicitly verifies the zero-mean relationships used above.
+Both cancellations are the same fact: a quantity minus its own mean has mean zero.
 
-For the learned predictor:
+$$ \mathbb{E}_D\left[h_D(x)-\bar{h}(x)\right] = 0, \qquad \mathbb{E}_{y\mid x}\left[y-\bar{y}(x)\right] = 0. $$
 
-$$ \mathbb{E}_D\left[h_D(x)-\bar{h}(x)\right] = \mathbb{E}_D[h_D(x)]-\bar{h}(x)=0. $$
+## 2.12 Using the decomposition
 
-For the target:
+| Term | Meaning | Symptom | Typical fix |
+|---|---|---|---|
+| Noise | irreducible randomness in $y$ | floor under both errors | better features or measurements |
+| Bias² | average prediction is systematically off | training error high | richer model, more features, less regularization |
+| Variance | prediction changes a lot across samples | big gap between training and validation error | more data, regularization, simpler model, averaging/bagging |
 
-$$ \mathbb{E}_{y\mid x}\left[y-\bar{y}(x)\right] = \mathbb{E}_{y\mid x}[y]-\bar{y}(x)=0. $$
+Bias can be positive or negative; squaring it makes both directions cost. The practical value of the decomposition is diagnostic: a high-bias problem and a high-variance problem need opposite remedies.
 
-These identities make the corresponding mixed terms vanish after taking expectations. The decomposition is therefore an algebraic consequence of adding and subtracting the appropriate mean predictor and mean target.
+```python
+# Bias–variance by simulation: fit many datasets, look at the spread at one x.
+import numpy as np
+rng = np.random.default_rng(1)
+f = lambda x: np.sin(2 * np.pi * x)
+x0 = 0.3
+for degree in (1, 3, 9):
+    preds = []
+    for _ in range(500):
+        x = rng.uniform(0, 1, 20)
+        y = f(x) + rng.normal(0, 0.3, 20)
+        preds.append(np.polyval(np.polyfit(x, y, degree), x0))
+    preds = np.array(preds)
+    print(degree, "bias^2=%.3f  var=%.3f" % ((preds.mean() - f(x0))**2, preds.var()))
 
-## 2.12 Interpreting the decomposition
-
-The source uses the decomposition diagnostically:
-
-| Component | Interpretation | Typical failure pattern |
-|---|---|---|
-| Noise | unavoidable variation in observed targets | remains even for the correct conditional mean |
-| Squared bias | average prediction is systematically away from the target function | underfitting |
-| Variance | fitted prediction changes substantially across training samples | overfitting |
-
-The handwritten summary states:
-
-- Underfitting is associated with high bias.
-- Overfitting is associated with high variance.
-- Model design involves a bias–variance trade-off.
-
-Bias itself can be positive or negative. Squaring it makes both directions contribute positively to expected squared error.
-
-The practical point of the decomposition is not only to name three terms. If a developed algorithm is not accurate enough, the dominant term suggests a different remedy: a high-bias problem and a high-variance problem should not be treated as the same failure.
+# 1 bias^2=0.317  var=0.026   <- underfits: bias dominates
+# 3 bias^2=0.002  var=0.016   <- about right
+# 9 bias^2=0.018  var=2.200   <- overfits: variance explodes
+```
 
 ## 2.13 Common mistakes
 
-1. **Choosing the model using the final test set.** This mixes model selection with model assessment.
-2. **Assuming the smallest training error gives the best model.** Training error generally falls with complexity, even after generalization begins to worsen.
-3. **Treating the fitted model as deterministic.** The learned model depends on the randomly sampled training dataset.
-4. **Confusing observation noise with model variance.** Noise comes from the conditional distribution of the target; variance comes from changes in the learned predictor across datasets.
-5. **Ignoring the square on bias.** The error decomposition contains squared prediction bias, not signed bias.
-6. **Assuming test error must always follow one U-shaped curve.** The handwritten overparameterization sketch records a possible second-descent regime.
-7. **Calling the rotating cross-validation fold the final test set.** In model selection, it functions as a validation fold; final assessment requires separate untouched data.
+1. **Choosing the model on the test set.** That mixes selection with assessment.
+2. **Picking the lowest training error.** Training error keeps falling long after generalization gets worse.
+3. **Treating the fitted model as fixed.** It depends on the random training sample.
+4. **Confusing noise with variance.** Noise lives in $p(y\mid x)$; variance lives in how $h_D$ changes across training sets.
+5. **Forgetting the square on bias.** The decomposition contains bias², not bias.
+6. **Assuming test error is always U-shaped in parameter count.** See double descent.
+7. **Reporting the CV score as the final test error.** CV folds did model selection; a separate test set gives the unbiased estimate.
 
-## 2.14 Chapter summary
+## 2.14 Summary
 
-- Generalization measures prediction performance on unseen data.
-- Model selection chooses among candidate models; model assessment estimates the selected model's final generalization error.
-- Training, validation, and test sets have distinct roles.
-- K-fold cross-validation averages held-out performance across multiple partitions.
-- Underfitting is associated with insufficient flexibility and high bias.
-- Overfitting is associated with sensitivity to the sampled data and high variance.
-- A fitted model is random because it depends on the sampled training set.
-- Expected squared test error decomposes into noise, squared bias, and variance.
-- The source also notes that heavily overparameterized models may exhibit a second-descent pattern beyond the classical U-shaped curve.
+- Generalization is performance on unseen data.
+- Model selection and model assessment need separate data.
+- K-fold CV averages held-out error across rotating folds.
+- Underfitting ↔ high bias; overfitting ↔ high variance.
+- Expected squared test error = noise + bias² + variance.
 
-## 2.15 Self-check questions
+## 2.15 Self-check
 
-1. What is the distinction between model selection and model assessment?
-2. Why are validation and test sets assigned different roles?
-3. How is four-fold cross-validation performed?
-4. Why can training error continue decreasing while test error increases?
-5. Why should $h_D$ be treated as a random function?
-6. How are $\bar{y}(x)$ and $\bar{h}(x)$ defined, and what is the difference between them?
-7. Which expectation produces prediction variance?
-8. Why do the cross terms vanish in the bias–variance derivation?
-9. What part of expected test error is described as uncontrollable in the source?
-10. How does the handwritten overparameterization sketch extend the classical complexity-error curve?
+1. What is the difference between model selection and model assessment?
+2. How does 4-fold cross-validation work?
+3. Why can training error decrease while test error increases?
+4. Why is $h_D$ a random function?
+5. Which expectation defines prediction variance?
+6. Why do the cross terms vanish in the derivation?
+7. Which part of test error is irreducible?
+
+<details>
+<summary>Answers</summary>
+
+1. Selection chooses among candidates using validation data; assessment estimates the chosen model's error on untouched test data.
+2. Split into 4 folds; train on 3, measure error on the held-out one; rotate 4 times; average.
+3. Extra flexibility lets the model fit noise that is specific to the training sample.
+4. It is a function of the training set, which is a random draw from $P^n$.
+5. $\mathbb{E}_D[(h_D(x)-\bar h(x))^2]$, averaged over $x$.
+6. Each cross term contains a quantity minus its own expectation, whose mean is zero; independence of the test point from $D$ lets the expectation factor.
+7. The noise term $\mathbb{E}[(y-h^\star(x))^2]$.
+
+</details>

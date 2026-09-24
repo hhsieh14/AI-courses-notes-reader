@@ -1,831 +1,112 @@
 # Glossary
 
-## Autocorrelation
-
-Correlation between observations of the same process separated by a lag.
-
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 6
-- Related: lag, ACF, PACF, stationarity
-
-## Autoregressive model
-
-A temporal model in which the current observation depends directly on
-one or more previous observations.
-
-- Notation: AR $(p)$
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 7
-
-## Backshift operator
-
-An operator that moves a time-series index backward:
-
-```math
-Bx_t=x_{t-1}.
-```
-
-- Seasonal form: $B^{12}x_t=x_{t-12}$
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 13
-
-## Differencing
-
-A transformation that subtracts a previous observation:
-
-```math
-\Delta x_t=x_t-x_{t-1}.
-```
-
-It is used in the notes to reduce changing levels or trends before fitting
-AR and MA terms.
-
-- Introduced: Chapter 2
-- Sources: CSE598MTL.pdf, pp. 9-10
-
-## Exogenous attribute
-
-An external predictor added to a time-series model, analogous to an input
-variable in regression.
-
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 13
-
-## Forecast horizon
-
-The number of future time points over which predictions are produced.
-
-- Illustrated: one-step versus 20-step prediction
-- Source: CSE598MTL.pdf, p. 7
-
-## Moving-average model
-
-A model in which the current observation depends on the current
-disturbance and a finite number of previous disturbances.
-
-- Notation: MA $(q)$
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 8
-
-## Partial autocorrelation
-
-The remaining relationship between two lagged observations after
-adjusting for observations at the intermediate lags.
-
-- Abbreviation: PACF
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 11
-
-## Residual
-
-The difference between an observed value and its model prediction:
-
-```math
-r_t=x_t-\hat{x}_t.
-```
-
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 11
-
-## Stationarity
-
-Stability of the statistical properties of the process generating a time
-series.
-
-- Strong stationarity: invariance of finite-dimensional distributions
-- Weak stationarity: constant mean and variance, with covariance depending
-  only on lag
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 5
-
-## White noise
-
-A process described in the notes as having zero mean, constant variance,
-and no temporal correlation.
-
-- The notes emphasize that white noise need not be IID or normal.
-- Introduced: Chapter 2
-- Source: CSE598MTL.pdf, p. 5
-
-## Additive seasonality
-
-A seasonal effect expressed as an additive deviation from the level:
-
-```math
-x_t=L_t+S_t+N_t.
-```
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 17
-
-## Convolution
-
-A time-invariant linear filtering operation:
-
-```math
-y_t=\sum_k\beta_kx_{t-k}.
-```
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 14
-
-## EWMA
-
-Exponentially weighted moving average, a recursive smoother:
-
-```math
-y_t=\lambda x_t+(1-\lambda)y_{t-1}.
-```
-
-- Also called first-order exponential smoothing on the slide
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 14
-
-## Holt's method
-
-A smoothing method that maintains separate level and trend estimates.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 16
-
-## Holt-Winters method
-
-A smoothing method that maintains level, trend, and seasonal components.
-The notes show additive and multiplicative forms.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 17
-
-## Impulse response
-
-The coefficient sequence of a linear filter, equal to the filter output
-when the input is a single unit impulse.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 14
-
-## LOESS
-
-Locally estimated scatterplot smoothing using locally weighted averages,
-linear regression, or higher-order polynomial fits.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 18
-
-## Multiplicative seasonality
-
-A seasonal effect that scales the level:
-
-```math
-x_t=L_tS_tN_t.
-```
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 17
-
-## STL
-
-Seasonal and trend decomposition using LOESS.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 18
-
-## Transfer-function model
-
-A dynamic regression model that combines current or lagged exogenous
-inputs with temporally structured residual behavior.
-
-- Introduced: Chapter 3
-- Source: CSE598MTL.pdf, p. 19
-
-## Approximation coefficient
-
-A wavelet-transform coefficient representing coarse or low-resolution
-signal structure at a selected scale.
-
-- Introduced: Chapter 4
-- Sources: CSE598MTL.pdf, pp. 23-28
-
-## Detail coefficient
-
-A wavelet-transform coefficient representing local differences or
-higher-resolution structure.
-
-- Introduced: Chapter 4
-- Sources: CSE598MTL.pdf, pp. 23-31
-
-## Discrete wavelet transform
-
-A multiresolution representation that decomposes a sampled signal into
-approximation and detail coefficients.
-
-- Abbreviation: DWT
-- Introduced: Chapter 4
-- Source: CSE598MTL.pdf, p. 20
-
-## Hard thresholding
-
-A coefficient rule that retains $w$ when $|w|>\lambda$ and otherwise
-sets it to zero.
-
-- Introduced: Chapter 4
-- Source: CSE598MTL.pdf, p. 32
-
-## Multiresolution analysis
-
-Representation of the same signal at several temporal resolutions,
-combining coarse approximations and progressively finer details.
-
-- Introduced: Chapter 4
-- Sources: CSE598MTL.pdf, pp. 20-28
-
-## Soft thresholding
-
-A coefficient-shrinkage rule:
-
-```math
-S_\lambda(w)=\mathrm{sgn}(w)\max(|w|-\lambda,0).
-```
-
-- Introduced: Chapter 4
-- Source: CSE598MTL.pdf, p. 32
-
-## Support
-
-The interval over which a wavelet function is nonzero. Shorter support is
-associated on the course page with better temporal localization.
-
-- Introduced: Chapter 4
-- Source: CSE598MTL.pdf, p. 29
-
-## Vanishing moment
-
-A wavelet property under which polynomial components up to a specified
-degree have zero detail coefficients.
-
-- db $K$ is described as having $K$ vanishing moments.
-- Introduced: Chapter 4
-- Sources: CSE598MTL.pdf, pp. 29-31
-
-## Wavelet coefficient
-
-The inner product or local correlation between a signal and a wavelet at
-a selected location and scale.
-
-- Introduced: Chapter 4
-- Source: CSE598MTL.pdf, p. 23
-
-## Bias
-
-The difference between the expected estimator and the target function.
-The chapter uses squared bias as one component of expected squared error.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 38
-
-## Eigenvalue
-
-For PCA, the variance associated with an eigenvector direction of the
-covariance matrix.
-
-- Introduced: Chapter 5
-- Sources: CSE598MTL.pdf, pp. 34-35
-
-## Eigenvector
-
-A covariance-matrix direction used as a principal-component loading
-vector.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 34
-
-## Lasso
-
-Regression with an $L_1$ coefficient penalty. The notes emphasize
-shrinkage and exact coefficient selection.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 43
-
-## Loading
-
-An element of a principal-component eigenvector describing the
-contribution of an original predictor to the component.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 34
-
-## Mahalanobis distance
-
-A covariance-adjusted distance:
-
-```math
-(\mathbf{x}-\boldsymbol{\mu})^\top
-\Sigma^{-1}
-(\mathbf{x}-\boldsymbol{\mu}).
-```
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 37
-
-## Principal component analysis
-
-A linear transformation that finds orthogonal directions of decreasing
-predictor variance.
-
-- Abbreviation: PCA
-- Introduced: Chapter 5
-- Sources: CSE598MTL.pdf, pp. 33-37
-
-## Principal-component score
-
-The projection of an observation onto a principal-component loading
-vector:
-
-```math
-z_m=\mathbf{v}_m^\top\mathbf{x}.
-```
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 34
-
-## Regularization
-
-Addition of a coefficient penalty to a loss function to control model
-complexity.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 40
-
-## Ridge regression
-
-Regression with an $L_2$-squared coefficient penalty.
-
-- Introduced: Chapter 5
-- Sources: CSE598MTL.pdf, pp. 40-42
-
-## Scree plot
-
-A plot of explained variance or eigenvalue against component index, used
-in the notes to identify an elbow for selecting components.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 36
-
-## Variance
-
-The variability of an estimator across repeated samples. In the
-bias-variance decomposition, model complexity often increases this term.
-
-- Introduced: Chapter 5
-- Source: CSE598MTL.pdf, p. 38
-
-## Absorbing state
-
-A state that cannot be left once entered.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 51
-
-## Baum-Welch algorithm
-
-An expectation-maximization algorithm for estimating HMM initial,
-transition, and emission parameters from expected state and transition
-counts.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 50
-
-## Emission distribution
-
-The observation distribution associated with a hidden state in an HMM.
-
-- Introduced: Chapter 6
-- Sources: CSE598MTL.pdf, pp. 47 and 49
-
-## Expectation-maximization
-
-An iterative latent-variable estimation method alternating expected
-latent assignments and parameter maximization.
-
-- Abbreviation: EM
-- Introduced: Chapter 6
-- Sources: CSE598MTL.pdf, pp. 52-55
-
-## Forward algorithm
-
-Dynamic-programming recursion for computing the probability of an HMM
-observation sequence.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 48
-
-## Hidden Markov model
-
-A Markov state process whose states are not observed directly; each state
-generates observations through an emission distribution.
-
-- Abbreviation: HMM
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 47
-
-## Markov property
-
-The next state is conditionally independent of earlier states given the
-current state.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 45
-
-## Responsibility
-
-The posterior probability that an observation belongs to a mixture
-component.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 53
-
-## Viterbi algorithm
-
-A dynamic-programming method for finding the most probable complete HMM
-state sequence.
-
-- Introduced: Chapter 6
-- Source: CSE598MTL.pdf, p. 49
-
-## Activation function
-
-A nonlinear transformation applied after a network's linear weighted sum.
-Examples in the notes are sigmoid, tanh, and ReLU.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 56
-
-## Backpropagation
-
-An efficient application of the chain rule for calculating neural-network
-parameter derivatives.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 61
-
-## Cross-entropy
-
-For one-hot multiclass targets, the negative logarithm of the probability
-assigned to the true class, summed across observations.
-
-- Introduced: Chapter 7
-- Sources: CSE598MTL.pdf, pp. 58 and 60
-
-## Dropout
-
-A training regularizer that randomly omits network nodes during an update.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 64
-
-## Logit
-
-The pre-output linear value $\mathbf{o}_i$ transformed by sigmoid,
-softmax, or another output function.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 56
-
-## Minibatch
-
-A subset of training instances used for one gradient update.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 62
-
-## ReLU
-
-Rectified linear unit:
-
-```math
-\mathrm{ReLU}(u)=\max(0,u).
-```
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 56
-
-## Softmax
-
-A vector output function converting logits into nonnegative values that
-sum to one.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 56
-
-## Stochastic gradient descent
-
-Gradient training that updates parameters using one training instance at
-a time in the course's definition.
-
-- Abbreviation: SGD
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 61
-
-## Weight decay
-
-A squared-weight penalty added to a neural-network loss to shrink
-parameter magnitudes.
-
-- Introduced: Chapter 7
-- Source: CSE598MTL.pdf, p. 64
-
-## Backpropagation through time
-
-Gradient computation through an RNN unrolled across time steps.
-
-- Abbreviation: BPTT
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 70
-
-## Cell state
-
-The LSTM memory vector updated through forget and input gates and passed
-to the next time step.
-
-- Introduced: Chapter 8
-- Sources: CSE598MTL.pdf, pp. 74-76
-
-## Encoder-decoder
-
-A sequence architecture in which an encoder represents the input sequence
-and a decoder generates an output sequence.
-
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 78
-
-## Gated recurrent unit
-
-A recurrent unit using reset and update gates to combine the previous
-hidden state and a candidate state.
-
-- Abbreviation: GRU
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 77
-
-## Hidden state
-
-An internal recurrent representation carrying information from previous
-time steps.
-
-- Introduced: Chapter 8
-- Sources: CSE598MTL.pdf, pp. 68-73
-
-## Long short-term memory
-
-A gated recurrent unit with separate hidden and cell states and forget,
-input, and output gates.
-
-- Abbreviation: LSTM
-- Introduced: Chapter 8
-- Sources: CSE598MTL.pdf, pp. 74-76
-
-## Recurrent neural network
-
-A neural model whose hidden state is updated using the previous hidden
-state and current input.
-
-- Abbreviation: RNN
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 68
-
-## Stateful training
-
-RNN training in which hidden states are carried from one ordered batch to
-the corresponding sequence continuation in the next batch.
-
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 73
-
-## Truncated BPTT
-
-Backpropagation through only a limited number of recurrent time steps.
-
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 70
-
-## Vanishing gradient
-
-A gradient that becomes very small after repeated multiplication through
-many recurrent steps, limiting long-range learning.
-
-- Introduced: Chapter 8
-- Source: CSE598MTL.pdf, p. 74
-
-## Causal convolution
-
-A convolution whose output at time $t$ uses only current and earlier
-input positions.
-
-- Introduced: Chapter 9
-- Source: CSE598MTL.pdf, p. 79
-
-## Dilated convolution
-
-A convolution whose filter taps are separated by a dilation factor $d$.
-
-- Introduced: Chapter 9
-- Source: CSE598MTL.pdf, p. 81
-
-## Receptive field
-
-The temporal input range capable of influencing a selected network
-output.
-
-- Introduced: Chapter 9
-- Sources: CSE598MTL.pdf, pp. 80-82
-
-## Residual block
-
-A neural-network block that adds a transformed branch to an identity or
-projected input branch.
-
-- Introduced for TCNs: Chapter 9
-- Source: CSE598MTL.pdf, p. 82
-
-## Temporal convolutional network
-
-A one-dimensional fully-convolutional temporal network based on causal
-convolution, dilation, and often residual blocks.
-
-- Abbreviation: TCN
-- Introduced: Chapter 9
-- Sources: CSE598MTL.pdf, pp. 79-82
-
-## Autoencoder
-
-An encoder-bottleneck-decoder model trained to reconstruct its input.
-
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 85
-
-## Contrastive learning
-
-A representation-learning method that trains similar pairs to be close
-and dissimilar pairs to be far apart.
-
-- Introduced: Chapter 10
-- Sources: CSE598MTL.pdf, pp. 87-90
-
-## Kernel PCA
-
-A nonlinear PCA method expressed through inner products in an implicit
-feature space.
-
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 84
-
-## Pretext task
-
-A task constructed from unlabeled data to provide a self-supervised
-training signal.
-
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 87
-
-## Projection head
-
-A training-time mapping $z=g(h)$ applied to an encoder representation
-before the contrastive loss.
-
-- Introduced: Chapter 10
-- Sources: CSE598MTL.pdf, pp. 88-90
-
-## Self-supervised learning
-
-Learning from targets or relationships created from the data rather than
-externally supplied labels.
-
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 87
-
-## Slowness assumption
-
-The temporal assumption that nearby segments tend to have similar
-underlying representations.
-
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 88
-
-## Temperature
-
-A contrastive-softmax parameter controlling how sharply similarities are
-converted into probabilities.
-
-- Symbol: $\tau$
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 89
-
-## Temporal representation learning
-
-Mapping a temporal object into a lower-dimensional embedding for later
-analysis.
-
-- Abbreviation: TRL
-- Introduced: Chapter 10
-- Source: CSE598MTL.pdf, p. 83
-
-## Attention
-
-A mechanism that forms a weighted combination of value vectors using
-query-key similarities.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 93
-
-## Cross-attention
-
-Decoder attention using decoder queries and encoder keys and values.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 97
-
-## Key
-
-A learned vector compared with a query to calculate an attention score.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 93
-
-## Masked attention
-
-Decoder self-attention that prevents access to future output positions.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 96
-
-## Multi-head attention
-
-Parallel attention using several learned query, key, and value
-transformations, followed by concatenation and output projection.
-
-- Introduced: Chapter 11
-- Sources: CSE598MTL.pdf, pp. 94-95
-
-## Positional encoding
-
-A fixed or learned representation of sequence position added to content
-embeddings.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 99
-
-## Query
-
-A learned vector representing what a sequence element seeks from other
-elements.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 93
-
-## Self-attention
-
-Attention in which query, key, and value vectors originate from the same
-sequence.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 93
-
-## Teacher forcing
-
-Training a decoder with the known target sequence rather than its own
-previous generated outputs.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 98
-
-## Transformer
-
-A sequence architecture based on attention, position-wise feed-forward
-layers, residual connections, normalization, and positional information.
-
-- Introduced: Chapter 11
-- Sources: CSE598MTL.pdf, pp. 92-100
-
-## Value
-
-The learned information vector combined according to attention weights.
-
-- Introduced: Chapter 11
-- Source: CSE598MTL.pdf, p. 93
-
-## Local-level model
-
-A model with an observed series around an evolving latent level:
-
-```math
-x_t=\mu_t+e_t,
-\qquad
-\mu_t=\mu_{t-1}+\delta_t.
-```
-
-The handwritten appendix studies the first difference of this model.
-
-- Introduced: Chapter 2
-- Revisited: Chapter 12
-- Sources: CSE598MTL.pdf, pp. 9 and 103
+Terms in alphabetical order, each with a one-line definition and the chapter where it's explained.
+
+| Term | Meaning | Ch |
+|---|---|:---:|
+| **Absorbing state** | a Markov state that is never left once entered ($a_{ii}=1$) | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **ACF / autocorrelation** | correlation of a series with itself at lag $k$: $\rho_k=\gamma(k)/\gamma(0)$ | [2](../notes/02_classical_time_series_models.md) |
+| **Activation function** | the nonlinearity between layers (sigmoid, tanh, ReLU); without it, stacked layers collapse to one linear map | [7](../notes/07_neural_network_foundations.md) |
+| **Additive seasonality** | a seasonal swing of constant size, added to the level: $x_t=L_t+S_t+N_t$ | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **AIC / BIC** | $-2\log L$ plus a complexity penalty ($2p$ or $p\log T$); lower is better | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Approximation coefficient** | the low-pass (smooth) output of a wavelet level | [4](../notes/04_wavelets.md) |
+| **AR($p$) model** | $x_t$ regressed on its own $p$ previous values plus a shock | [2](../notes/02_classical_time_series_models.md) |
+| **ARIMA($p,d,q$)** | AR($p$) + MA($q$) fitted after $d$ differences | [2](../notes/02_classical_time_series_models.md) |
+| **Attention** | a content-dependent weighted average of value vectors, with weights from query–key similarity | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md), [11](../notes/11_transformers.md) |
+| **Autoencoder** | a network trained to reconstruct its input through a narrow bottleneck; the bottleneck is the representation | [10](../notes/10_representation_learning.md) |
+| **Backpropagation** | the chain rule applied backward through a network to get every parameter's gradient efficiently | [7](../notes/07_neural_network_foundations.md) |
+| **BPTT** | backpropagation through the time-unrolled RNN, summing gradients for the shared weights | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Backshift operator** | $Bx_t=x_{t-1}$; $B^{s}x_t=x_{t-s}$ | [2](../notes/02_classical_time_series_models.md) |
+| **Baum–Welch** | EM for HMMs: forward–backward expected counts (E-step), then ratio re-estimates (M-step) | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **BERT** | encoder-only transformer pretrained by masked-token prediction; bidirectional context | [11](../notes/11_transformers.md) |
+| **Bias (statistical)** | $\mathbb E[\hat f]-f$: systematic error of an estimator | [5](../notes/05_pca_and_regularization.md) |
+| **Causal convolution** | a convolution whose output at $t$ uses only inputs at $t$ and earlier | [9](../notes/09_temporal_convolutional_networks.md) |
+| **Cell state** | the LSTM's additively updated memory line $\mathbf c_t$ | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Contrastive learning** | learning embeddings where positive pairs are close and negatives are far apart | [10](../notes/10_representation_learning.md) |
+| **Convolution (filter)** | $y_t=\sum_k\beta_kx_{t-k}$: a weighted sum over a window, with the same weights at every position | [3](../notes/03_filters_smoothing_and_decomposition.md), [9](../notes/09_temporal_convolutional_networks.md) |
+| **Cross-attention** | decoder queries attending to encoder keys and values | [11](../notes/11_transformers.md) |
+| **Cross-entropy** | $-\sum_ky_k\log p_k$; the negative log-likelihood of a categorical model | [7](../notes/07_neural_network_foundations.md) |
+| **Detail coefficient** | the high-pass output of a wavelet level: local change at that scale | [4](../notes/04_wavelets.md) |
+| **Differencing** | $\Delta x_t=x_t-x_{t-1}$; removes a random-walk level or a linear trend | [2](../notes/02_classical_time_series_models.md) |
+| **Dilation** | spacing of $d$ steps between a convolution's taps | [9](../notes/09_temporal_convolutional_networks.md) |
+| **Discrete wavelet transform** | repeated low/high-pass filtering and downsampling (the pyramid algorithm) | [4](../notes/04_wavelets.md) |
+| **Dropout** | randomly zeroing units during training to prevent co-adaptation | [7](../notes/07_neural_network_foundations.md) |
+| **Early stopping** | stopping training at the minimum of the validation loss | [7](../notes/07_neural_network_foundations.md) |
+| **Eigenvalue / eigenvector** | $\Sigma\mathbf v=\lambda\mathbf v$; in PCA, the variance along a direction and the direction itself | [5](../notes/05_pca_and_regularization.md) |
+| **EM** | expectation–maximization: alternate expected latent statistics and parameter re-estimation; the likelihood never decreases | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Emission distribution** | $F_j(y)=P(y_t\mid x_t=j)$ in an HMM | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Encoder–decoder** | an encoder summarizes the input; a decoder generates the output sequence from it | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **EWMA** | exponentially weighted moving average $y_t=\lambda x_t+(1-\lambda)y_{t-1}$ | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Exogenous variable** | an external input to a time-series model (the X in SARIMAX) | [2](../notes/02_classical_time_series_models.md) |
+| **Exposure bias** | the train–test mismatch from teacher forcing: the model never trains on its own mistakes | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md), [11](../notes/11_transformers.md) |
+| **Forecast horizon** | how many steps ahead we predict, $H$ | [2](../notes/02_classical_time_series_models.md), [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Forget gate** | LSTM gate that scales the old cell state; 1 = keep, 0 = forget | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Forward algorithm** | computes $P(\mathbf y)$ for an HMM in $O(Q^2T)$ by summing over paths recursively | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **GRU** | gated recurrent unit: reset and update gates, one state; a lighter LSTM | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Hard thresholding** | keep a coefficient if $\lvert w\rvert>\lambda$, otherwise set it to 0 | [4](../notes/04_wavelets.md) |
+| **Hidden Markov model** | a hidden Markov chain of states, each emitting an observation | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Hidden state (RNN)** | the per-step activation $\mathbf h_t$ that summarizes the past; not a weight | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Holt / Holt–Winters** | exponential smoothing with a trend state / with trend and seasonal states | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Hotelling's $T^2$** | a Mahalanobis distance on PC scores, $\sum_mz_m^2/\lambda_m$ | [5](../notes/05_pca_and_regularization.md) |
+| **IID** | independent and identically distributed | [2](../notes/02_classical_time_series_models.md) |
+| **IMA(1,1)** | a series whose first difference is MA(1); EWMA is its optimal forecaster | [2](../notes/02_classical_time_series_models.md), [12](../notes/12_handwritten_appendix.md) |
+| **Impulse response** | a filter's output to a single unit spike; its weights $\beta_k$ | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **InfoNCE / NT-Xent** | the softmax contrastive loss: pick the positive among $N$ candidates | [10](../notes/10_representation_learning.md) |
+| **Kernel PCA** | PCA in an implicit feature space, computed from the kernel (Gram) matrix | [10](../notes/10_representation_learning.md) |
+| **Key / query / value** | attention's projections: what a position offers / what it seeks / what it hands over | [11](../notes/11_transformers.md) |
+| **KV cache** | stored keys and values of past positions, reused during autoregressive decoding | [11](../notes/11_transformers.md) |
+| **Lasso** | least squares with an $\ell_1$ penalty; shrinks and sets coefficients exactly to 0 | [5](../notes/05_pca_and_regularization.md) |
+| **Layer normalization** | normalizing each position's feature vector to zero mean and unit variance | [11](../notes/11_transformers.md) |
+| **Ljung–Box test** | a joint test that residual autocorrelations up to lag $h$ are all zero | [2](../notes/02_classical_time_series_models.md) |
+| **Loading** | the weight of an original variable in a principal component | [5](../notes/05_pca_and_regularization.md) |
+| **Local-level model** | $x_t=\mu_t+e_t$, $\mu_t=\mu_{t-1}+\delta_t$: a random-walk level plus noise | [2](../notes/02_classical_time_series_models.md), [12](../notes/12_handwritten_appendix.md) |
+| **LOESS** | locally weighted regression smoothing | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Logit** | the unnormalized output $\mathbf o$ before sigmoid or softmax | [7](../notes/07_neural_network_foundations.md) |
+| **LSTM** | long short-term memory: forget, input and output gates around an additive cell state | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **MA($q$) model** | $x_t$ as the current shock plus $q$ past shocks | [2](../notes/02_classical_time_series_models.md) |
+| **Mahalanobis distance** | distance scaled by the covariance: $(\mathbf x-\boldsymbol\mu)^\top\Sigma^{-1}(\mathbf x-\boldsymbol\mu)$ | [5](../notes/05_pca_and_regularization.md) |
+| **Markov property** | the future depends on the past only through the present state | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Masked attention** | attention with future positions' scores set to $-\infty$ | [11](../notes/11_transformers.md) |
+| **Minibatch** | the subset of examples used for one gradient step | [7](../notes/07_neural_network_foundations.md) |
+| **Momentum** | an EWMA of gradients used as the update direction | [7](../notes/07_neural_network_foundations.md) |
+| **Multi-head attention** | several attention heads in parallel in lower-dimensional subspaces, concatenated and projected by $W_O$ | [11](../notes/11_transformers.md) |
+| **Multiplicative seasonality** | a seasonal swing proportional to the level: $x_t=L_tS_tN_t$ | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Multiresolution analysis** | describing a signal at a nested set of scales | [4](../notes/04_wavelets.md) |
+| **Mutual information** | $I(X;Y)=H(X)-H(X\mid Y)$: the reduction in uncertainty about one variable from knowing the other | [10](../notes/10_representation_learning.md) |
+| **PACF** | correlation at lag $k$ after removing the effect of the intermediate lags | [2](../notes/02_classical_time_series_models.md) |
+| **Positional encoding** | a vector added to embeddings to tell attention where each element is | [11](../notes/11_transformers.md) |
+| **Pretext task** | a label-free task invented from the data to train a representation | [10](../notes/10_representation_learning.md) |
+| **Principal component** | a direction of maximal variance (a covariance eigenvector); its projections are the scores | [5](../notes/05_pca_and_regularization.md) |
+| **Projection head** | a small MLP $g$ on top of the encoder where the contrastive loss is applied; discarded afterwards | [10](../notes/10_representation_learning.md) |
+| **Q statistic (SPE)** | squared residual distance from the PCA subspace | [5](../notes/05_pca_and_regularization.md) |
+| **Receptive field** | how many past inputs can influence one output | [9](../notes/09_temporal_convolutional_networks.md) |
+| **Recurrent neural network** | a network that updates a hidden state with shared weights at each time step | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Regularization** | constraining a model (penalty, early stopping, dropout) to reduce variance | [5](../notes/05_pca_and_regularization.md), [7](../notes/07_neural_network_foundations.md) |
+| **ReLU** | $\max(0,u)$ | [7](../notes/07_neural_network_foundations.md) |
+| **Residual** | $r_t=x_t-\hat x_t$; should look like white noise for a good model | [2](../notes/02_classical_time_series_models.md) |
+| **Residual connection** | $\mathbf y=\mathbf x+\mathcal F(\mathbf x)$; skips layers, not time | [9](../notes/09_temporal_convolutional_networks.md), [11](../notes/11_transformers.md) |
+| **Responsibility** | $\gamma(z_{nk})$: the posterior probability that component $k$ generated point $n$ | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Ridge regression** | least squares with an $\ell_2$ penalty; shrinks low-variance directions most | [5](../notes/05_pca_and_regularization.md) |
+| **SARIMAX** | ARIMA with seasonal terms and exogenous inputs | [2](../notes/02_classical_time_series_models.md) |
+| **Scree plot** | eigenvalues against component index, used to choose how many PCs to keep | [5](../notes/05_pca_and_regularization.md) |
+| **Self-attention** | attention where queries, keys and values all come from the same sequence | [11](../notes/11_transformers.md) |
+| **Self-supervised learning** | supervision generated from the data itself | [10](../notes/10_representation_learning.md) |
+| **Slowness assumption** | nearby time segments share the same underlying state | [10](../notes/10_representation_learning.md) |
+| **Soft thresholding** | $\mathrm{sgn}(w)(\lvert w\rvert-\lambda)_+$; the lasso solution in an orthonormal basis | [4](../notes/04_wavelets.md), [5](../notes/05_pca_and_regularization.md) |
+| **Softmax** | $e^{o_k}/\sum_je^{o_j}$: turns logits into a probability vector | [7](../notes/07_neural_network_foundations.md) |
+| **Stateful training** | carrying an RNN's hidden state across batches (aligned, unshuffled, detached) | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Stationarity (strict / weak)** | the whole distribution / the first two moments are invariant to time shifts | [2](../notes/02_classical_time_series_models.md), [12](../notes/12_handwritten_appendix.md) |
+| **STL** | seasonal–trend decomposition using LOESS | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Stochastic gradient descent** | updating with the gradient of one example or a minibatch | [7](../notes/07_neural_network_foundations.md) |
+| **Support (of a wavelet)** | the interval where the wavelet is nonzero; shorter support localizes better | [4](../notes/04_wavelets.md) |
+| **Teacher forcing** | training a decoder on the true previous outputs rather than its own | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md), [11](../notes/11_transformers.md) |
+| **Temperature** | $\tau$ dividing the similarities in a softmax; small = sharp, large = flat | [10](../notes/10_representation_learning.md) |
+| **Temporal convolutional network** | a stack of causal, dilated, residual 1-D convolutions | [9](../notes/09_temporal_convolutional_networks.md) |
+| **Transfer-function model** | a regression of $y_t$ on lagged inputs $x_t$ with ARMA noise | [3](../notes/03_filters_smoothing_and_decomposition.md) |
+| **Transformer** | an encoder–decoder built from attention, feed-forward layers, residuals and normalization; no recurrence | [11](../notes/11_transformers.md) |
+| **Truncated BPTT** | backpropagating only $k$ steps back in time | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Vanishing / exploding gradient** | geometric shrinkage or growth of gradients through many layers or time steps | [8](../notes/08_rnn_lstm_gru_and_seq2seq.md) |
+| **Vanishing moments** | a wavelet with $p$ vanishing moments is orthogonal to polynomials of degree $<p$ | [4](../notes/04_wavelets.md) |
+| **Viterbi algorithm** | dynamic programming for the single most probable hidden-state path | [6](../notes/06_markov_models_hmm_and_em.md) |
+| **Weight decay** | an $\ell_2$ penalty on network weights; each step shrinks them by a factor | [7](../notes/07_neural_network_foundations.md) |
+| **White noise** | uncorrelated, constant mean and variance; need not be independent or Gaussian | [2](../notes/02_classical_time_series_models.md) |

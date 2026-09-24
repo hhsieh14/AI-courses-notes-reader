@@ -1,20 +1,12 @@
----
-course: "Statistical Learning Theory"
-chapter: "10"
-title: "Nonsmooth and Proximal Optimization"
-source_pages: "598SLT.pdf, pp. 65-70"
-status: "consolidated v1.0"
----
+# 10. Nonsmooth and Proximal Optimization
 
-# Nonsmooth and Proximal Optimization
-
-**Source:** 598SLT.pdf, pp. 65-70.
+Lasso and SVMs have objectives with kinks, where gradients don't exist. This chapter handles objectives of the form *smooth + nonsmooth-but-simple*: take a gradient step on the smooth part, then a **proximal** step on the rest. For the $\ell_1$ norm the proximal step is soft thresholding, which is exactly where lasso's exact zeros come from. The method keeps gradient descent's $O(1/k)$ rate.
 
 ## 1. Why gradient descent is not always enough
 
 The previous chapter studied gradient descent for differentiable convex objectives. Many machine-learning objectives, however, include a convex term that is not differentiable everywhere.
 
-The course considers the composite optimization problem
+Consider the composite problem
 
 $$\min_{x\in\mathbb{R}^{d}}f(x)=g(x)+h(x),$$
 
@@ -61,8 +53,10 @@ $$\lim_{t\to 0^{-}}\frac{\lvert t\rvert-\lvert 0\rvert}{t}=-1.$$
 
 Because the two one-sided derivatives are different, $\lvert x\rvert$ is not differentiable at $x=0$.
 
-!!! clarification "Why is this example important?"
-    The nondifferentiability occurs precisely at zero, which is also the value encouraged by $\ell_{1}$ regularization. A method designed for this objective must therefore handle the point at which ordinary differentiation fails.
+> [!TIP]
+> **Why is this example important?**
+>
+> The nondifferentiability occurs precisely at zero, which is also the value encouraged by $\ell_{1}$ regularization. A method designed for this objective must therefore handle the point at which ordinary differentiation fails.
 
 ## 3. The two-step idea
 
@@ -114,10 +108,12 @@ When $u_{i}<-\lambda\eta$,
 
 $$\left[\mathrm{prox}_{\eta h}(u)\right]_{i}=u_{i}+\lambda\eta.$$
 
-This operation is the soft-thresholding rule shown on page 66. Inputs within the interval $[-\lambda\eta,\lambda\eta]$ are mapped exactly to zero, while larger-magnitude inputs are moved toward zero by $\lambda\eta$.
+This is **soft thresholding**. Inputs within the interval $[-\lambda\eta,\lambda\eta]$ are mapped exactly to zero, while larger-magnitude inputs are moved toward zero by $\lambda\eta$.
 
-!!! clarification "How does the proximal step promote sparsity?"
-    The mapping has a nontrivial interval of inputs that all produce the exact output zero. Repeated proximal-gradient updates can therefore set many coordinates of $\theta$ exactly to zero, which explains the sparse coefficients associated with $\ell_{1}$ regularization in the source notes.
+> [!TIP]
+> **How does the proximal step promote sparsity?**
+>
+> The mapping has a nontrivial interval of inputs that all produce the exact output zero. Repeated proximal-gradient updates can therefore set many coordinates of $\theta$ exactly to zero, which is the mechanism behind lasso's sparse coefficients.
 
 ## 6. Subgradients of convex functions
 
@@ -125,7 +121,7 @@ For a differentiable convex function $h$, the first-order convexity inequality i
 
 $$h(y)\geq h(x)+\nabla h(x)^{\top}(y-x).$$
 
-When $h$ is convex but not differentiable, the course replaces the gradient by a subgradient.
+When $h$ is convex but not differentiable, we replace the gradient by a subgradient.
 
 The subdifferential of $h$ at $x$ is
 
@@ -137,10 +133,12 @@ If $h$ is differentiable at $x$, then the subdifferential contains only the ordi
 
 $$\partial h(x)=\left\lbrace \nabla h(x)\right\rbrace.$$
 
-In the setting used by the course, the subdifferential is nonempty at every point in the domain of $h$.
+For a convex $h:\mathbb R^d\to\mathbb R$ the subdifferential is nonempty everywhere.
 
-!!! clarification "Why is it called a subgradient?"
-    A subgradient defines an affine function that lies below the convex function. At a smooth point there is one tangent slope; at a nonsmooth point there may be several valid supporting slopes.
+> [!TIP]
+> **Why is it called a subgradient?**
+>
+> A subgradient defines an affine function that lies below the convex function. At a smooth point there is one tangent slope; at a nonsmooth point there may be several valid supporting slopes.
 
 ## 7. Example: the subdifferential of $\lvert x\rvert$
 
@@ -198,10 +196,12 @@ Start from an initialization $x^{(0)}$. For iteration $k\geq 1$, proximal gradie
 
 $$x^{(k)}=\mathrm{prox}_{\eta h}\left(x^{(k-1)}-\eta\nabla g\left(x^{(k-1)}\right)\right).$$
 
-The course uses a fixed learning rate $\eta>0$ and runs the method until a prescribed maximum number of iterations is reached.
+Use a fixed learning rate $\eta\le1/L$ and a fixed iteration budget.
 
-!!! technical-note "Index missing in the displayed algorithm"
-    The update on page 68 displays an unindexed $x$ inside the proximal mapping. The proof on page 69 uses $x^{(k-1)}$, which is also consistent with the generic two-step update on page 66. This chapter therefore writes the iteration with $x^{(k-1)}$ explicitly.
+> [!NOTE]
+> **Why the prox step is cheap**
+>
+> Proximal gradient is only useful when $\mathrm{prox}_{\eta h}$ has a closed form or is easy to compute. Common cases: $\ell_1$ gives soft thresholding; the indicator of a convex set gives Euclidean projection (so projected gradient descent is a special case); $\ell_2$ gives shrinkage $u/(1+2\eta\lambda)$; group lasso gives block soft thresholding.
 
 ## 10. Convergence theorem for proximal gradient descent
 
@@ -227,8 +227,7 @@ Therefore,
 
 $$f\left(x^{(k)}\right)-f\left(x^{\star}\right)=O\left(\frac{1}{k}\right).$$
 
-!!! technical-note "The absolute value is not needed"
-    Because $x^{\star}$ is a global minimizer, $f(x^{(k)})-f(x^{\star})\geq 0$. The source states the theorem with an absolute value, but the proof bounds the nonnegative objective gap directly.
+> Since $x^\star$ is a global minimizer, $f(x^{(k)})-f(x^\star)\ge0$, so no absolute value is needed.
 
 ## 11. Proof of Theorem 1
 
@@ -322,11 +321,11 @@ Renaming $k^{\prime}$ as $k$ completes the proof.
 
 ## 12. Accelerated proximal gradient descent
 
-The source concludes with accelerated proximal gradient descent, the proximal analogue of accelerated gradient descent.
+Acceleration carries over directly (FISTA):
 
 Initialize $x^{(0)}$, set
 
-$$x^{(-1)}=x^{(0)},\qquad t_{0}=0,\qquad t_{1}=1.$$
+$$x^{(1)}=x^{(0)},\qquad t_{0}=0,\qquad t_{1}=1.$$
 
 At iteration $k\geq 1$, form the extrapolated point
 
@@ -340,7 +339,7 @@ Update the momentum parameter using
 
 $$t_{k+1}=\frac{\sqrt{1+4t_{k}^{2}}+1}{2}.$$
 
-The course states the rates
+The rates are
 
 $$f\left(x^{(k)}\right)-f\left(x^{\star}\right)=O\left(\frac{1}{k}\right)$$
 
@@ -350,8 +349,10 @@ $$f\left(x^{(k)}\right)-f\left(x^{\star}\right)=O\left(\frac{1}{k^{2}}\right)$$
 
 for accelerated proximal gradient descent.
 
-!!! source-boundary "The accelerated rate is stated without proof"
-    Pages 65-69 provide the full $O(1/k)$ proof for proximal gradient descent. Page 70 gives the accelerated algorithm and states its $O(1/k^{2})$ rate, but the notebook does not prove that result.
+> [!NOTE]
+> **Initialization indices**
+>
+> Start with $x^{(0)}=x^{(1)}$ (the first extrapolation has no momentum), matching Chapter 9. The $O(1/k^2)$ proof is the same estimate-sequence argument as for AGD, with the prox step in place of the gradient step (Beck & Teboulle, 2009).
 
 ## 13. Main takeaways
 
@@ -361,7 +362,7 @@ for accelerated proximal gradient descent.
 - Subgradients replace ordinary gradients at nondifferentiable points.
 - The proximal optimality condition is the key link between the algorithm and the convergence proof.
 - With $\eta\leq 1/L$, proximal gradient descent has an $O(1/k)$ objective-gap bound.
-- The source states that acceleration improves the rate to $O(1/k^{2})$.
+- Acceleration (FISTA) improves the rate to $O(1/k^{2})$.
 
 ---
 

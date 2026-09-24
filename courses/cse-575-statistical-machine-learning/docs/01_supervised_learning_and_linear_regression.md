@@ -1,296 +1,226 @@
 # 1. Supervised Learning and Linear Regression
 
-**Source pages:** 2–6  
-**Status:** reconstructed and equation-checked
-
-This chapter introduces supervised learning, establishes the course notation, and develops linear regression through both the closed-form least-squares solution and gradient descent.
+This chapter sets up the vocabulary used for the rest of the course: what "learning" means, how supervised problems are posed, and how the simplest useful model, linear regression, is fit two different ways, in closed form and by gradient descent.
 
 ## 1.1 What does it mean for a machine to learn?
 
-The source begins with two complementary definitions.
+Two classic definitions are worth keeping side by side.
 
-Arthur Samuel describes machine learning as the field that gives computers the ability to learn without being explicitly programmed. Tom Mitchell gives a more operational definition: a program learns from experience when its performance on a task improves according to a chosen performance measure.
+- **Arthur Samuel (1959):** machine learning gives computers the ability to learn without being explicitly programmed.
+- **Tom Mitchell (1997):** a program *learns* from experience $E$ with respect to a task $T$ and performance measure $P$ if its performance on $T$, as measured by $P$, improves with $E$.
 
-Mitchell's definition can be organized using three objects:
+Mitchell's version is the one I find useful in practice, because it forces three decisions:
 
-- **Task, T:** the activity the system must perform, such as regression, classification, machine translation, anomaly detection, or density estimation.
-- **Performance, P:** the quantity used to judge the system, such as prediction accuracy or another task-appropriate metric.
-- **Experience, E:** the data or interactions from which the system learns.
-
-For supervised learning, the experience contains input-output pairs. For unsupervised learning, the experience contains inputs without observed output labels.
+| Symbol | Meaning | Spam-filter example |
+|---|---|---|
+| $T$ (task) | what the system must do | label an email as spam / not spam |
+| $P$ (performance) | how we score it | fraction of emails labeled correctly, or recall on spam |
+| $E$ (experience) | what it learns from | a set of emails already labeled by users |
 
 > [!TIP]
-> **Review intuition**
+> **Intuition**
 >
-> The T-P-E framework prevents the phrase “the model learns” from being vague. A learning problem is not fully specified until the task, evidence, and success criterion are all defined.
+> "The model learns" is vague until $T$, $P$ and $E$ are written down. Most confusion in ML projects comes from one of the three being left implicit, usually $P$.
 
+## 1.2 Three modes of learning
 
-## 1.2 Three broad modes of machine learning
+1. **Supervised learning:** every training input comes with a known target.
+2. **Unsupervised learning:** we only have inputs and look for structure in them (Chapters 9–11).
+3. **Reinforcement learning:** an agent learns from rewards obtained by acting; not covered in this course.
 
-The source distinguishes three modes:
+A supervised training set is written
 
-1. **Supervised learning:** every training input has a known target.
-2. **Unsupervised learning:** training inputs are available without target labels.
-3. **Reinforcement learning:** listed in the handwritten annotation as another major learning mode, although it is not developed in these opening pages.
+$$ \mathcal{D}_{\mathrm{train}} = \left\lbrace \left(x^{(i)}, y^{(i)}\right)\right\rbrace_{i=1}^{n_{\mathrm{train}}}, $$
 
-A supervised training set is:
-
-$$ \mathcal{D}_{\mathrm{train}} = \left\lbrace \left(x^{(i)}, y^{(i)}\right)\right\rbrace_{i=1}^{n_{\mathrm{train}}}. $$
-
-Here, $x^{(i)}$ is the input for training example $i$, and $y^{(i)}$ is its observed target.
-
-An unsupervised dataset contains only the inputs:
+where $x^{(i)}$ is the input of example $i$ and $y^{(i)}$ its observed target. An unsupervised dataset drops the targets:
 
 $$ \mathcal{D}_{\mathrm{train}} = \left\lbrace x^{(i)}\right\rbrace_{i=1}^{n_{\mathrm{train}}}. $$
 
 ## 1.3 Regression and classification
 
-The source divides supervised learning into two main task types.
-
-| Task | Output type | Source examples |
+| Task | Output | Examples |
 |---|---|---|
-| Regression | continuous numerical outcome | study hours to score; movie information to revenue |
-| Classification | discrete category | spam versus not spam; animal category |
+| Regression | a real number, $y^{(i)}\in\mathbb{R}$ | hours studied → exam score; movie metadata → box-office revenue |
+| Classification | a category, e.g. $y^{(i)}\in\lbrace 0,1\rbrace$ | spam vs. not spam; which animal is in a photo |
 
-For regression, the output is real-valued:
+Every supervised method has the same two phases:
 
-$$ y^{(i)} \in \mathbb{R}. $$
-
-For binary classification, the output can be encoded as zero or one:
-
-$$ y^{(i)} \in \lbrace 0,1\rbrace. $$
-
-For multiclass classification, the output belongs to a finite set of categories.
-
-The supervised-learning workflow has two stages:
-
-<div class="grid cards" markdown>
-
--   **Training**
-
-    ---
-
-    Combine data with known answers and a parameterized model. Fit the parameters using the training examples.
-
--   **Prediction**
-
-    ---
-
-    Apply the fitted model to new data whose answer is unknown. Return a numerical value or category.
-
-</div>
+| Phase | What happens |
+|---|---|
+| **Training** | Combine labeled data with a parameterized model and choose the parameters that fit the data. |
+| **Prediction** | Apply the fitted model to new inputs whose answers are unknown. |
 
 ## 1.4 Hypotheses and parameters
 
-The model is written as $h_\theta(x)$ or $h(x;\theta)$, where $\theta$ denotes the learned parameters.
+A model is written $h_\theta(x)$ or $h(x;\theta)$, where $\theta$ collects the learned parameters. The older name for this object is a **hypothesis**: an assumed form for the relationship between input and output.
 
-The source calls this object a **hypothesis**, a **parameterized model**, or a **parameterized function**. It represents an assumed relationship between the input and output.
+Training picks the parameters that minimize a loss over the training set:
 
-Training chooses parameter values that minimize a loss over the training set:
+$$ \theta^{\star} = \mathrm{arg\,min}_{\theta}\; L\left(\left\lbrace y^{(i)}, h_\theta\left(x^{(i)}\right)\right\rbrace_{i=1}^{n_{\mathrm{train}}}\right). $$
 
-$$ \theta^{\star} = \mathrm{arg\,min}_{\theta} L\left(\left\lbrace y^{(i)}, h_\theta\left(x^{(i)}\right)\right\rbrace_{i=1}^{n_{\mathrm{train}}}\right). $$
-
-> [!NOTE]
-> **Added clarification**
->
-> The exact form of $L$ depends on the task and modeling assumptions. In the next sections, the course uses squared prediction error for linear regression.
-
+The form of $L$ depends on the problem. For linear regression it is squared error, which we will later see is not an arbitrary choice (Chapter 3 shows it is the negative log-likelihood under Gaussian noise).
 
 ## 1.5 The one-feature linear model
 
-One of the simplest regression hypotheses is:
+The simplest regression hypothesis is a line:
 
-$$ h_\theta(x) = \theta_0 + \theta_1x. $$
+$$ h_\theta(x) = \theta_0 + \theta_1x, \qquad \theta = \left[\theta_0,\theta_1\right]^\top, $$
 
-The parameter vector is:
+with $\theta_0$ the intercept (bias) and $\theta_1$ the slope. Each choice of $\theta$ is a different candidate line; learning means choosing the best one under the loss.
 
-$$ \theta = \left[\theta_0,\theta_1\right]^\top. $$
+## 1.6 Measuring error
 
-The roles of the parameters are:
+Before choosing a loss it helps to recall the common distances between vectors $x^{(1)}$ and $x^{(2)}$:
 
-- $\theta_0$: intercept or bias.
-- $\theta_1$: slope or coefficient of the input feature.
+$$ d_1 = \sum_j \left|x_j^{(1)}-x_j^{(2)}\right|, \qquad d_2 = \left(\sum_j \left|x_j^{(1)}-x_j^{(2)}\right|^2\right)^{1/2}, \qquad d_p = \left(\sum_j \left|x_j^{(1)}-x_j^{(2)}\right|^p\right)^{1/p}. $$
 
-Different parameter values produce different candidate lines. Learning is the process of selecting the line that performs best according to the chosen objective.
+For regression we measure the vertical gap between the observation and the prediction, the **residual**
 
-## 1.6 Measuring prediction error
+$$ r^{(i)} = y^{(i)} - h_\theta\left(x^{(i)}\right), $$
 
-The source first reviews distance measures between two vectors $x^{(1)}$ and $x^{(2)}$.
-
-The Euclidean or L2 distance is:
-
-$$ d_2\left(x^{(1)},x^{(2)}\right) = \left(\sum_j \left|x_j^{(1)}-x_j^{(2)}\right|^2\right)^{1/2}. $$
-
-The Manhattan or L1 distance is:
-
-$$ d_1\left(x^{(1)},x^{(2)}\right) = \sum_j \left|x_j^{(1)}-x_j^{(2)}\right|. $$
-
-The general Lp distance is:
-
-$$ d_p\left(x^{(1)},x^{(2)}\right) = \left(\sum_j \left|x_j^{(1)}-x_j^{(2)}\right|^p\right)^{1/p}. $$
-
-For linear regression, the course measures the vertical difference between the observed target and model prediction. The per-example residual is:
-
-$$ r^{(i)} = y^{(i)} - h_\theta\left(x^{(i)}\right). $$
-
-The course objective is the sum of squared residuals with a factor of one half:
+and minimize half the residual sum of squares (RSS):
 
 $$ L(\theta) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
 
-The source also presents the averaged version:
+The mean squared error divides by $n_{\mathrm{train}}$ instead of 2:
 
-$$ L_{\mathrm{mean}}(\theta) = \frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
+$$ L_{\mathrm{MSE}}(\theta) = \frac{1}{n_{\mathrm{train}}}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-h_\theta\left(x^{(i)}\right)\right)^2. $$
 
 > [!NOTE]
-> **Added clarification: RSS versus MSE**
+> **RSS, MSE and the ½**
 >
-> The slides use “RSS,” “loss,” and “mean squared error” near the same derivation. They differ only by constant scaling in this context: RSS sums squared residuals, while MSE divides by the number of examples. The factor $1/2$ is commonly inserted because it cancels the factor $2$ produced by differentiation. These constant factors do not change the minimizing parameter vector.
+> These differ only by a positive constant, so they have the same minimizer. The $\tfrac12$ is there purely so the 2 from differentiating a square cancels. What *does* matter in practice: MSE's scale does not grow with the dataset, which makes learning rates transferable between dataset sizes.
 
+## 1.7 Vector form
 
-## 1.7 Vector representation
+Append a constant 1 to each input so the intercept becomes an ordinary weight:
 
-Introduce an augmented input vector that contains a constant coordinate:
+$$ \tilde{x}^{(i)} = \left[1,x^{(i)}\right]^\top, \qquad h_\theta\left(x^{(i)}\right) = \left(\tilde{x}^{(i)}\right)^\top\theta. $$
 
-$$ \tilde{x}^{(i)} = \left[1,x^{(i)}\right]^\top. $$
+Stack the augmented inputs as rows of the **design matrix** $X$ (row $i$ is $(\tilde{x}^{(i)})^\top$) and the targets into $y=[y^{(1)},\ldots,y^{(n_{\mathrm{train}})}]^\top$. All predictions are then $X\theta$ and all residuals $y-X\theta$.
 
-Then:
+## 1.8 Least squares in closed form
 
-$$ h_\theta\left(x^{(i)}\right) = \left(\tilde{x}^{(i)}\right)^\top\theta. $$
+In matrix form the loss is
 
-Stack the training examples into a design matrix:
+$$ L(\theta) = \frac{1}{2}(y-X\theta)^\top(y-X\theta) = \frac{1}{2}\left(y^\top y - 2y^\top X\theta + \theta^\top X^\top X\theta\right). $$
 
-$$ X_{i,:} = \left(\tilde{x}^{(i)}\right)^\top, \qquad i=1,\ldots,n_{\mathrm{train}}. $$
-
-Stack the observed targets into a vector:
-
-$$ y = \left[y^{(1)},y^{(2)},\ldots,y^{(n_{\mathrm{train}})}\right]^\top. $$
-
-All model predictions are then collected in $X\theta$, and all residuals are collected in $y-X\theta$.
-
-## 1.8 Method of least squares
-
-The scalar objective can be written in matrix form:
-
-$$ L(\theta) = \frac{1}{2}(y-X\theta)^\top(y-X\theta). $$
-
-This equality follows from the inner-product rule:
-
-$$ (y-X\theta)^\top(y-X\theta) = \sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-\left(\tilde{x}^{(i)}\right)^\top\theta\right)^2. $$
-
-Expanding the quadratic objective gives:
-
-$$ L(\theta) = \frac{1}{2}\left(y^\top y - 2y^\top X\theta + \theta^\top X^\top X\theta\right). $$
-
-The gradient with respect to the parameter vector is:
+Its gradient is
 
 $$ \nabla_\theta L(\theta) = X^\top X\theta - X^\top y. $$
 
-At an optimum of this differentiable quadratic objective, the gradient is zero:
+The loss is a convex quadratic, so any point with zero gradient is a global minimum. Setting the gradient to zero gives the **normal equations**
 
-$$ X^\top X\theta - X^\top y = 0. $$
+$$ X^\top X\theta = X^\top y, $$
 
-Therefore, the normal equations are:
-
-$$ X^\top X\theta = X^\top y. $$
-
-When $X^\top X$ is invertible, the least-squares solution is:
+and, when $X^\top X$ is invertible,
 
 $$ \theta^{\star} = (X^\top X)^{-1}X^\top y. $$
 
 > [!NOTE]
-> **Technical note**
+> **Beyond the lecture: when $X^\top X$ is singular, and how it is really computed**
 >
-> The source presents the inverse form directly. The inverse requires $X^\top X$ to be nonsingular. Handling a singular design matrix is outside these pages and will not be developed here.
-
+> $X^\top X$ is singular whenever features are perfectly collinear or there are more features than examples. Then the normal equations have infinitely many solutions; the minimum-norm one is $\theta^\star = X^{+}y$ with $X^{+}$ the Moore–Penrose pseudo-inverse. Adding a ridge penalty (Chapter 3) makes the matrix $X^\top X+\lambda I$ invertible for any $\lambda>0$.
+>
+> In code, never form the inverse. `numpy.linalg.lstsq` solves the problem through a QR or SVD factorization, which is faster and much more numerically stable than `inv(X.T @ X) @ X.T @ y`, whose error grows with the *square* of $X$'s condition number.
 
 ## 1.9 Gradient descent
 
-The source next presents a generic iterative optimization method. Starting from an initial parameter vector $\theta^{(0)}$, gradient descent repeatedly moves in the negative-gradient direction:
+Gradient descent is the general-purpose alternative. Start from $\theta^{(0)}$ and repeatedly step against the gradient:
 
-$$ \theta^{(k+1)} = \theta^{(k)} - \eta\nabla_\theta L\left(\theta^{(k)}\right). $$
+$$ \theta^{(k+1)} = \theta^{(k)} - \eta\nabla_\theta L\left(\theta^{(k)}\right), $$
 
-Here, $\eta$ is the learning rate.
+where $\eta>0$ is the **learning rate**. For intuition take $f(x)=x^2$ with $f'(x)=2x$: when the slope is positive, moving left lowers $f$; when it is negative, moving right does. The negative gradient always points downhill locally.
 
-For the simple function $f(x)=x^2$, the derivative is $f'(x)=2x$. A positive derivative means moving left lowers the function, while a negative derivative means moving right lowers it. The negative gradient therefore points locally toward decreasing objective values.
+For the one-feature model,
 
-For linear regression with one input feature:
+$$ \frac{\partial L}{\partial\theta_0} = -\sum_{i}\left(y^{(i)}-\theta_0-\theta_1x^{(i)}\right), \qquad \frac{\partial L}{\partial\theta_1} = -\sum_{i}\left(y^{(i)}-\theta_0-\theta_1x^{(i)}\right)x^{(i)}, $$
 
-$$ L(\theta_0,\theta_1) = \frac{1}{2}\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-\theta_0-\theta_1x^{(i)}\right)^2. $$
+so the **simultaneous** update is
 
-The derivative with respect to the intercept is:
-
-$$ \frac{\partial L}{\partial\theta_0} = -\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-\theta_0-\theta_1x^{(i)}\right). $$
-
-The derivative with respect to the slope is:
-
-$$ \frac{\partial L}{\partial\theta_1} = -\sum_{i=1}^{n_{\mathrm{train}}}\left(y^{(i)}-\theta_0-\theta_1x^{(i)}\right)x^{(i)}. $$
-
-The simultaneous update is:
-
-$$ \theta_0^{(k+1)} = \theta_0^{(k)} + \eta\sum_i\left(y^{(i)}-\theta_0^{(k)}-\theta_1^{(k)}x^{(i)}\right). $$
+$$ \theta_0^{(k+1)} = \theta_0^{(k)} + \eta\sum_i\left(y^{(i)}-\theta_0^{(k)}-\theta_1^{(k)}x^{(i)}\right), $$
 
 $$ \theta_1^{(k+1)} = \theta_1^{(k)} + \eta\sum_i\left(y^{(i)}-\theta_0^{(k)}-\theta_1^{(k)}x^{(i)}\right)x^{(i)}. $$
 
-In matrix form, the same update is:
+In matrix form this is simply
 
 $$ \theta^{(k+1)} = \theta^{(k)} - \eta X^\top\left(X\theta^{(k)}-y\right). $$
 
-> [!NOTE]
-> **Closed-form least squares versus gradient descent**
->
-> The handwritten note contrasts least squares as a specialized method that can produce the optimum directly with gradient descent as a generic optimization procedure that approaches an optimum iteratively.
-
-
-## 1.10 Advanced linear regression through feature construction
-
-Linear regression can include polynomial features:
-
-$$ h_\theta(x) = \theta_0 + \theta_1x + \theta_2x^2 + \theta_3x^3 + \cdots. $$
-
-It can also include other transformed features, such as trigonometric functions and logarithms.
-
-For example, define a feature map:
-
-$$ \phi(x) = \left[1,x,x^2,x^3\right]^\top. $$
-
-The model becomes:
-
-$$ h_\theta(x) = \theta^\top\phi(x). $$
-
-Even though the prediction is nonlinear as a function of the raw input $x$, it is still a linear combination of the constructed features.
+| | Closed form | Gradient descent |
+|---|---|---|
+| Result | exact optimum in one solve | approaches the optimum iteratively |
+| Cost | $O(nd^2+d^3)$ | $O(nd)$ per step |
+| Works for | this quadratic loss | any differentiable loss |
 
 > [!NOTE]
-> **Added clarification: what “linear” means**
+> **Beyond the lecture: how large can $\eta$ be?**
 >
-> The source emphasizes that “linear” refers to taking a linear combination of features. Equivalently, the model is linear in its learned coefficients. The features themselves may be nonlinear transformations of the original input.
+> For this loss, gradient descent converges iff $0<\eta<2/\lambda_{\max}(X^\top X)$. Too large and the iterates oscillate and blow up; too small and progress is slow along the directions with small eigenvalues. This is also why standardizing features (Chapter 4) speeds up gradient descent: it makes the eigenvalues of $X^\top X$ more similar. The general theory is in [Statistical Learning Theory, Chapter 9](../../statistical-learning-theory/docs/chapters/09_smooth_convex_optimization.md).
 
+```python
+import numpy as np
 
-Increasing the polynomial degree makes the model more flexible. The source examples show that low-degree models may miss the shape of the data, while very high-degree models may produce unstable oscillations. The next chapter develops this issue as underfitting, overfitting, and generalization.
+rng = np.random.default_rng(0)
+x = rng.uniform(0, 10, 50)
+y = 3.0 + 2.0 * x + rng.normal(0, 1, 50)
+X = np.column_stack([np.ones_like(x), x])
+
+theta_closed, *_ = np.linalg.lstsq(X, y, rcond=None)
+
+theta = np.zeros(2)
+eta = 1.0 / np.linalg.eigvalsh(X.T @ X).max()   # safe step size
+for _ in range(20_000):
+    theta -= eta * X.T @ (X @ theta - y)
+
+print(theta_closed, theta)   # both [2.757, 2.052]; the true values are [3, 2]
+```
+
+## 1.10 Nonlinear features, still linear regression
+
+Linear regression can fit curves by adding transformed features:
+
+$$ h_\theta(x) = \theta_0 + \theta_1x + \theta_2x^2 + \theta_3x^3 = \theta^\top\phi(x), \qquad \phi(x) = \left[1,x,x^2,x^3\right]^\top. $$
+
+The prediction is nonlinear in $x$, but it is still **linear in the parameters** $\theta$, so every formula above applies with $X$ built from $\phi(x^{(i)})$. Logarithms, sines, interactions and so on work the same way.
+
+Raising the polynomial degree makes the model more flexible. A low degree misses the curve; a very high degree fits the noise and oscillates between points. That tension is the subject of Chapter 2.
 
 ## 1.11 Common mistakes
 
-1. **Confusing the fitted model with the learning algorithm.** The model is $h_\theta$; least squares or gradient descent is the procedure used to select $\theta$.
-2. **Calling every squared-error expression MSE.** A sum, an average, and a half-scaled sum are related but not literally identical.
-3. **Updating gradient-descent coordinates one at a time using already-updated values.** The displayed update is simultaneous: all coordinates on the right use iteration $k$.
-4. **Thinking polynomial regression is nonlinear in its parameters.** It remains linear in the coefficients when polynomial terms are treated as features.
-5. **Assuming the normal-equation inverse always exists.** The source solution is conditional on invertibility.
+1. **Confusing the model with the algorithm.** The model is $h_\theta$; least squares and gradient descent are two ways to choose $\theta$.
+2. **Calling every squared-error expression "MSE".** A sum, a mean and a half-sum have the same minimizer but different scales.
+3. **Updating coordinates in place.** In the displayed update every coordinate uses the values from step $k$. Updating $\theta_0$ first and then using the new $\theta_0$ for $\theta_1$ is a different algorithm.
+4. **Thinking polynomial regression is nonlinear regression.** It is linear in the coefficients.
+5. **Inverting $X^\top X$ blindly.** It may be singular or badly conditioned; solve with `lstsq` or add regularization.
 
-## 1.12 Chapter summary
+## 1.12 Summary
 
-- Supervised learning uses labeled input-output pairs.
-- Regression predicts numerical targets; classification predicts categories.
-- A hypothesis $h_\theta$ is a parameterized input-output mapping.
+- Supervised learning fits a parameterized mapping from inputs to known targets.
+- Regression predicts numbers; classification predicts categories.
 - Linear regression minimizes squared residuals.
-- The least-squares solution follows from setting the matrix gradient to zero.
-- Gradient descent optimizes the same objective iteratively.
-- Nonlinear feature transformations can be used while retaining a model that is linear in its coefficients.
+- Setting the gradient to zero gives the normal equations and a closed-form solution.
+- Gradient descent reaches the same solution iteratively and generalizes to other losses.
+- Nonlinear features keep the model linear in its parameters.
 
-## 1.13 Self-check questions
+## 1.13 Self-check
 
-1. In Mitchell's definition, what are T, P, and E for a spam classifier?
-2. What is the distinction between a residual and the total squared-error objective?
-3. Why does adding the factor $1/2$ not change the least-squares minimizer?
-4. Starting from the matrix objective, how do the normal equations arise?
-5. What condition is required for the displayed inverse solution?
-6. Why can a cubic polynomial regression model still be called linear regression?
-7. How do the specialized least-squares solution and gradient descent differ as optimization approaches?
+1. What are $T$, $P$ and $E$ for a spam classifier?
+2. What is the difference between a residual and the loss?
+3. Why does the factor $\tfrac12$ not change the minimizer?
+4. Derive the normal equations from the matrix form of the loss.
+5. When does the closed-form solution not exist, and what can you do instead?
+6. Why is cubic polynomial regression still "linear" regression?
+7. What limits the learning rate in gradient descent for least squares?
+
+<details>
+<summary>Answers</summary>
+
+1. $T$: classify emails; $P$: e.g. accuracy, or recall at a fixed false-positive rate; $E$: a labeled email corpus.
+2. A residual is one example's error $y^{(i)}-h_\theta(x^{(i)})$; the loss aggregates all squared residuals into one number.
+3. Multiplying a function by a positive constant does not move its minimum.
+4. Expand $\tfrac12(y-X\theta)^\top(y-X\theta)$, differentiate to get $X^\top X\theta-X^\top y$, set it to zero.
+5. When $X^\top X$ is singular (collinear features or $d>n$). Use the pseudo-inverse, `lstsq`, or ridge regression.
+6. Because the prediction is a linear combination of the parameters; only the features are nonlinear.
+7. The largest eigenvalue of $X^\top X$: convergence needs $\eta<2/\lambda_{\max}$.
+
+</details>

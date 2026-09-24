@@ -1,1251 +1,282 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 3
-title: "Filters, Smoothing, Decomposition, and Transfer Functions"
-source_pages: "14-19"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 3. Filters, Smoothing, Decomposition, and Transfer Functions
 
-# Filters, Smoothing, Decomposition, and Transfer Functions
-
-## 1. Chapter overview
-
-This chapter shifts from explicit ARIMA-style stochastic models to a
-signal-processing and component-model view of time series.
-
-The main progression is:
+Chapter 2 modeled a series as a stochastic process. This chapter takes a signal-processing view instead: separate a series into meaningful parts (level, trend, seasonality, noise, the effect of external inputs) and forecast each part. The path is
 
 ```text
-Linear filters
-    -> moving averages and differences
-    -> exponentially weighted smoothing
-    -> trend-aware smoothing
-    -> trend-seasonal decomposition
-    -> local regression decomposition
-    -> additive regression and transfer-function models
+linear filters → moving averages and differences → exponential smoothing (EWMA)
+→ Holt (trend) → Holt–Winters (trend + season) → LOESS / STL → Prophet → transfer functions
 ```
 
-A central idea in these pages is that a useful representation may separate
-a time series into meaningful components such as:
+## 1. Linear filters
 
-- level;
-- trend;
-- seasonality;
-- stochastic residual behavior;
-- exogenous-input effects.
-
-**Sources:** CSE598MTL.pdf, pp. 14-19
-
----
-
-## 2. Learning objectives
-
-After this chapter, the reader should be able to:
-
-1. define a time-invariant linear filter as a convolution;
-2. distinguish low-pass and high-pass filters;
-3. derive the recursive form of an exponentially weighted moving average;
-4. interpret the EWMA smoothing parameter;
-5. compare MSE, MAE, and MAPE;
-6. explain why simple EWMA underpredicts a rising trend;
-7. describe Holt's level-and-trend method;
-8. distinguish additive and multiplicative component models;
-9. describe additive and multiplicative Holt-Winters methods;
-10. explain AIC, BIC, LOESS, and STL at the level presented in the notes;
-11. summarize Prophet as an additive regression model;
-12. explain how transfer-function models incorporate exogenous inputs with
-    temporally structured residuals.
-
-**Sources:** CSE598MTL.pdf, pp. 14-19
-
----
-
-## 3. Filters
-
-### 3.1 Signal-plus-noise view
-
-The course introduces filtering through the idea that a time series may
-contain:
-
-- a signal of interest;
-- noise that obscures that signal.
-
-A filter transforms the original series $x_t$ into a new series $y_t$.
-
-**Source:** CSE598MTL.pdf, p. 14
-
-### 3.2 Time-invariant linear filter
-
-The slide defines a common time-invariant linear filter as:
+A filter maps a series $x_t$ to a new series $y_t$, usually to separate signal from noise. A **time-invariant linear filter** is a convolution:
 
 ```math
 y_t = \sum_{k=-\infty}^{\infty} \beta_k x_{t-k}.
 ```
 
-This operation is identified as a convolution.
+The coefficients $\beta_k$ are the **impulse response**: feed in $x_t=1$ at $t=0$ and $0$ elsewhere, and out comes $y_t=\beta_t$.
 
-The coefficient sequence $\beta_k$ determines how observations at
-different lags contribute to the filtered output.
+The filter is **causal** if it never uses the future, $\beta_k=0$ for $k<0$ (since $x_{t-k}$ with $k<0$ is a future value). A **finite** causal filter also has $\beta_k=0$ for $k>K$. Forecasting and real-time monitoring need causal filters; offline smoothing can use both sides.
 
-**Source:** CSE598MTL.pdf, p. 14
+## 2. Moving-average and difference filters
 
-### 3.3 Causality
-
-The filter is causal when future observations do not affect the current
-output.
-
-The slide states:
+**Moving average** of width $K$:
 
 ```math
-\beta_k = 0
-\qquad \text{for } k<0.
+y_t=\frac{1}{K}\sum_{k=0}^{K-1}x_{t-k}, \qquad \beta_k=\tfrac1K,\;k=0,\ldots,K-1 .
 ```
 
-A finite causal filter may also set:
+It is a **low-pass** filter: it suppresses fast wiggles and keeps slow movement.
+
+**First difference**, with the backshift operator $Bx_t=x_{t-1}$:
 
 ```math
-\beta_k = 0
-\qquad \text{for } k>K.
+y_t=(1-B)x_t=x_t-x_{t-1}.
 ```
 
-### Clarification
+It is a **high-pass** filter: it removes the slowly varying level and keeps changes.
 
-With the indexing used on the slide, $x_{t-k}$ is a past value when
-$k>0$. Negative $k$ would refer to a future value.
+| Filter | Keeps | Removes | Example |
+|---|---|---|---|
+| low-pass | slow structure | rapid fluctuation | moving average |
+| high-pass | local changes | slow level/trend | first difference |
 
-**Source:** CSE598MTL.pdf, p. 14
+## 3. Exponentially weighted moving average (EWMA)
 
-### 3.4 Impulse response
-
-The coefficient sequence $\beta_k$ is called the impulse response.
-
-If the input is:
+A moving average weights the last $K$ points equally and ignores everything older. EWMA weights recent points most and lets older points fade geometrically. Start from the weighted sum
 
 ```math
-x_t =
-\begin{cases}
-1, & t=0 \\
-0, & \text{otherwise},
-\end{cases}
+y_t=\sum_{k=0}^{t-1}\theta^k x_{t-k}, \qquad |\theta|<1 .
 ```
 
-then the filtered output is:
+The weights sum to $\frac{1-\theta^t}{1-\theta}\approx\frac{1}{1-\theta}$ for large $t$, so normalize by $(1-\theta)$:
 
 ```math
-y_t = \beta_t.
-```
-
-This means the impulse response directly reveals how the filter responds
-to a one-time input.
-
-**Source:** CSE598MTL.pdf, p. 14
-
----
-
-## 4. Moving-average and difference filters
-
-### 4.1 Moving-average filter
-
-A moving-average filter of width $K$ is:
-
-```math
-y_t =
-\frac{1}{K}
-\sum_{k=0}^{K-1}x_{t-k}.
-```
-
-Therefore:
-
-```math
-\beta_k = \frac{1}{K},
-\qquad
-k \in \{0,1,\ldots,K-1\}.
-```
-
-The slide labels this a low-pass filter.
-
-### Interpretation
-
-A local average suppresses rapid fluctuations while preserving slower
-changes.
-
-```text
-Rapid variation / high-frequency detail
-    -> reduced
-
-Slow variation / low-frequency structure
-    -> retained more strongly
-```
-
-**Source:** CSE598MTL.pdf, p. 14
-
-### 4.2 Difference filter
-
-Using the backshift operator:
-
-```math
-Bx_t=x_{t-1},
-```
-
-the first-difference filter is:
-
-```math
-y_t=(1-B)x_t
-```
-
-or:
-
-```math
-y_t=x_t-x_{t-1}.
-```
-
-The slide labels this a high-pass filter.
-
-### Interpretation
-
-Differencing suppresses slowly varying level and emphasizes changes
-between adjacent points.
-
-**Source:** CSE598MTL.pdf, p. 14
-
-### 4.3 Low-pass versus high-pass
-
-| Filter | Main effect | Course example |
-|---|---|---|
-| Low-pass | Smooth rapid fluctuations | Moving average |
-| High-pass | Emphasize local changes and remove slow level | First difference |
-
-**Source:** CSE598MTL.pdf, p. 14
-
----
-
-## 5. Exponentially weighted moving average
-
-### 5.1 Motivation
-
-A fixed moving average gives equal weight to the most recent $K$
-observations and zero weight to older values.
-
-EWMA instead:
-
-- gives more weight to recent observations;
-- decreases weights gradually with age;
-- allows all historical observations to contribute.
-
-The initial weighted form on the slide is:
-
-```math
-y_t =
-\sum_{k=0}^{t-1}\theta^k x_{t-k},
-\qquad |\theta|<1.
-```
-
-The finite geometric sum is:
-
-```math
-\sum_{k=0}^{t-1}\theta^k
-=
-\frac{1-\theta^t}{1-\theta}.
-```
-
-For large $t$, the notes ignore the factor $1-\theta^t$, which is near
-one.
-
-**Source:** CSE598MTL.pdf, p. 14
-
-### 5.2 Normalized form
-
-The slide rewrites the smoother as:
-
-```math
-y_t =
-(1-\theta)
-\left(
-x_t+\theta x_{t-1}
-+\cdots+\theta^{t-1}x_1
-\right).
-```
-
-This becomes the recursive relation:
-
-```math
+y_t=(1-\theta)\left(x_t+\theta x_{t-1}+\cdots+\theta^{t-1}x_1\right)
+\quad\Longrightarrow\quad
 y_t=(1-\theta)x_t+\theta y_{t-1}.
 ```
 
-Let:
-
-```math
-\lambda=1-\theta.
-```
-
-Then:
+With $\lambda=1-\theta$ this is the familiar recursion
 
 ```math
 y_t=\lambda x_t+(1-\lambda)y_{t-1}.
 ```
 
-This is called the exponentially weighted moving average.
+It is cheap: one multiply-add per step and no stored window.
 
-**Source:** CSE598MTL.pdf, p. 14
+## 4. The smoothing parameter
 
-### 5.3 Weight pattern
+| $\lambda$ | Weight on the newest point | Smoothing | Reaction | Memory |
+|---|---|---|---|---|
+| large (e.g. 0.6) | high | little | fast | short |
+| small (e.g. 0.05) | low | heavy | slow | long |
 
-The page's handwritten sketch contrasts:
+The limits: $\lambda=0$ means $y_t=y_{t-1}$, which never updates; $\lambda=1$ means $y_t=x_t$, no smoothing. The weight on an observation $k$ steps back is $\lambda(1-\lambda)^k$, so the "effective memory" is about $1/\lambda$ observations (and the mean age of the data is $(1-\lambda)/\lambda$).
 
-```text
-Moving average:
-equal weights for K observations, then zero
+**Initialization:** $y_0=x_1$ or $y_0=\bar x$. Its influence decays like $(1-\lambda)^t$.
 
-EWMA:
-largest weight on the current observation,
-then exponentially decreasing weights
-```
+## 5. EWMA as a forecaster
 
-**Source:** CSE598MTL.pdf, p. 14
-
----
-
-## 6. Interpreting the EWMA parameter
-
-The key parameter is $\lambda$.
+For short horizons, the latest smoothed level is the forecast: $\hat x_{t}=y_{t-1}$. Choose $\lambda$ by minimizing one-step-ahead forecast error on history:
 
 ```math
-y_t=\lambda x_t+(1-\lambda)y_{t-1}.
+\mathrm{MSE}=\frac1T\sum_t(x_t-\hat x_t)^2, \qquad
+\mathrm{MAE}=\frac1T\sum_t|x_t-\hat x_t|, \qquad
+\mathrm{MAPE}=\frac{100}{T}\sum_t\left|\frac{x_t-\hat x_t}{x_t}\right| .
 ```
 
-### Larger lambda
+MSE punishes big misses; MAE is in the original units and is robust to outliers; MAPE is scale-free but explodes when $x_t$ is near zero.
 
-A larger $\lambda$ puts more weight on the current observation.
+> [!NOTE]
+> **EWMA is optimal for IMA(1,1)**
+>
+> For the IMA(1,1) process $x_t=x_{t-1}+\epsilon_t-\theta\epsilon_{t-1}$ from Chapter 2, the minimum-MSE one-step forecast is EWMA with $\lambda=1-\theta$. Proof sketch: invert the MA part to write $\epsilon_t=\sum_{j\ge0}\theta^j(x_{t-j}-x_{t-j-1})$. Rearranging gives $x_t=\sum_{j\ge1}(1-\theta)\theta^{j-1}x_{t-j}+\epsilon_t$. The best predictor of $x_t$ drops the unpredictable $\epsilon_t$, leaving exactly exponentially decaying weights. This is why exponential smoothing works so well on level-shifting series.
 
-Consequences:
+## 6. Backshift notation
 
-- less smoothing;
-- faster response to new changes;
-- shorter effective memory.
-
-### Smaller lambda
-
-A smaller $\lambda$ puts more weight on the previous smoothed value.
-
-Consequences:
-
-- more smoothing;
-- slower response;
-- longer effective memory.
-
-The plot on page 15 compares smoothing values 0.05, 0.2, and 0.6.
-The larger smoothing parameter follows short-term changes more closely.
-
-**Source:** CSE598MTL.pdf, p. 15
-
-### 6.1 Boundary cases
-
-The slide asks what happens when $\lambda=0$ or $\lambda=1$.
-
-From the recursive equation:
-
-- if $\lambda=0$, then $y_t=y_{t-1}$, so the estimate never updates;
-- if $\lambda=1$, then $y_t=x_t$, so there is no smoothing.
-
-These conclusions follow directly from the displayed EWMA equation.
-
-**Source:** CSE598MTL.pdf, p. 15
-
-### 6.2 Initialization
-
-An initial value $y_0$ is required.
-
-The slide suggests:
+Every model in Chapter 2 is a pair of polynomials in $B$:
 
 ```math
-y_0=x_1
+\Phi(B)(1-B)^d x_t=\Theta(B)e_t,
 ```
 
-or:
+with AR terms on the left (applied to $x_t$), differencing as $(1-B)$ factors, and MA terms on the right (applied to $e_t$). Examples: AR(1) is $(1-\phi B)x_t=e_t$ and MA(1) is $x_t=(1-\theta B)e_t$. Seasonal models add polynomials in $B^{s}$ (e.g. $B^{12}$), which multiply the regular ones.
+
+The idea behind all of them: **after applying the model's operators, what remains should be white noise.**
+
+## 7. EWMA lags a trend
+
+Suppose $x_t=\beta_0+\beta_1t+e_t$. Then the smoothed value is biased:
 
 ```math
-y_0=\bar{x}.
+\mathbb{E}[y_t]=\beta_0+\beta_1t-\frac{1-\lambda}{\lambda}\beta_1 ,
 ```
 
-It also notes that the effect of the initial value becomes small as time
-increases.
+so it lags behind by $\frac{1-\lambda}{\lambda}\beta_1$. If it's used as a one-step forecast of $x_{t+1}$, the bias is $\beta_1/\lambda$. An upward trend is under-predicted, a downward trend over-predicted, and the lag grows with the slope and with heavier smoothing. Simple EWMA tracks a level; it has no notion of slope.
 
-**Source:** CSE598MTL.pdf, p. 15
+## 8. Holt's method: level and trend
 
----
-
-## 7. EWMA as a short-horizon predictor
-
-The course states that EWMA is commonly used to:
-
-- smooth a series;
-- make short-term predictions when the forecast horizon is small.
-
-The prediction notation on the page is:
+Keep two smoothed quantities, a level $L_t$ and a trend $b_t$:
 
 ```math
-\tilde{x}_t = \tilde{x}_{t-1}=y_{t-1}
+L_t=\lambda_1x_t+(1-\lambda_1)(L_{t-1}+b_{t-1}), \qquad
+b_t=\lambda_2(L_t-L_{t-1})+(1-\lambda_2)b_{t-1}, \qquad
+\hat{x}_{t+h}=L_t+h\,b_t .
 ```
 
-with handwritten clarification that the prediction uses the previous
-EWMA value.
+The level blends the new observation with where the old level *plus* trend said we'd be; the trend blends the newest level change with the old trend. Forecasts now extrapolate the slope.
 
-### Clarification
+## 9. Component models
 
-The exact notation on the slide is compact and visually ambiguous, but
-the intended idea is clear: the most recent smoothed level is used as the
-next short-horizon forecast.
-
-**Source:** CSE598MTL.pdf, p. 15
-
----
-
-## 8. Prediction-error measures
-
-### 8.1 Mean squared error
+The classical decomposition is
 
 ```math
-\mathrm{MSE}
-=
-\frac{1}{T}
-\sum_{t=1}^{T}
-\left(x_t-\tilde{x}_{t-1}\right)^2.
+x_t=L_t+S_t+N_t \quad(\text{additive}), \qquad x_t=L_t\times S_t\times N_t \quad(\text{multiplicative}),
 ```
 
-Squaring makes large errors contribute disproportionately.
-
-### 8.2 Mean absolute error
+with level/trend $L_t$, seasonal effect $S_t$ repeating every $s$ steps ($S_t=S_{t-s}$), and noise $N_t$. This is the Error–Trend–Season (**ETS**) family. In the additive case the seasonal effects sum to zero over a cycle, $\sum_{t=1}^sS_t=0$, which separates the average level from the seasonal deviations. In the multiplicative case they average to 1 (e.g. $S=1.1$ means 10% above the level), and taking logs turns multiplicative into additive:
 
 ```math
-\mathrm{MAE}
-=
-\frac{1}{T}
-\sum_{t=1}^{T}
-\left|x_t-\tilde{x}_{t-1}\right|.
+\log x_t=\log L_t+\log S_t+\log N_t .
 ```
 
-MAE preserves the original unit of the response.
+Use additive when seasonal swings have a constant size, multiplicative when they grow with the level.
 
-### 8.3 Mean absolute percentage error
+## 10. Holt–Winters
+
+When a series has **both** trend and seasonality, add a seasonal state. With $q=\lfloor(h-1)/s\rfloor$ so that the seasonal index refers to the most recent observed cycle:
+
+**Additive:**
 
 ```math
-\mathrm{MAPE}
-=
-\frac{1}{T}
-\sum_{t=1}^{T}
-\left|
-\frac{x_t-\tilde{x}_{t-1}}{x_t}
-\right|
-\times 100,
-\qquad x_t\neq0.
+\begin{aligned}
+L_t&=\lambda_1(x_t-S_{t-s})+(1-\lambda_1)(L_{t-1}+b_{t-1})\\
+b_t&=\lambda_2(L_t-L_{t-1})+(1-\lambda_2)b_{t-1}\\
+S_t&=\lambda_3(x_t-L_{t-1}-b_{t-1})+(1-\lambda_3)S_{t-s}\\
+\hat{x}_{t+h}&=L_t+h\,b_t+S_{t+h-s(q+1)}
+\end{aligned}
 ```
 
-The slide notes that MAPE adds context to the magnitude of the error.
-
-### 8.4 Parameter selection
-
-The page states that $\lambda$ is often selected to obtain a good
-prediction measure.
-
-```text
-Choose candidate λ
-    -> compute forecasts
-    -> compute MSE, MAE, or MAPE
-    -> prefer the λ with better error performance
-```
-
-**Source:** CSE598MTL.pdf, p. 15
-
----
-
-## 9. EWMA and IMA
-
-The page states that EWMA is motivated by the state-space foundation used
-to build an IMA $(1,1)$ model.
-
-It also states:
-
-> Given an IMA $(1,1)$ model, the prediction with minimum MSE is EWMA.
-
-The source page does not provide the full derivation, so the note preserves
-this result without adding an external proof.
-
-**Source:** CSE598MTL.pdf, p. 16
-
----
-
-## 10. Backshift representation
-
-The handwritten section uses backshift notation to summarize AR, MA, and
-integrated components.
-
-A generic representation appears as:
+**Multiplicative:** divide instead of subtract,
 
 ```math
-\Phi(B)x_t=\Theta(B)e_t.
+L_t=\lambda_1\frac{x_t}{S_{t-s}}+(1-\lambda_1)(L_{t-1}+b_{t-1}), \qquad
+S_t=\lambda_3\frac{x_t}{L_{t-1}+b_{t-1}}+(1-\lambda_3)S_{t-s}, \qquad
+\hat{x}_{t+h}=(L_t+h\,b_t)\,S_{t+h-s(q+1)} .
 ```
 
-The annotation explains the intended division:
+In words: the level is a weighted average of the *deseasonalized* observation and the previous level-plus-trend, and each seasonal index is a weighted average of this cycle's seasonal deviation and the same season last cycle.
 
-```text
-AR terms:
-polynomial in B applied to x_t
-appear on the left-hand side
+## 11. Picking a model: AIC and BIC
 
-MA terms:
-polynomial in B applied to e_t
-appear on the right-hand side
-
-Integrated terms:
-difference factors such as (1-B) applied to x_t
-```
-
-The handwritten note gives examples such as:
+Parameters are fit by least squares or maximum likelihood. Models are compared with
 
 ```math
-(1-\phi B)x_t=e_t
+\mathrm{AIC}=-2\log L+2p, \qquad \mathrm{BIC}=-2\log L+p\log T ,
 ```
 
-for AR(1), and:
+where $p$ counts parameters **and initial states** and $T$ is the number of observations. Lower is better. BIC's penalty grows with $T$, so it prefers smaller models. Software packages differ by constants, so compare values only within one tool.
+
+## 12. LOESS and STL
+
+**LOESS** (locally estimated scatterplot smoothing) fits a small weighted regression around each point, with a local constant, line or low-order polynomial and weights that decay with distance. Because the weights are recomputed at every point (and adapt near the edges), LOESS is **not** a convolution. It sits between a global filter and a fully local fit:
+
+| Method | Weights |
+|---|---|
+| moving average | equal, fixed |
+| EWMA | exponentially decaying, fixed |
+| local linear fit | equal within a window, linear model |
+| LOESS | distance-weighted within a window, recomputed per point |
+
+**STL** (Seasonal–Trend decomposition using LOESS) alternates LOESS fits to extract trend and seasonal components. Its two main knobs are the trend window $w_t$ and the seasonal window $w_s$ (e.g. 13 and 7 observations). Small windows let components change quickly; large windows keep them stable. STL's robust mode downweights outliers.
+
+**Anomalies leak into components.** Add a temporary anomaly lasting a few cycles and the estimated trend bends toward it, while the residual shows spikes at the start and end of the anomaly. Components are *estimates*, and what goes where depends on the window sizes.
+
+## 13. Prophet
+
+Prophet (Taylor & Letham, 2018) is an **additive regression model**:
 
 ```math
-x_t=(1-\theta B)e_t
+y(t)=g(t)+s(t)+h(t)+\sum_m\beta_mx_m(t)+\epsilon_t ,
 ```
 
-for MA(1), using the page's sign conventions.
+with a piecewise-linear or logistic trend $g$ whose change points are learned, Fourier-series yearly and weekly seasonality $s$, holiday effects $h$, optional exogenous regressors, and Bayesian fitting. It lands between a convolution with one set of weights everywhere and a regression whose weights change at every point: a few global components with occasional trend changes.
 
-### Core interpretation from the annotation
+## 14. Transfer-function (dynamic regression) models
 
-> Capture the temporal information in the model so that after applying
-> the corresponding operations, the remaining process should be white
-> noise.
-
-**Source:** CSE598MTL.pdf, p. 16
-
-### 10.1 Seasonal notation
-
-The annotation also states that seasonal models replace regular lags with
-cycle-length lags, for example:
+Real series respond to external inputs, such as price driving demand or temperature driving load, and their errors are rarely white. A transfer-function model has both:
 
 ```math
-B \rightarrow B^{12}.
+y_t=\beta_0+\beta_1x_t+\beta_2x_{t-2}+N_t, \qquad N_t=\phi N_{t-1}+e_t .
 ```
 
-Seasonal AR and MA coefficients are written separately from the regular
-coefficients.
-
-The small handwritten algebra is preserved conceptually, but not every
-symbol is transcribed because several exponents and coefficient marks are
-too small to verify exactly.
-
-**Source:** CSE598MTL.pdf, p. 16
-
----
-
-## 11. EWMA bias under a linear trend
-
-Suppose:
+Current and lagged inputs enter the mean, and the residual $N_t$ gets its own ARIMA model. The general form is
 
 ```math
-x_t=\beta_0+\beta_1t+e_t,
+\Phi(B)\,y_t=\Psi(B)\,x_t+\Theta(B)\,e_t ,
 ```
 
-where $e_t$ is white noise.
+with $\Psi(B)$ the input (transfer) polynomial. Several inputs, each with its own lags, are allowed. The model is powerful, but identifying all the lag orders gets complicated. Cross-correlation of pre-whitened series is the classical tool.
 
-The slide gives:
-
-```math
-E(\tilde{x}_t)
-=
-\beta_0+\beta_1t
--
-\frac{1-\lambda}{\lambda}\beta_1.
-```
-
-Therefore:
-
-```math
-E(\tilde{x}_t)
-=
-E(x_t)
--
-\frac{1-\lambda}{\lambda}\beta_1.
-```
-
-If:
-
-```math
-\beta_1>0,
-```
-
-then EWMA systematically underpredicts.
-
-If:
-
-```math
-\beta_1<0,
-```
-
-then it systematically overpredicts.
-
-> **Handwritten interpretation:** The amount of underprediction depends
-> on $\lambda$ and the magnitude of the trend, represented by
-> $\beta_1$.
-
-### Clarification
-
-Simple EWMA estimates a level but does not maintain a separate trend
-state. When the true series rises, the smoothed level lags behind.
-
-**Source:** CSE598MTL.pdf, p. 16
-
----
-
-## 12. Holt's method
-
-To address trend, Holt's method uses two recursively updated components:
-
-- a level estimate $L_t$;
-- a trend estimate $b_t$.
-
-The page gives:
-
-```math
-\hat{x}_{t+h}=L_t+hb_t.
-```
-
-The level update is:
-
-```math
-L_t=
-\lambda_1x_t+
-(1-\lambda_1)(L_{t-1}+b_{t-1}).
-```
-
-The trend update is:
-
-```math
-b_t=
-\lambda_2(L_t-L_{t-1})
-+
-(1-\lambda_2)b_{t-1}.
-```
-
-### Interpretation
-
-The level is a weighted combination of:
-
-- the current observation;
-- the previous level advanced by the previous trend.
-
-The trend is a weighted combination of:
-
-- the newest change in level;
-- the previous trend estimate.
-
-**Source:** CSE598MTL.pdf, p. 16
-
-### 12.1 Plot interpretation
-
-The page-17 plot compares combinations of smoothing and trend parameters.
-
-The handwritten comments interpret the method as:
-
-- changing the level;
-- adding an explicit trend contribution;
-- shifting forecasts upward when the series is increasing.
-
-**Source:** CSE598MTL.pdf, p. 17
-
----
-
-## 13. Component models
-
-The page introduces the traditional decomposition:
-
-```math
-x_t=L_t+S_t+N_t,
-```
-
-where:
-
-- $L_t$: level or trend component;
-- $S_t$: seasonal effect;
-- $N_t$: stochastic, error, or noise component.
-
-The notes call these ETS-style component models, using the labels:
-
-```text
-Error
-Trend
-Season
-```
-
-**Source:** CSE598MTL.pdf, p. 17
-
-### 13.1 Seasonal effect
-
-The seasonal component repeats with period $s$:
-
-```math
-S_t=S_{t-s}=S_{t-2s}=\cdots
-```
-
-for times after the initial seasonal cycle.
-
-The slide often assumes:
-
-```math
-\sum_{t=1}^{s}S_t=0.
-```
-
-> **Handwritten annotation:** The sum of seasonal effects over one season
-> is zero.
-
-### Clarification
-
-This zero-sum convention separates the average level from the seasonal
-deviations in an additive model.
-
-**Source:** CSE598MTL.pdf, p. 17
-
-### 13.2 Additive model
-
-The additive component model is:
-
-```math
-x_t=L_t+S_t+N_t.
-```
-
-It is appropriate when seasonal variation is expressed in roughly
-constant absolute units.
-
-### 13.3 Multiplicative model
-
-The multiplicative form is:
-
-```math
-x_t=L_t\times S_t\times N_t.
-```
-
-The slide notes that a seasonal estimate may multiply the level, such as
-$1.1$ for a 10% increase.
-
-A log transformation gives:
-
-```math
-\log(x_t)
-=
-\log(L_t)+\log(S_t)+\log(N_t).
-```
-
-> **Handwritten annotation:** The log base depends on the application.
-
-**Source:** CSE598MTL.pdf, p. 17
-
----
-
-## 14. Holt-Winters methods
-
-The handwritten note states:
-
-> If the time series contains both trend and seasonality, choose
-> Holt-Winters rather than simple EWMA.
-
-**Source:** CSE598MTL.pdf, p. 17
-
-### 14.1 Additive Holt-Winters
-
-The forecast equation on the slide is:
-
-```math
-\hat{x}_{t+h}
-=
-L_t+hb_t+S_{t+h-s(q+1)},
-```
-
-where:
-
-```math
-q=\mathrm{floor}\left(\frac{h-1}{s}\right).
-```
-
-The level update is:
-
-```math
-L_t=
-\lambda_1(x_t-S_{t-s})
-+
-(1-\lambda_1)(L_{t-1}+b_{t-1}).
-```
-
-The trend update is:
-
-```math
-b_t=
-\lambda_2(L_t-L_{t-1})
-+
-(1-\lambda_2)b_{t-1}.
-```
-
-The seasonal update is:
-
-```math
-S_t=
-\lambda_3(x_t-L_{t-1}-b_{t-1})
-+
-(1-\lambda_3)S_{t-s}.
-```
-
-The highlighted interpretation states that the level is a weighted
-average between:
-
-- the seasonally adjusted observation;
-- the previous nonseasonal forecast.
-
-The seasonal component is a weighted average between:
-
-- the current estimated seasonal deviation;
-- the previous value from the same season.
-
-**Source:** CSE598MTL.pdf, p. 17
-
-### 14.2 Multiplicative Holt-Winters
-
-The multiplicative forecast is:
-
-```math
-\hat{x}_{t+h}
-=
-(L_t+hb_t)S_{t+h-s(q+1)}.
-```
-
-The level update shown is:
-
-```math
-L_t=
-\lambda_1
-\frac{x_t}{S_{t-s}}
-+
-(1-\lambda_1)(L_{t-1}+b_{t-1}).
-```
-
-The trend update remains:
-
-```math
-b_t=
-\lambda_2(L_t-L_{t-1})
-+
-(1-\lambda_2)b_{t-1}.
-```
-
-The seasonal update is:
-
-```math
-S_t=
-\lambda_3
-\frac{x_t}{L_{t-1}+b_{t-1}}
-+
-(1-\lambda_3)S_{t-s}.
-```
-
-The slide notes that the seasonal component acts as a multiplier.
-
-**Source:** CSE598MTL.pdf, p. 17
-
----
-
-## 15. Model selection with AIC and BIC
-
-The page states that parameters are commonly estimated by:
-
-- minimizing a sum of squared errors;
-- maximizing likelihood.
-
-A model may then be selected using an information criterion.
-
-### 15.1 AIC
-
-The slide gives:
-
-```math
-\mathrm{AIC}
-=
--2\log(L)+2p,
-```
-
-where:
-
-- $L$: likelihood;
-- $p$: number of parameters and initial states estimated.
-
-The handwritten note says to minimize the criterion.
-
-### 15.2 BIC
-
-The slide gives:
-
-```math
-\mathrm{BIC}
-=
--2\log(L)+p\log(T),
-```
-
-where $T$ is the number of observations.
-
-### Interpretation
-
-Both criteria balance:
-
-```text
-better fit
-    against
-greater model complexity
-```
-
-BIC uses a penalty that increases with sample size.
-
-The page notes that software may define the criteria somewhat differently.
-
-**Source:** CSE598MTL.pdf, p. 18
-
----
-
-## 16. LOESS and STL
-
-### 16.1 Local smoothing
-
-LOESS is described as locally estimated scatterplot smoothing.
-
-For each time location, a local neighborhood is selected and a weighted
-fit is computed.
-
-The page lists:
-
-- locally weighted averages;
-- locally weighted linear regression;
-- locally weighted higher-order polynomial terms.
-
-### Handwritten interpretation
-
-The annotation compares several operations:
-
-1. equal-weight local average;
-2. decaying-weight average, such as EWMA;
-3. unweighted linear approximation;
-4. weighted local linear approximation.
-
-It also states:
-
-> The weights are not time invariant, so this is not a convolution.
-
-### Clarification
-
-A convolution uses the same lag weights everywhere. LOESS recomputes local
-weights and a local fit around each target point.
-
-**Source:** CSE598MTL.pdf, p. 18
-
-### 16.2 STL decomposition
-
-The slide describes STL as seasonal and trend decomposition using LOESS.
-
-Local estimates are fitted for:
-
-- the trend component;
-- the seasonal component.
-
-The principal tuning parameters shown are:
-
-- trend window size $w_t$;
-- seasonal window size $w_s$.
-
-These specify the number of time-series values included in a local
-neighborhood.
-
-The slide gives default examples:
-
-```math
-w_t=13,
-\qquad
-w_s=7.
-```
-
-### 16.3 Window-size interpretation
-
-The page states:
-
-- small $w_t$ and $w_s$ allow trend and seasonality to change more
-  quickly;
-- large $w_t$ and $w_s$ keep them more stable.
-
-> **Handwritten annotation:** Smaller windows make component estimates
-> change quickly; larger windows make them change less.
-
-**Source:** CSE598MTL.pdf, p. 18
-
-### 16.4 Effect of an anomaly
-
-The page adds a temporary anomaly over several cycles and shows its effect
-on:
-
-- observed data;
-- estimated trend;
-- estimated seasonal component;
-- residual.
-
-The trend estimate rises during the anomalous interval, while the residual
-captures substantial deviations around the change boundaries.
-
-### Clarification
-
-The example shows that decomposition components are estimates and can
-absorb part of an anomaly depending on the smoothing windows.
-
-**Source:** CSE598MTL.pdf, p. 18
-
----
-
-## 17. Prophet
-
-The page describes the Facebook Prophet model as an additive regression
-model:
-
-```math
-y=
-\beta_0+
-\sum_{m=1}^{M}
-f_m(x_{im}).
-```
-
-The slide lists components such as:
-
-- piecewise linear or logistic growth trend;
-- learned change points;
-- yearly seasonality;
-- weekly seasonality;
-- additional flexible details;
-- Bayesian estimation methods.
-
-> **Handwritten annotations:** Exogenous variables may be included, and
-> change points determine where the trend changes.
-
-### Clarification
-
-The page presents Prophet as lying between a fixed global filter and a
-fully local regression that changes at every point:
-
-> “Somewhere between using a convolution with the same weights everywhere
-> and using a regression model that changes the weights at every point.”
-
-This wording is preserved from the handwritten note.
-
-**Source:** CSE598MTL.pdf, p. 19
-
----
-
-## 18. Transfer-function models
-
-### 18.1 Dynamic regression view
-
-Transfer-function models are also called dynamic regression models.
-
-The page emphasizes that they include:
-
-- exogenous attributes;
-- stochastic errors that are not necessarily white noise.
-
-A simple example is:
-
-```math
-y_t=
-\beta_0+\beta_1x_t+N_t,
-```
-
-where $N_t$ follows a time-series model.
-
-The page gives an AR-style residual process:
-
-```math
-N_t=\phi N_{t-1}+e_t,
-```
-
-where $e_t$ is white noise.
-
-**Source:** CSE598MTL.pdf, p. 19
-
-### 18.2 Lagged exogenous effects
-
-Another example is:
-
-```math
-y_t=
-\beta_0+\beta_1x_t+\beta_2x_{t-2}+N_t.
-```
-
-This shows that current and lagged values of an external input may both
-affect the response.
-
-### 18.3 General backshift form
-
-The page gives the general form:
-
-```math
-\Phi(B)y_t
-=
-\Psi(B)x_t+
-\Theta(B)e_t.
-```
-
-The annotation labels $\Psi(B)$ as the exogenous-input component.
-
-The slide states that models may include:
-
-- current exogenous values;
-- lagged exogenous values;
-- lagged response values;
-- several exogenous attributes.
-
-It also notes that ARIMA-style transfer models can become complex.
-
-**Source:** CSE598MTL.pdf, p. 19
-
----
-
-## 19. Component and model relationships
+## 15. How the methods relate
 
 ```mermaid
 flowchart TD
-    A[Observed time series] --> B[Filtering view]
+    A[Observed series] --> B[Filter view]
     A --> C[Component view]
-    A --> D[Dynamic regression view]
-
+    A --> D[Dynamic-regression view]
     B --> B1[Moving average: low-pass]
     B --> B2[Difference: high-pass]
-    B --> B3[EWMA: exponentially decaying weights]
-
-    C --> C1[Level]
-    C --> C2[Trend]
-    C --> C3[Seasonality]
-    C --> C4[Noise]
-    C --> C5[Holt / Holt-Winters / STL]
-
-    D --> D1[Exogenous inputs]
-    D --> D2[ARIMA-structured residual]
-    D --> D3[Transfer-function model]
+    B --> B3[EWMA]
+    C --> C1[Holt / Holt–Winters]
+    C --> C2[STL]
+    C --> C3[Prophet]
+    D --> D1[Exogenous inputs + ARIMA residuals]
 ```
 
-This diagram is synthesized from pages 14-19.
+| Method | Trend | Season | Exogenous | Weights |
+|---|:---:|:---:|:---:|---|
+| Moving average | – | – | – | fixed, equal |
+| Difference | removes | seasonal diff. possible | – | fixed |
+| EWMA | – | – | – | fixed, exponential |
+| Holt | ✓ | – | – | recursive |
+| Holt–Winters | ✓ | ✓ | – | recursive |
+| STL | ✓ | ✓ | – | local, recomputed |
+| Prophet | piecewise | Fourier | ✓ | global regression |
+| Transfer function | via regressors/ARIMA | via lags | ✓ | parametric |
 
-**Sources:** CSE598MTL.pdf, pp. 14-19
+## 16. Common confusions
 
----
+- **Moving-average filter vs MA model:** averages of observations vs combinations of shocks.
+- **EWMA vs Holt:** level only vs level + trend.
+- **Additive vs multiplicative seasonality:** constant-size swings vs swings that scale with level.
+- **Convolution vs LOESS:** fixed lag weights vs locally refitted weights.
+- **White vs normal residuals:** uncorrelated doesn't mean Gaussian; check both.
 
-## 20. Method comparison
+## 17. Questions and answers
 
-| Method | Main representation | Trend | Seasonality | Exogenous inputs | Local or global weighting |
-|---|---|---:|---:|---:|---|
-| Moving average filter | Equal local average | No explicit state | No | No | Same finite weights everywhere |
-| Difference filter | Adjacent change | Removes or reduces slow trend | Seasonal differencing possible elsewhere | No | Same weights everywhere |
-| EWMA | Smoothed level | No explicit trend | No | No | Same exponential lag weights |
-| Holt | Level + trend | Yes | No | No | Recursive global form |
-| Holt-Winters | Level + trend + seasonal state | Yes | Yes | No | Recursive global form |
-| STL | LOESS trend + LOESS seasonality | Yes | Yes | No | Local, changing weights |
-| Prophet | Additive regression components | Piecewise trend | Yearly/weekly and other components | Can include flexible attributes | Regression components |
-| Transfer function | Regression + temporal residual model | Through regressors and residual model | Possible through lag structure | Yes | Parametric dynamic regression |
+<details><summary>How do I pick between MSE, MAE and MAPE?</summary>
 
-**Sources:** CSE598MTL.pdf, pp. 14-19
+Match the business cost. MSE if large misses are disproportionately bad; MAE if cost is linear in the error, or with outliers; MAPE for comparing across series of different scales, but not near zero (use MASE or sMAPE there).
+</details>
 
----
+<details><summary>How do I tell additive from multiplicative seasonality?</summary>
 
-## 21. Common confusions
+Plot the series. If the seasonal swing grows with the level, it's multiplicative (or take logs). Or fit both and compare AIC and holdout error.
+</details>
 
-### Moving-average filter versus MA model
+<details><summary>How do I choose STL window sizes?</summary>
 
-A moving-average filter averages observed values:
+The seasonal window should span several cycles and be odd; a larger value means a more stable season. The trend window is typically about $1.5s$ rounded up to odd. Tune on holdout forecast error or residual whiteness, and use robust STL when outliers exist.
+</details>
 
-```math
-\frac{1}{K}\sum x_{t-k}.
-```
+<details><summary>How are transfer-function lag orders chosen?</summary>
 
-An MA $(q)$ stochastic model combines disturbances:
-
-```math
-e_t-\theta_1e_{t-1}-\cdots.
-```
-
-They share a name but represent different operations.
-
-### EWMA versus Holt
-
-EWMA estimates a changing level. Holt maintains both level and trend.
-
-### Holt-Winters additive versus multiplicative
-
-Additive seasonality is expressed in constant units. Multiplicative
-seasonality scales with the level.
-
-### Convolution versus LOESS
-
-A convolution uses fixed lag weights. LOESS recalculates local weights and
-fits around each target point.
-
-### White-noise residual versus normal residual
-
-A residual process may have no temporal correlation without being
-normally distributed. The course examines these with different diagnostic
-plots in Chapter 2.
-
-### Prophet versus SARIMAX
-
-The Prophet page describes additive regression components and learned
-change points. SARIMAX emphasizes ARIMA-style regular and seasonal
-dependence plus exogenous terms.
-
-**Sources:** CSE598MTL.pdf, pp. 14-19
+Pre-whiten the input with its own ARIMA model, apply the same filter to the output, and read significant lags off their cross-correlation. Then check the residuals. In practice, a regression with a small lag grid chosen by AIC often does the job.
+</details>
 
 ---
 
-## 22. Questions preserved for later discussion
-
-1. How should the effective memory of EWMA be quantified from $\lambda$?
-2. Why is EWMA the minimum-MSE predictor for the stated IMA $(1,1)$
-   model?
-3. How should $y_0$ be selected for a short series?
-4. When should MSE, MAE, or MAPE be preferred?
-5. How should additive versus multiplicative seasonality be diagnosed?
-6. How are Holt-Winters parameters estimated in the software used in the
-   course?
-7. How should STL window sizes be selected beyond the qualitative rules
-   given on page 18?
-8. How robust is STL to prolonged anomalies?
-9. Which Prophet terms were actually used in the course implementation?
-10. How should transfer-function lag orders be selected in practice?
-
-These questions are motivated by the source pages but are not fully
-answered there.
-
----
-
-## 23. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 14 | Linear filters, convolution, low-pass/high-pass filters, EWMA derivation |
-| 15 | EWMA parameter, initialization, forecasting, MSE/MAE/MAPE |
-| 16 | EWMA-IMA relationship, backshift representation, trend bias, Holt method |
-| 17 | Holt plot, component models, additive/multiplicative Holt-Winters |
-| 18 | AIC, BIC, LOESS, STL, smoothing windows, anomaly example |
-| 19 | Prophet and transfer-function models |
-
-## Review status
-
-- Printed slide definitions and main equations: `[VERIFIED]`
-- EWMA recursion and prediction-error measures: `[VERIFIED]`
-- Backshift handwritten summary: `[INTERPRETED]`
-- Small seasonal backshift algebra on page 16: `[NEEDS REVIEW]`
-- Holt-Winters equations: `[VERIFIED]`
-- Prophet handwritten positioning statement: `[VERIFIED]`
-- Exact software-specific definitions of AIC/BIC: preserved as slide caveat
+[← Previous: Classical Models](02_classical_time_series_models.md) · [Course map](../course_map.md) · [Next: Wavelets →](04_wavelets.md)

@@ -1,248 +1,131 @@
 # 9. Unsupervised Learning and K-Means
 
-**Source pages:** 40–42  
-**Status:** reconstructed and equation-checked
+Without labels there's no "right answer" to fit. The goal becomes finding structure already in the inputs. This chapter separates the two main unsupervised tasks and develops K-means in detail: the algorithm, the objective it minimizes, why initialization matters, K-means++, and how to choose $K$.
 
-This chapter introduces unsupervised learning as learning structure from data without observed target labels. The source distinguishes clustering from dimensionality reduction, then develops K-means as the first unsupervised-learning algorithm: initialize centroids, alternate assignment and centroid updates, measure cluster tightness with inertia, reduce initialization sensitivity with K-means++, and choose the number of clusters using application knowledge or the elbow heuristic.
+## 9.1 What changes without labels
 
-## 9.1 What changes in unsupervised learning?
+The dataset is just inputs,
 
-In supervised learning, each training example includes an observed answer. In unsupervised learning, the dataset contains only inputs:
+$$ \mathcal{D}=\left\lbrace x^{(i)}\right\rbrace_{i=1}^{n}, $$
 
-$$ \mathcal{D}=\left\lbrace x^{(i)}\right\rbrace_{i=1}^{n_{\mathrm{train}}}. $$
+and the workflow is: fit a model to unlabeled data, extract a structure (groups, a low-dimensional space), then map new points into that structure.
 
-There is no target variable $y^{(i)}$ telling the algorithm what output should be produced. The goal is instead to discover useful structure already present in the inputs.
+![K-means workflow](assets/diagrams/09_kmeans_workflow.png)
 
-Page 40 presents the workflow as:
+*The assign/update loop, inertia, sensitivity to initialization, K-means++ seeding and the elbow heuristic.*
 
-1. fit a model to unlabeled data;
-2. extract a structure from the data;
-3. use the learned model to map new unlabeled examples into that structure.
+## 9.2 Two kinds of unsupervised learning
 
-![Redrawn unsupervised-learning and K-means overview](assets/diagrams/09_kmeans_workflow.png)
-
-*Redrawn from source pages 40–42: unsupervised structure discovery, the K-means assignment/update loop, sensitivity to initialization, K-means++ seeding, and the elbow heuristic.*
-
-## 9.2 Two types of unsupervised learning in the source
-
-The source introduces two broad tasks.
-
-### Clustering
-
-**Clustering** identifies unknown groups or structure in data. Page 40 uses text articles as an example: a model fitted to articles with unknown topics can group similar articles together.
-
-A second example considers users of a web application represented by age. Depending on the purpose, the same users might be partitioned into two groups or five groups. This illustrates that the requested number of clusters is part of the modeling decision rather than an observed label supplied by the data.
-
-### Dimensionality reduction
-
-**Dimensionality reduction** uses structural characteristics to simplify the data. The page 40 example fits a model to high-resolution images and produces compressed representations.
-
-| Task | Source framing | Example from page 40 |
+| Task | Goal | Example |
 |---|---|---|
-| Clustering | identify distinct groups | group articles with similar unknown topics |
-| Dimensionality reduction | simplify structure | compress high-resolution images |
+| **Clustering** | find groups of similar points | group news articles by (unknown) topic |
+| **Dimensionality reduction** | find a simpler representation | compress high-resolution images (Chapter 11) |
 
-This chapter develops clustering. Dimensionality reduction returns later in the course notes.
+The number of clusters is a modeling choice, not something the data hands you. The same web-app users described by age could reasonably be split into two groups for one purpose and five for another.
 
-## 9.3 K-means notation
+## 9.3 Notation
 
-Let the unlabeled dataset be:
+Choose $K$. K-means keeps an assignment $c^{(i)}\in\lbrace1,\ldots,K\rbrace$ for every point and a centroid $\mu_j\in\mathbb{R}^d$ for every cluster.
 
-$$ x^{(i)}\in\mathbb{R}^{d}, \qquad i\in\lbrace 1,\ldots,n_{\mathrm{train}}\rbrace. $$
+## 9.4 The algorithm
 
-Choose a number of clusters $K$. K-means maintains:
+1. **Initialize** $K$ centroids $\mu_1,\ldots,\mu_K$ (randomly, or with K-means++ below).
+2. **Assign** each point to its nearest centroid:
+   $$ c^{(i)}\leftarrow\underset{j}{\mathrm{arg\,min}}\left\lVert x^{(i)}-\mu_j\right\rVert^2 . $$
+3. **Update** each centroid to the mean of its points:
+   $$ \mu_j\leftarrow\frac{\sum_{i}\mathbb{1}[c^{(i)}=j]\,x^{(i)}}{\sum_{i}\mathbb{1}[c^{(i)}=j]} . $$
+4. **Repeat** steps 2–3 until no assignment changes.
 
-- one cluster assignment $c^{(i)}$ for every training example;
-- one centroid $\mu_j\in\mathbb{R}^{d}$ for every cluster $j$.
+(If a cluster ends up empty, re-seed its centroid, for example at the point farthest from its current centroid.)
 
-The assignment takes a value in:
+## 9.5 The objective: inertia
 
-$$ c^{(i)}\in\lbrace 1,\ldots,K\rbrace. $$
+K-means minimizes the within-cluster sum of squared distances, also called **inertia** or distortion:
 
-The centroid $\mu_j$ represents the current center of cluster $j$.
+$$ J(c,\mu)=\sum_{i=1}^{n}\left\lVert x^{(i)}-\mu_{c^{(i)}}\right\rVert^2 . $$
 
-## 9.4 The K-means algorithm
+The two steps are **coordinate descent** on $J$:
 
-Page 41 gives the following iterative procedure.
+- with centroids fixed, assigning each point to its nearest centroid minimizes $J$ over $c$;
+- with assignments fixed, the mean minimizes the sum of squared distances within each cluster, so the update minimizes $J$ over $\mu$.
 
-### Step 1: initialize the centroids
-
-Initialize $K$ cluster centroids randomly:
-
-$$ \mu_1,\mu_2,\ldots,\mu_K\in\mathbb{R}^{d}. $$
-
-The source example uses $K=2$ and places two random centers in an age-income plot.
-
-### Step 2: assign every point to its closest centroid
-
-For every example $i$, set:
-
-$$ c^{(i)}\leftarrow\underset{j\in\lbrace 1,\ldots,K\rbrace}{\mathrm{arg\,min}}\left\lVert x^{(i)}-\mu_j\right\rVert_2^2. $$
-
-Each example is assigned to whichever centroid has the smallest squared Euclidean distance.
-
-### Step 3: recompute every centroid
-
-For every cluster $j$, set:
-
-$$ \mu_j\leftarrow\frac{\sum_{i=1}^{n_{\mathrm{train}}}\mathbb{1}\left[c^{(i)}=j\right]x^{(i)}}{\sum_{i=1}^{n_{\mathrm{train}}}\mathbb{1}\left[c^{(i)}=j\right]}. $$
-
-The numerator adds all points currently assigned to cluster $j$. The denominator counts them. Therefore the updated centroid is the mean of the points in that cluster.
-
-### Step 4: repeat until convergence
-
-Repeat the assignment and centroid-update steps. In the source diagram, the algorithm is declared converged when the points no longer move between clusters.
-
-> [!NOTE]
-> **Added clarification: two alternating minimizations**
->
-> With the centroids fixed, the assignment step chooses the closest center for each point. With the assignments fixed, the update step chooses the mean of each cluster. Each step therefore minimizes the K-means objective with respect to one group of variables while holding the other fixed.
-
-
-## 9.5 The K-means objective: inertia
-
-Page 41 calls the objective **inertia**, also described as a distortion function. It is the sum of squared distances from every point to the centroid of its assigned cluster:
-
-$$ J(c,\mu)=\sum_{i=1}^{n_{\mathrm{train}}}\left\lVert x^{(i)}-\mu_{c^{(i)}}\right\rVert_2^2. $$
-
-Smaller inertia means that points lie closer to their assigned centroids, so the clusters are tighter according to squared Euclidean distance.
-
-The assignment step reduces or preserves $J$ because each point is moved to its nearest current centroid. The centroid update also reduces or preserves $J$ because the arithmetic mean minimizes the sum of squared distances within a fixed cluster.
-
-> [!NOTE]
-> **Added clarification: convergence is not global optimality**
->
-> The objective cannot increase during the standard assignment/update loop, so the algorithm eventually reaches a stable solution. The initialization examples on pages 41–42 show, however, that different initial centroids can lead to different stable clusterings and different inertia values. Convergence therefore does not guarantee the globally smallest possible inertia.
-
+Neither step can increase $J$, and there are finitely many assignments, so the loop always terminates. But it terminates at a **local** minimum. Finding the global one is NP-hard in general.
 
 ## 9.6 Why initialization matters
 
-The lower part of page 41 shows two different final clusterings produced from different initial cluster assignments. Page 42 then compares three solutions with inertias approximately:
-
-$$ 12.645, \qquad 12.943, \qquad 13.112. $$
-
-The handwritten conclusion is explicit:
-
-> A disadvantage of K-means is that results depend largely on the initial centroids.
-
-The solution with the smallest displayed inertia is preferred among these three runs under the source's stated criterion. More importantly, the examples show that one run of randomly initialized K-means is not enough to establish that the best available clustering has been found.
+Different starting centroids lead to different final clusterings. Three runs on the same data might end at inertias of 12.645, 12.943 and 13.112: all "converged", different quality. One random run isn't enough.
 
 > [!TIP]
-> **Review intuition**
+> **Intuition**
 >
-> Random initialization changes the first assignments. Those assignments change the first centroid updates, which change later assignments, and the entire optimization path can finish at a different stable solution.
+> The first assignments depend on where the centroids start, the first update depends on those assignments, and so on. A bad start, such as two centroids in the same natural cluster, can lock in a bad split.
 
+In practice run K-means several times (scikit-learn's `n_init`) and keep the run with the lowest inertia.
 
-## 9.7 K-means++ initialization
+## 9.7 K-means++
 
-Page 42 introduces **K-means++** as a smarter initialization method.
+A smarter seeding that spreads the initial centroids out:
 
-### First centroid
+1. Pick the first centroid uniformly at random from the data.
+2. For each point compute $D(x^{(i)})$, its distance to the nearest centroid chosen so far.
+3. Pick the next centroid with probability proportional to $D(x^{(i)})^2$:
+   $$ p\left(x^{(i)}\right)=\frac{D\left(x^{(i)}\right)^2}{\sum_{r}D\left(x^{(r)}\right)^2}. $$
+4. Repeat until there are $K$ centroids, then run ordinary K-means.
 
-Choose one training point at random as the first centroid.
+Points far from every current centroid are likely to be chosen, so seeds tend to land in different clusters. K-means++ also comes with a guarantee: its expected inertia is within a factor $O(\log K)$ of optimal (Arthur & Vassilvitskii, 2007).
 
-### Distance to the nearest selected centroid
+## 9.8 Choosing K
 
-For every point $x^{(i)}$, define its distance to the closest centroid already selected:
+**From the application.** Sometimes $K$ is dictated by the use case: group jobs across 4 CPU cores ($K=4$), or design clothing in 10 sizes ($K=10$).
 
-$$ D\left(x^{(i)}\right)=\min_{\mu\in\mathcal{M}}\left\lVert x^{(i)}-\mu\right\rVert_2, $$
-
-where $\mathcal{M}$ is the set of centroids chosen so far.
-
-### Next centroid
-
-Choose the next point with probability proportional to the squared distance:
-
-$$ p\left(x^{(i)}\right)=\frac{D\left(x^{(i)}\right)^2}{\sum_{r=1}^{n_{\mathrm{train}}}D\left(x^{(r)}\right)^2}. $$
-
-A point far from every existing centroid receives a larger probability of becoming the next centroid. In the source illustration, after choosing a point in one visible group, the next center is likely to be placed in the distant group rather than next to the first center.
-
-> [!NOTE]
-> **Added clarification: completing the initialization**
->
-> Repeat the distance-weighted selection until $K$ initial centroids have been chosen, then run the ordinary K-means assignment/update loop.
-
-
-## 9.8 Choosing the number of clusters
-
-Page 42 describes $K$ as the algorithm's main knob and gives two ways to choose it.
-
-### Predefine $K$ from the application
-
-Sometimes the use case determines the number of groups directly. The source examples are:
-
-- cluster similar jobs across four CPU cores, giving $K=4$;
-- create clothing designs in ten sizes, giving $K=10$.
-
-In these cases, $K$ comes from an external requirement rather than from the geometry of the data alone.
-
-### Use the elbow method
-
-The elbow heuristic evaluates inertia for several choices of $K$.
-
-As $K$ increases, inertia decreases because additional centroids can represent the data more closely. The source recommends looking for an **elbow**: a point after which increasing $K$ produces only a much smaller reduction in inertia.
+**Elbow method.** Plot inertia against $K$. Inertia always falls as $K$ grows (at $K=n$ it is 0), so look for the **elbow**, the point after which extra clusters buy little.
 
 > [!WARNING]
-> **A lower inertia alone does not select $K$**
+> **Lowest inertia doesn't pick K**
 >
-> Inertia is expected to decrease as $K$ increases. Choosing the largest tested $K$ merely because it has the lowest inertia would ignore the purpose of the elbow heuristic. The decision is based on where the improvement begins to flatten.
+> Choosing the $K$ with the smallest inertia always picks the largest $K$ you tried. The elbow looks for diminishing returns instead. The elbow is often ambiguous; the silhouette score or the gap statistic give a second opinion.
 
+## 9.9 Where this leads
 
-## 9.9 Source transition notes
+- **K-means → a probabilistic version → EM.** Replacing hard assignments with probabilities gives Gaussian mixture models, trained with the EM algorithm ([Chapter 10](10_gaussian_mixture_models_and_em.md)). K-means is the limit of a GMM with equal, spherical covariances shrinking to zero.
+- **Letting K be learned.** A Dirichlet-process mixture is a nonparametric Bayesian model in which the number of clusters grows with the data instead of being fixed in advance.
 
-Two brief handwritten notes connect this chapter to later material:
-
-1. Page 40 writes “K-means $\rightarrow$ probabilistic extension $\rightarrow$ EM algorithm.” The following chapter develops mixture models and expectation-maximization.
-2. Page 42 mentions a nonparametric Bayesian alternative, the **Dirichlet process**, in which the number of clusters can change during training.
-
-The source does not develop the Dirichlet process further in these pages, so it is preserved here only as a transition note.
+> [!NOTE]
+> **Beyond the lecture: what K-means assumes**
+>
+> Minimizing squared Euclidean distance to a centroid implicitly assumes clusters that are roughly spherical, of similar size and similar density. K-means will split an elongated cluster and merge two small nearby ones. For other shapes use GMMs (elliptical clusters), DBSCAN (arbitrary shapes, with noise) or spectral clustering. Features need scaling, as for KNN.
 
 ## 9.10 Common mistakes
 
-### Mistake 1: treating cluster identifiers as observed class labels
+1. **Treating cluster IDs as meaningful labels.** Cluster "1" and "2" can be swapped freely.
+2. **Recomputing a centroid from all points** instead of its own cluster.
+3. **Stopping after one assignment step.**
+4. **Assuming convergence means the best clustering.** It is a local optimum.
+5. **Choosing K by minimum inertia.**
+6. **Forgetting to scale features.**
 
-Cluster number $1$ or $2$ has no target meaning supplied by the dataset. The assignments are discovered group identifiers, and their numeric names can be exchanged without changing the partition.
+## 9.11 Summary
 
-### Mistake 2: recomputing a centroid from all points
+- Unsupervised learning finds structure in unlabeled inputs: clustering or dimensionality reduction.
+- K-means alternates nearest-centroid assignment and mean updates, which is coordinate descent on inertia.
+- It converges to a local optimum that depends on initialization; K-means++ seeding and multiple restarts help.
+- Choose $K$ from the application or from the elbow of the inertia curve.
 
-Each $\mu_j$ is the mean only of points whose current assignment is $j$:
+## 9.12 Self-check
 
-$$ c^{(i)}=j. $$
+1. Why can't the K-means objective increase during the loop?
+2. Why is the centroid update the mean?
+3. How does K-means++ pick the next seed, and why squared distance?
+4. Why does inertia always decrease with $K$?
+5. What cluster shapes does K-means handle poorly?
 
-Using every training point would make all centroid updates identical.
+<details>
+<summary>Answers</summary>
 
-### Mistake 3: stopping after one assignment step
+1. Each step exactly minimizes $J$ over one block of variables with the other fixed.
+2. The mean minimizes $\sum_i\lVert x^{(i)}-\mu\rVert^2$ (set the gradient $-2\sum_i(x^{(i)}-\mu)$ to zero).
+3. With probability proportional to $D(x)^2$, which strongly favors far-away points while still being random.
+4. More centroids can only bring each point closer to its nearest centroid; $K=n$ gives zero.
+5. Elongated, non-convex, or very unequal-size/density clusters.
 
-K-means alternates assignment and centroid recomputation. The first nearest-center assignment is generally not the final clustering.
-
-### Mistake 4: assuming convergence means the best possible clustering
-
-Pages 41–42 show that different initializations can converge to different solutions. A stable assignment is not necessarily the global optimum.
-
-### Mistake 5: choosing $K$ only by the minimum inertia
-
-Inertia falls as model flexibility grows with $K$. The elbow heuristic looks for diminishing returns rather than the absolute minimum over all tested values.
-
-## 9.11 Chapter summary
-
-- Unsupervised learning operates on inputs without observed target labels.
-- Clustering discovers groups; dimensionality reduction simplifies structure.
-- K-means alternates nearest-centroid assignment and centroid-mean updates.
-- Its objective is inertia, the within-cluster sum of squared distances.
-- The algorithm converges to a stable solution, but the result depends on initialization.
-- K-means++ spreads initial centroids using squared-distance probabilities.
-- $K$ can be supplied by the application or estimated heuristically with an inertia elbow.
-- The source points forward from K-means to probabilistic clustering and EM.
-
-## 9.12 Self-check questions
-
-1. What information is absent from an unsupervised training set?
-2. How do clustering and dimensionality reduction differ in the source examples?
-3. What does $c^{(i)}$ represent in K-means?
-4. Write the nearest-centroid assignment rule.
-5. Why is the updated centroid the mean of its assigned points?
-6. What quantity does inertia measure?
-7. Why can different random initializations produce different final clusterings?
-8. How does K-means++ choose a new initial centroid?
-9. Why does inertia normally decrease as $K$ increases?
-10. What does the elbow heuristic look for?
+</details>

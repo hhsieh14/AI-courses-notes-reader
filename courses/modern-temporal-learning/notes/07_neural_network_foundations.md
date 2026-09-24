@@ -1,1543 +1,284 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 7
-title: "Neural-Network Foundations and Training"
-source_pages: "56-65"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 7. Neural-Network Foundations and Training
 
-# Neural-Network Foundations and Training
-
-## 1. Chapter overview
-
-This chapter introduces feed-forward neural networks before the course
-moves to explicitly temporal neural architectures.
-
-The progression is:
+Before the temporal architectures (RNNs, TCNs, transformers) I need the plain feed-forward network and the recipe for training it. Everything in this chapter carries over: the forward equations, choosing the output and loss, cross-entropy as a likelihood, SGD and its variants, and the regularizers that keep a network with thousands of parameters from memorizing the training set.
 
 ```text
-Linear classifier
-    -> nonlinear activation
-    -> one-hidden-layer network
-    -> multilayer network
-
-Regression or classification output
-    -> suitable loss function
-    -> likelihood interpretation
-
-Backpropagation
-    -> gradient descent
-    -> stochastic or minibatch updates
-
-Training choices
-    -> initialization
-    -> learning rate
-    -> early stopping
-    -> weight decay, dropout, momentum
+linear classifier → nonlinear activation → hidden layers
+output function + loss ↔ likelihood
+backpropagation → full-batch / stochastic / minibatch gradient descent
+initialization, learning rate, early stopping, weight decay, dropout, momentum
 ```
 
-The chapter also connects softmax cross-entropy to multinomial maximum
-likelihood and uses a parameter-counting exercise to emphasize how quickly
-network size grows.
+The backpropagation derivation itself, with a numerical gradient check, is in [CSE 575, Chapter 12](../../cse-575-statistical-machine-learning/docs/12_neural_networks_and_backpropagation.md). This chapter focuses on the modeling and training choices.
 
-**Sources:** CSE598MTL.pdf, pp. 56-65
+## 1. Why nonlinearity is needed
 
----
+A binary linear classifier is $f(\mathbf x)=\mathrm{sign}(w_0+\mathbf w^\top\mathbf x)$. Many patterns (XOR is the classic one) aren't linearly separable, and stacking linear layers doesn't help, since $W_2(W_1\mathbf x+\mathbf b_1)+\mathbf b_2$ is still linear. A nonlinear **activation** between layers is what makes depth useful.
 
-## 2. Learning objectives
+| Activation | Formula | Range | Note |
+|---|---|---|---|
+| threshold | $\mathbf 1(u\ge0)$ | $\{0,1\}$ | zero gradient almost everywhere, so not trainable by gradient descent |
+| sigmoid | $\sigma(u)=1/(1+e^{-u})$ | $(0,1)$ | $\sigma'=\sigma(1-\sigma)\le\tfrac14$ |
+| tanh | $(e^u-e^{-u})/(e^u+e^{-u})$ | $(-1,1)$ | zero-centered; $\tanh'\le1$ |
+| ReLU | $\max(0,u)$ | $[0,\infty)$ | gradient 1 when active, so it doesn't saturate for $u>0$ |
 
-After this chapter, the reader should be able to:
+## 2. The one-hidden-layer network
 
-1. explain why compositions of only linear functions remain linear;
-2. describe threshold, sigmoid, tanh, and ReLU activation functions;
-3. write the forward equations for a one-hidden-layer or multilayer
-   feed-forward network;
-4. distinguish hidden activations, output logits, output functions, and
-   predictions;
-5. choose basic regression and multiclass output encodings;
-6. derive cross-entropy as the negative multinomial log likelihood;
-7. derive the Bernoulli maximum-likelihood estimate shown in the notes;
-8. distinguish full-batch, stochastic, and minibatch gradient descent;
-9. apply the chain rule to the sigmoid example;
-10. list the course's network-training setup steps;
-11. explain the roles of initialization, learning rate, and nonconvexity;
-12. describe early stopping, weight decay, dropout, repeated starts,
-    averaging, momentum, and label noise;
-13. count weight and bias parameters in a multilayer network;
-14. compute one instance's cross-entropy contribution from a one-hot label
-    and a softmax vector.
+For input $\mathbf x_i\in\mathbb R^M$, $Q$ hidden units and $K$ outputs:
 
-**Sources:** CSE598MTL.pdf, pp. 56-65
-
----
-
-## 3. From linear classifiers to neural networks
-
-The chapter begins with a binary linear classifier:
-
-```math
-f(\mathbf{x})
-=
-\mathrm{sign}
-\left(
-w_0+\mathbf{w}^\top\mathbf{x}
-\right).
-```
-
-A threshold converts the score into one of two classes.
-
-The slide notes that a single linear function cannot separate many
-classification patterns.
-
-Simply stacking linear functions does not solve this problem because a
-composition of linear functions is still linear.
-
-Therefore neural networks introduce nonlinear activation functions.
-
-**Source:** CSE598MTL.pdf, p. 56
-
----
-
-## 4. Activation functions
-
-### 4.1 Threshold function
-
-A simple nonlinear threshold is:
-
-```math
-h(u)
-=
-\begin{cases}
-1, & u\geq0,\\
-0, & u<0.
-\end{cases}
-```
-
-### 4.2 Sigmoid
-
-```math
-\sigma(u)
-=
-\frac{1}{1+e^{-u}}
-=
-\frac{e^u}{1+e^u}.
-```
-
-The sigmoid produces values between zero and one.
-
-### 4.3 Hyperbolic tangent
-
-```math
-\tanh(u)
-=
-\frac{e^u-e^{-u}}
-{e^u+e^{-u}}.
-```
-
-### 4.4 Rectified linear unit
-
-```math
-\mathrm{ReLU}(u)
-=
-\max(0,u)
-=
-u_+.
-```
-
-The slide presents sigmoid, tanh, and ReLU as examples of nonlinear
-activation functions that increase the expressive power of a network.
-
-**Source:** CSE598MTL.pdf, p. 56
-
----
-
-## 5. One-hidden-layer network
-
-Consider:
-
-- input vector $\mathbf{x}_i$;
-- input-to-hidden weights $W_1$;
-- hidden biases $\mathbf{b}_1$;
-- hidden-to-output weights $W_2$;
-- output biases $\mathbf{b}_2$.
-
-The hidden representation is:
-
-```math
-\mathbf{h}_i
-=
-\mathrm{act}
-\left(
-W_1\mathbf{x}_i+\mathbf{b}_1
-\right).
-```
-
-The pre-output values or logits are:
-
-```math
-\mathbf{o}_i
-=
-W_2\mathbf{h}_i+\mathbf{b}_2.
-```
-
-The prediction is:
-
-```math
-\hat{\mathbf{y}}_i
-=
-\bar{g}(\mathbf{o}_i).
-```
-
-The per-instance loss is:
-
-```math
-L_i
-=
-\mathrm{Loss}
-\left(
-\mathbf{y}_i,\hat{\mathbf{y}}_i
-\right).
-```
-
-The total loss is:
-
-```math
-L
-=
-\sum_{i=1}^{N}L_i.
-```
-
-The slide notes that $\bar{g}$ may be:
-
-- linear;
-- sigmoid;
-- softmax.
-
-The hidden values are computed internally and are not directly observed.
-The output-node values are transformed into model predictions.
-
-**Source:** CSE598MTL.pdf, p. 56
-
----
-
-## 6. Softmax output
-
-For $K$ output classes, softmax converts the output logits into
-probabilities:
-
-```math
-\bar{g}_k(\mathbf{o}_i)
-=
-\frac{
-e^{o_{ik}}
-}{
-\sum_{j=1}^{K}e^{o_{ij}}
-}.
-```
-
-Therefore:
-
-```math
-\bar{g}_k(\mathbf{o}_i)\geq0,
-\qquad
-\sum_{k=1}^{K}
-\bar{g}_k(\mathbf{o}_i)=1.
-```
-
-This allows the network output to be interpreted as a class-probability
-vector.
-
-**Source:** CSE598MTL.pdf, p. 56
-
----
-
-## 7. Multilayer feed-forward networks
-
-The page represents a deep network as a composition:
-
-```math
-\mathbf{y}
-=
-f(\mathbf{x})
-=
-f^{(4)}
-\left(
-f^{(3)}
-\left(
-f^{(2)}
-\left(
-f^{(1)}(\mathbf{x})
-\right)
-\right)
-\right).
-```
-![Multilayer feed-forward network from the course page](../assets/clean_diagrams/feedforward_depth_width.png)
-
-*Redrawn course diagram — Network width counts units within a layer, while depth counts successive transformations.*
-
-The diagram distinguishes:
-
-- network **width**: the number of nodes in a layer;
-- network **depth**: the number of successive layers.
-
-**Source:** CSE598MTL.pdf, p. 57
-
----
-
-## 8. Network dimensions and parameters
-
-For a network with:
-
-- $M$ inputs;
-- $Q$ hidden nodes;
-- $K$ outputs;
-
-the page gives:
-
-```math
-W_1\in\mathbb{R}^{Q\times M},
-```
-
-```math
-W_2\in\mathbb{R}^{K\times Q},
-```
-
-```math
-\mathbf{b}_1\in\mathbb{R}^{Q\times1},
-```
-
-```math
-\mathbf{b}_2\in\mathbb{R}^{K\times1}.
-```
-
-The parameter set is:
-
-```math
-\theta
-=
-(W_1,\mathbf{b}_1,W_2,\mathbf{b}_2).
-```
-
-### Review note
-
-The prose line on the page appears to list $W_1$ as $M\times Q$ and
-$W_2$ as $Q\times K$, while the forward equations use left
-multiplication:
-
-```math
-W_1\mathbf{x}_i,
-\qquad
-W_2\mathbf{h}_i.
-```
-
-The equations require the dimensions written above. This likely reflects
-a transpose convention or a slide-level dimension-order inconsistency.
-
-**Source:** CSE598MTL.pdf, p. 57
-
----
-
-## 9. L-hidden-layer network
-
-For hidden layers $1,\ldots,L$:
-
-```math
-\mathbf{h}_i^{(1)}
-=
-\mathrm{act}
-\left(
-W_1\mathbf{x}_i+\mathbf{b}_1
-\right),
-```
-
-```math
-\mathbf{h}_i^{(2)}
-=
-\mathrm{act}
-\left(
-W_2\mathbf{h}_i^{(1)}+\mathbf{b}_2
-\right),
-```
-
-```math
-\cdots
-```
-
-```math
-\mathbf{o}_i
-=
-W_{L+1}\mathbf{h}_i^{(L)}
-+
-\mathbf{b}_{L+1},
-```
-
-```math
-\hat{\mathbf{y}}_i
-=
-\bar{g}(\mathbf{o}_i).
-```
-
-The loss is:
-
-```math
-L
-=
-\sum_{i=1}^{N}
-\mathrm{Loss}
-\left(
-\mathbf{y}_i,\hat{\mathbf{y}}_i
-\right).
-```
-
-**Source:** CSE598MTL.pdf, p. 57
-
----
-
-## 10. Approximation statements on the slide
-
-The page states two theoretical results:
-
-1. every bounded continuous function can be approximated with arbitrarily
-   small error by a network with one hidden layer and one output layer;
-2. every function can be approximated with arbitrarily small error by a
-   network with two hidden layers and one output layer.
-
-It also warns that, in practice, many hidden nodes may be required.
-
-### Source-faithful caution
-
-The slide does not state the exact assumptions, domain, activation
-conditions, or formal theorem names. The note preserves the claims at the
-same level rather than replacing them with a more specific theorem.
-
-**Source:** CSE598MTL.pdf, p. 57
-
----
-
-## 11. Regression outputs
-
-For regression, the slide states that output encoding is simple.
-
-A common one-node output uses a linear output function:
-
-```math
-\hat{y}_i
-=
-\bar{g}(o_i)
-=
-o_i.
-```
-
-If a sigmoid output is used, the prediction is restricted to:
-
-```math
-0\leq\hat{y}_i\leq1.
-```
-
-The page lists squared-error loss as a common regression objective.
-
-A generic regression prediction is:
-
-```math
-\hat{y}_i
-=
-\bar{g}
-\left(
-\mathbf{o}(\mathbf{x}_i;\theta)
-\right).
-```
-
-**Source:** CSE598MTL.pdf, p. 58
-
----
-
-## 12. Multiclass classification encoding
-
-The course typically uses one output node per class.
-
-For $K$ classes, the target is represented with one-hot or
-one-of $K$ encoding.
-
-For an observation in class 2 among four classes:
-
-```math
-\mathbf{y}_i
-=
-(0,1,0,0)^\top.
-```
-
-The predicted class is:
-
-```math
-\hat{k}_i
-=
-\mathrm{arg\,max}_{1\leq k\leq K}
-\ \bar{g}_k(\mathbf{o}_i).
-```
-
-The output probabilities do not have to be exactly zero or one.
-
-**Source:** CSE598MTL.pdf, p. 58
-
----
-
-## 13. Cross-entropy loss
-
-For one-hot targets, the slide gives the multiclass cross-entropy or
-logistic-regression deviance:
-
-```math
-L(\theta)
-=
--
-\sum_{i=1}^{N}
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{o}(\mathbf{x}_i;\theta)
-\right).
-```
-
-The corresponding estimator is:
-
-```math
-\hat{\theta}
-=
-\mathrm{arg\,min}_{\theta}
-\left[
--
-\sum_{i=1}^{N}
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{o}(\mathbf{x}_i;\theta)
-\right)
-\right].
-```
-
-Because one-hot encoding has only one $y_{ik}=1$, each observation
-contributes the negative logarithm of the probability assigned to its
-true class.
-
-**Source:** CSE598MTL.pdf, p. 58
-
-### 13.1 Pasted cross-entropy explanation
-
-The bottom of page 58 includes pasted explanatory text that describes
-cross-entropy between a target distribution $P$ and an approximation
-$Q$:
-
-```math
-H(P,Q)
-=
--
-\sum_{x\in\mathcal{X}}
-P(x)\log Q(x).
-```
-
-It interprets cross-entropy as the additional information needed when
-using $Q$ instead of the true distribution $P$.
-
-The pasted text mentions:
-
-- base-2 logarithms producing bits;
-- natural logarithms producing nats;
-- the continuous analogue using an integral.
-
-This section is preserved as pasted explanatory material rather than
-attributed to the main slide bullets.
-
-**Source:** CSE598MTL.pdf, p. 58
-
----
-
-## 14. Maximum likelihood
-
-Suppose:
-
-```math
-y_1,\ldots,y_N
-```
-
-are independent observations with probability mass or density function:
-
-```math
-f(y_i;\theta).
-```
-
-The likelihood is:
-
-```math
-L(\theta)
-=
-\prod_{i=1}^{N}
-f(y_i;\theta).
-```
-
-The maximum-likelihood estimator is:
-
-```math
-\hat{\theta}
-=
-\mathrm{arg\,max}_{\theta}
-\ L(\theta).
-```
-
-Because the logarithm is monotonic:
-
-```math
-\hat{\theta}
-=
-\mathrm{arg\,max}_{\theta}
-\sum_{i=1}^{N}
-\log f(y_i;\theta).
-```
-
-Equivalently:
-
-```math
-\hat{\theta}
-=
-\mathrm{arg\,min}_{\theta}
-\left[
--
-\sum_{i=1}^{N}
-\log f(y_i;\theta)
-\right].
-```
-
-The final expression is the negative log likelihood.
-
-**Source:** CSE598MTL.pdf, p. 59
-
----
-
-## 15. Bernoulli maximum-likelihood example
-
-Let:
-
-```math
-y_i\in\{0,1\}
-```
-
-be independent Bernoulli observations.
-
-The probability mass function is:
-
-```math
-f(y_i;p)
-=
-p^{y_i}(1-p)^{1-y_i}.
-```
-
-The likelihood is:
-
-```math
-L(p)
-=
-\prod_{i=1}^{N}
-p^{y_i}(1-p)^{1-y_i}.
-```
-
-The log likelihood is:
-
-```math
-\sum_{i=1}^{N}
-\left[
-y_i\log p
-+
-(1-y_i)\log(1-p)
-\right].
-```
-
-The page gives:
-
-```math
-\hat{p}
-=
-\frac{
-\sum_{i=1}^{N}y_i
-}{
-N
-}
-=
-\bar{y}.
-```
-
-Thus the MLE of a Bernoulli probability is the observed fraction of
-positive outcomes.
-
-**Source:** CSE598MTL.pdf, p. 59
-
----
-
-## 16. Multinomial likelihood
-
-A multinomial observation selects one of $K$ categories.
-
-The page gives an example with three categories:
-
-- major delay;
-- minor delay;
-- no delay.
-
-Using one-hot encoding:
-
-```math
-\mathbf{y}_i
-=
-(y_{i1},\ldots,y_{iK}).
-```
-
-For class probabilities $p_{ik}$, the probability of one instance is:
-
-```math
-P(\mathbf{y}_i)
-=
-\prod_{k=1}^{K}
-p_{ik}^{y_{ik}}.
-```
-
-For $N$ independent instances:
-
-```math
-L
-=
-\prod_{i=1}^{N}
-\prod_{k=1}^{K}
-p_{ik}^{y_{ik}}.
-```
-
-In the neural-network model:
-
-```math
-p_{ik}
-=
-\bar{g}_k
-\left(
-\mathbf{x}_i;\theta
-\right).
-```
-
-Therefore:
-
-```math
-L(\theta)
-=
-\prod_{i=1}^{N}
-\prod_{k=1}^{K}
-\bar{g}_k
-\left(
-\mathbf{x}_i;\theta
-\right)^{y_{ik}}.
-```
-
-The MLE minimizes:
-
-```math
--
-\sum_{i=1}^{N}
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{x}_i;\theta
-\right).
-```
-
-This is the cross-entropy loss.
-
-**Source:** CSE598MTL.pdf, p. 60
-
----
-
-## 17. Backpropagation and gradient descent
-
-The slide describes the original network-training method as
-backpropagation, essentially gradient descent.
-
-It attributes the commonly cited network-training method to Rumelhart and
-McClelland (1986).
-
-Backpropagation calculates derivatives with respect to every parameter
-while exploiting relationships shared across nodes and layers.
-
-The objective shown is the negative cross-entropy loss:
-
-```math
-L(\theta)
-=
--
-\sum_{i=1}^{N}
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{o}(\mathbf{x}_i;\theta)
-\right).
-```
-
-The page also defines a per-instance contribution:
-
-```math
-L_i(\theta)
-=
--
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{o}(\mathbf{x}_i;\theta)
-\right).
-```
-
-**Source:** CSE598MTL.pdf, p. 61
-
----
-
-## 18. Full-batch gradient descent
-
-The page writes separate updates for each weight and bias matrix.
-
-A compact equivalent is:
-
-```math
-\theta^{(r+1)}
-=
-\theta^{(r)}
--
-\eta_r
-\sum_{i=1}^{N}
-\nabla_\theta L_i
-\left(
-\theta^{(r)}
-\right),
-```
-
-where:
-
-- $r$: training iteration;
-- $\eta_r$: learning rate.
-
-The page's sketch shows a nonconvex objective with multiple minima and
-notes that gradient descent may end at a local rather than global
-minimum.
-
-**Source:** CSE598MTL.pdf, p. 61
-
----
-
-## 19. Stochastic gradient descent
-
-The slide states that stochastic gradient descent typically updates after
-each row or training instance $i$:
-
-```math
-\theta^{(r+1)}
-=
-\theta^{(r)}
--
-\eta_r
-\nabla_\theta L_i
-\left(
-\theta^{(r)}
-\right).
-```
-
-The page writes this separately for:
-
-- $W_1$;
-- $W_2$;
-- $\mathbf{b}_1$;
-- $\mathbf{b}_2$.
-
-### Interpretation
-
-Full-batch gradient descent uses the complete training-gradient sum.
-Stochastic gradient descent uses one observation at a time, creating a
-noisier update direction.
-
-**Source:** CSE598MTL.pdf, p. 61
-
----
-
-## 20. Minibatch gradient descent
-
-Alternatively, partition:
-
-```math
-i=1,\ldots,N
-```
-
-into minibatches:
-
-```math
-b=1,\ldots,B.
-```
-
-For the set of instances in minibatch $b$, the update is:
-
-```math
-\theta^{(r+1)}
-=
-\theta^{(r)}
--
-\eta_r
-\sum_{i\in b}
-\nabla_\theta L_i
-\left(
-\theta^{(r)}
-\right).
-```
-
-The slide again lists separate versions for the network weights and
-biases.
-
-```text
-Full batch:
-all N instances per update
-
-Stochastic:
-one instance per update
-
-Minibatch:
-a selected subset per update
-```
-
-**Source:** CSE598MTL.pdf, p. 62
-
----
-
-## 21. Partial derivatives
-
-The page reviews the derivative definition:
-
 ```math
-\frac{\partial L(\theta)}{\partial\theta}
-=
-\lim_{\epsilon\rightarrow0}
-\frac{
-L(\theta+\epsilon)-L(\theta)
-}{
-\epsilon
-}.
+\mathbf h_i=\mathrm{act}(W_1\mathbf x_i+\mathbf b_1),\qquad
+\mathbf o_i=W_2\mathbf h_i+\mathbf b_2,\qquad
+\hat{\mathbf y}_i=\bar g(\mathbf o_i),\qquad
+L=\sum_{i=1}^N\mathrm{Loss}(\mathbf y_i,\hat{\mathbf y}_i),
 ```
-
-This provides the local slope used for gradient-based parameter updates.
-
-**Source:** CSE598MTL.pdf, p. 62
 
----
+with $W_1\in\mathbb R^{Q\times M}$, $\mathbf b_1\in\mathbb R^{Q}$, $W_2\in\mathbb R^{K\times Q}$, $\mathbf b_2\in\mathbb R^{K}$, and $\theta=(W_1,\mathbf b_1,W_2,\mathbf b_2)$. (Row-vector code, `x @ W`, stores the transposes, $M\times Q$ and $Q\times K$. Same model.)
 
-## 22. Sigmoid derivative and chain rule
+Three quantities to keep apart:
 
-Let:
+- $\mathbf h_i$: the **hidden representation**, never observed;
+- $\mathbf o_i$: the **logits**, a linear function of $\mathbf h_i$;
+- $\hat{\mathbf y}_i=\bar g(\mathbf o_i)$: the **prediction**, where $\bar g$ is identity, sigmoid or softmax.
 
-```math
-\sigma(\mathbf{w}^\top\mathbf{x})
-=
-\frac{1}{
-1+e^{-\mathbf{w}^\top\mathbf{x}}
-}.
-```
-
-The derivative with respect to $\mathbf{w}$ is:
+**Softmax** turns $K$ logits into a probability vector:
 
 ```math
-\frac{
-\partial
-\sigma(\mathbf{w}^\top\mathbf{x})
-}{
-\partial\mathbf{w}
-}
-=
-\mathbf{x}
-\,
-\sigma(\mathbf{w}^\top\mathbf{x})
-\left[
-1-
-\sigma(\mathbf{w}^\top\mathbf{x})
-\right].
+\bar g_k(\mathbf o_i)=\frac{e^{o_{ik}}}{\sum_{j=1}^Ke^{o_{ij}}},\qquad \bar g_k\ge0,\qquad \sum_k\bar g_k=1 .
 ```
 
-The slide states that the chain rule is used to calculate derivatives for
-network weights and biases.
+Sigmoid squashes one scalar independently; softmax normalizes across the whole vector.
 
-**Source:** CSE598MTL.pdf, p. 62
-
-### Possible source issue
-
-The page then appears to state that the derivative lies between zero and
-one because:
-
-```math
-0<\sigma(u)<1.
-```
+## 3. Deeper networks
 
-That bound applies to the scalar factor:
+A deep network is a composition $f(\mathbf x)=f^{(4)}(f^{(3)}(f^{(2)}(f^{(1)}(\mathbf x))))$, i.e. for $L$ hidden layers
 
 ```math
-\sigma(u)[1-\sigma(u)],
+\mathbf h^{(1)}=\mathrm{act}(W_1\mathbf x+\mathbf b_1),\quad
+\mathbf h^{(\ell)}=\mathrm{act}(W_\ell\mathbf h^{(\ell-1)}+\mathbf b_\ell),\quad
+\mathbf o=W_{L+1}\mathbf h^{(L)}+\mathbf b_{L+1},\quad
+\hat{\mathbf y}=\bar g(\mathbf o).
 ```
-
-but the derivative with respect to $\mathbf{w}$ also contains
-$\mathbf{x}$. Its components are not necessarily between zero and one.
-
-The note preserves the slide's intended sigmoid-factor intuition while
-logging the complete derivative-bound statement as a possible error.
-
-**Source:** CSE598MTL.pdf, p. 62
-
----
-
-## 23. Network-training setup
-
-The page lists a practical training sequence.
-
-### Step 1: encode inputs and targets
-
-Examples include one-hot encoding.
-
-### Step 2: scale attributes
-
-Possible options:
-
-- mean zero and unit variance;
-- normalize to the interval $[0,1]$.
-
-The slide says scaling matters because inputs are treated similarly in:
-
-- weight updates;
-- initial weights;
-- regularization.
 
-### Step 3: select architecture
+![Width and depth](../assets/clean_diagrams/feedforward_depth_width.png)
 
-Choose:
+*Width is the number of units in a layer; depth is the number of successive transformations.*
 
-- number of hidden layers;
-- number of hidden nodes in each layer.
+### How expressive is one hidden layer?
 
-### Step 4: select activation function
+- **Universal approximation** (Cybenko 1989; Hornik 1991): one hidden layer with a non-polynomial activation (sigmoid, tanh, ReLU…) can approximate any **continuous** function on a **compact** set to any accuracy, given enough hidden units.
+- With **two** hidden layers it's easy to build localized "bumps" and combine them, so functions with jumps can be approximated too, in an average ($L^p$) sense rather than uniformly.
 
-### Step 5: select output function
+These are existence results. They don't say how many units are needed (possibly exponentially many), or that gradient descent will find the weights. In practice, depth buys the same accuracy with far fewer units.
 
-The page gives softmax as an example.
+## 4. Choosing outputs and losses
 
-### Step 6: select loss
+| Task | Output $\bar g$ | Loss |
+|---|---|---|
+| unbounded regression | identity, $\hat y=o$ | squared error |
+| target in $[0,1]$, or binary | sigmoid | binary cross-entropy (Bernoulli NLL) |
+| $K$ classes | softmax | categorical cross-entropy (multinomial NLL) |
 
-Examples:
+For classification, encode the target **one-hot**: class 2 of 4 is $\mathbf y_i=(0,1,0,0)^\top$, and the predicted class is $\hat k_i=\arg\max_k\bar g_k(\mathbf o_i)$. The outputs are probabilities, not 0/1.
 
-- cross-entropy;
-- squared error.
+## 5. Cross-entropy is maximum likelihood
 
-### Step 7: initialize weights
+**Maximum likelihood.** For independent $y_1,\ldots,y_N$ with density $f(y;\theta)$,
 
-The page suggests small random values such as:
-
 ```math
-(-0.1,0.1).
+\hat\theta=\arg\max_\theta\prod_if(y_i;\theta)=\arg\min_\theta\Big[-\sum_i\log f(y_i;\theta)\Big].
 ```
 
-### Step 8: initialize the learning rate
+**Bernoulli.** $f(y;p)=p^y(1-p)^{1-y}$, so the log-likelihood is $\sum_i[y_i\log p+(1-y_i)\log(1-p)]$. Setting its derivative $\sum_iy_i/p-\sum_i(1-y_i)/(1-p)$ to zero gives
 
-The page gives an example:
-
 ```math
-\eta_r=0.3.
+\hat p=\frac1N\sum_iy_i=\bar y,
 ```
 
-### Step 9: train with stochastic descent
+the observed fraction of ones.
 
-The slide suggests decreasing the learning rate with epochs, with an
-example resembling:
+**Multinomial.** With one-hot $\mathbf y_i$ and class probabilities $p_{ik}$ (e.g. major delay / minor delay / no delay), $P(\mathbf y_i)=\prod_kp_{ik}^{y_{ik}}$. Letting the network supply $p_{ik}=\bar g_k(\mathbf x_i;\theta)$,
 
 ```math
-\eta_r=\frac{1}{r},
-```
-
-where $r$ is the training epoch.
-
-**Source:** CSE598MTL.pdf, p. 63
-
----
-
-## 24. Starting weights and nonconvex optimization
-
-The page gives several observations.
-
-### 24.1 Small weights
-
-With small weights, sigmoid functions are approximately linear, so the
-network begins near an approximately linear model.
-
-The slide presents this as a potentially useful starting region.
-
-### 24.2 Local minima
-
-The optimization problem is nonconvex.
-
-Different initial weights can produce different fitted solutions.
-
-### 24.3 Convergence
-
-The page states that convergence is not well understood.
-
-### 24.4 Stochastic gradients
-
-The slide says stochastic gradient descent is often considered an
-advantage because it can move through local minima.
-
-### Source-faithful caution
-
-The page presents this as an intuition about noisy updates, not as a
-formal guarantee that SGD escapes every local minimum or finds a global
-solution.
-
-**Source:** CSE598MTL.pdf, p. 63
-
----
-
-## 25. Overfitting in neural networks
-
-The page emphasizes that networks can contain many parameters and
-therefore have substantial potential to overfit.
-
-Several controls are listed.
-
-**Source:** CSE598MTL.pdf, p. 64
-
----
-
-## 26. Early stopping
-
-The slide proposes stopping weight iterations before full convergence.
-
-Its interpretation is:
-
-- early iterations remain closer to a simpler or more nearly linear
-  model;
-- continued training increases model complexity;
-- training loss may continue to decrease after validation performance has
-  reached its best value.
-
-The suggested procedure is:
-
-```text
-train model
-    -> monitor validation loss
-    -> stop near the validation-loss minimum
-    -> avoid continuing only because training loss decreases
+-\log L(\theta)=-\sum_{i=1}^N\sum_{k=1}^Ky_{ik}\log\bar g_k(\mathbf x_i;\theta),
 ```
-
-Cross-validation can help determine the stopping point.
-
-**Source:** CSE598MTL.pdf, p. 64
 
----
+which is exactly the **cross-entropy** loss. Only the true class's term survives, so each example contributes $-\log(\text{probability given to the right answer})$.
 
-## 27. Weight decay
+> [!NOTE]
+> **Beyond the lecture: the information-theory view**
+>
+> The cross-entropy between a target distribution $P$ and a model $Q$ is $H(P,Q)=-\sum_xP(x)\log Q(x)=H(P)+\mathrm{KL}(P\,\|\,Q)$: the average code length when data from $P$ is encoded with a code built for $Q$. The overhead over the ideal $H(P)$ is the KL divergence. With one-hot targets $H(P)=0$, so minimizing cross-entropy is minimizing KL to the labels. Use log base 2 for bits and natural log for nats.
 
-Weight decay adds a squared-weight penalty:
+**Worked example.** Four classes (red, orange, yellow, green), a green example $\mathbf y_i=(0,0,0,1)^\top$ and softmax output $(0.4,0.3,0.2,0.1)^\top$:
 
 ```math
-L^*(\theta)
-=
-L(\theta)
-+
-\lambda
-\sum_j w_j^2.
+L_i=-\log0.1\approx2.303\text{ nats}.
 ```
 
-The page illustrates the derivative:
+If the network had given green 0.9 instead, the loss would be $-\log0.9\approx0.105$. Confident mistakes are punished hard.
 
-```math
-\frac{
-\partial L^*(\theta)
-}{
-\partial w_j
-}
-=
-\frac{
-\partial L(\theta)
-}{
-\partial w_j
-}
-+
-2\lambda w_j.
-```
-
-The negative-gradient update therefore includes a term that decreases the
-magnitude of the weight at each iteration.
+## 6. Gradient descent: full batch, stochastic, minibatch
 
-The slide notes that cross-validation can be used to estimate
-$\lambda$.
+**Backpropagation** (popularized by Rumelhart, Hinton and Williams, 1986) computes $\nabla_\theta L_i$ for every parameter at once by applying the chain rule backward through the layers and reusing shared intermediate terms. **Gradient descent** is what uses those gradients:
 
-**Source:** CSE598MTL.pdf, p. 64
+| Variant | Update | Behavior |
+|---|---|---|
+| full batch | $\theta^{(r+1)}=\theta^{(r)}-\eta_r\sum_{i=1}^N\nabla L_i(\theta^{(r)})$ | exact gradient, one update per pass |
+| stochastic (SGD) | $\theta^{(r+1)}=\theta^{(r)}-\eta_r\nabla L_i(\theta^{(r)})$ | one example per update, noisy but cheap |
+| minibatch | $\theta^{(r+1)}=\theta^{(r)}-\eta_r\sum_{i\in b}\nabla L_i(\theta^{(r)})$ | subset $b$ per update; the standard in practice |
 
----
+Minibatches (typically 32–512) average out much of the SGD noise and map well onto GPU matrix multiplies. If the loss is an average instead of a sum, divide by $|b|$ and the learning rate means the same thing across batch sizes.
 
-## 28. Dropout, repeated starts, averaging, momentum, and label noise
+**Sigmoid example.** For $\sigma(\mathbf w^\top\mathbf x)$,
 
-### 28.1 Dropout
-
-The page describes dropout as randomly omitting a node during a training
-update, with an example probability:
-
 ```math
-p=50\%.
+\frac{\partial\sigma(\mathbf w^\top\mathbf x)}{\partial\mathbf w}=\sigma(\mathbf w^\top\mathbf x)\big[1-\sigma(\mathbf w^\top\mathbf x)\big]\,\mathbf x .
 ```
-
-### 28.2 Repeated initializations
-
-Try several starting-weight configurations and select a good solution.
-
-### 28.3 Prediction averaging
-
-Average predictions from several fitted networks, possibly using bagging
-or random-start ensembles.
-
-### 28.4 Momentum
-
-The slide states that momentum applies an exponentially weighted moving
-average to weight changes to smooth the update process.
-
-This connects back to the EWMA concept from Chapter 3.
-
-### 28.5 Label noise
-
-The page lists label noise as another concern affecting training and
-generalization, but does not develop a method for handling it.
-
-**Source:** CSE598MTL.pdf, p. 64
-
----
-
-## 29. Neural-network enhancements
-
-The final page lists many extensions:
-
-### Alternative training methods
-
-- line search;
-- conjugate gradient.
-
-### Training and regularization
 
-- momentum;
-- weight decay;
-- dropout;
-- weight sharing.
+The scalar factor $\sigma(1-\sigma)$ lies in $(0,\tfrac14]$. The full gradient also carries $\mathbf x$, so its components are not bounded by 1. That $\tfrac14$ is important later: backpropagating through many sigmoid layers (or time steps, in [Chapter 8](08_rnn_lstm_gru_and_seq2seq.md)) multiplies many factors $\le\tfrac14$, and the gradient vanishes.
 
-### Architectures
+## 7. A training recipe
 
-- convolutional neural networks;
-- pooling and deep networks;
-- recurrent neural networks, including RNN, LSTM, and GRU;
-- sequence-to-sequence models;
-- attention and transformers;
-- autoencoders;
-- graph neural networks and embeddings;
-- generative adversarial networks.
+1. **Encode** inputs and targets (one-hot for categories).
+2. **Scale** inputs to mean 0 / variance 1, or to $[0,1]$. All inputs share one learning rate, one initialization scale and one penalty, so unscaled features get treated very unequally.
+3. **Architecture:** number of hidden layers and units per layer.
+4. **Activation:** ReLU by default for hidden layers; sigmoid/tanh inside gates (Chapter 8).
+5. **Output function** and matching **loss** (table above).
+6. **Initialize** weights randomly and small, e.g. $U(-0.1,0.1)$. For deep nets, scale by fan-in: Glorot/Xavier $\mathrm{Var}=2/(n_{\text{in}}+n_{\text{out}})$ for tanh, He $\mathrm{Var}=2/n_{\text{in}}$ for ReLU, so activations neither blow up nor die with depth.
+7. **Learning rate:** start around 0.1–0.3 for plain SGD (Adam: $10^{-3}$) and decay it, e.g. $\eta_r=\eta_0/r$ or cosine decay.
+8. **Train** with minibatch SGD, monitoring validation loss.
 
-These topics connect this foundation chapter to later course sections.
+### Initialization and nonconvexity
 
-**Source:** CSE598MTL.pdf, p. 65
+- With small weights, sigmoid units operate in their near-linear region, so training starts near a linear model and adds nonlinearity as the weights grow. That's a sensible starting point.
+- **Weights must not all be equal.** Identical hidden units receive identical gradients and stay identical forever. Random initialization breaks the symmetry.
+- The loss is **nonconvex**. Different starts reach different solutions, and there are no general convergence guarantees to a global minimum.
+- SGD noise helps it move out of sharp minima and saddle points. That's an empirical tendency, not a guarantee.
 
----
+## 8. Controlling overfitting
 
-## 30. Parameter-counting example
+A small network already has thousands of parameters (Section 9), so regularization isn't optional.
 
-The page gives:
+**Early stopping.** Early in training the weights are small and the model is close to linear; complexity grows with iterations. Training loss keeps falling after validation loss bottoms out, so stop at the validation minimum (with some patience) and keep those weights.
 
-- 10,000 training instances;
-- 50 numerical predictors;
-- 10 categorical predictors;
-- three values per categorical predictor;
-- four output classes;
-- hidden-layer widths:
+**Weight decay.** Add an L2 penalty:
 
 ```math
-(20,20,10).
+L^*(\theta)=L(\theta)+\lambda\sum_jw_j^2,\qquad
+\frac{\partial L^*}{\partial w_j}=\frac{\partial L}{\partial w_j}+2\lambda w_j ,
 ```
 
-One-hot encoding expands the input count to:
+so every step also shrinks each weight by a factor $(1-2\eta\lambda)$. That's ridge regression from [Chapter 5](05_pca_and_regularization.md). Choose $\lambda$ on validation data, and usually leave biases unpenalized.
 
-```math
-50+10\times3=80.
-```
-
-### Review note
-
-The slide's displayed answer says to encode to **70 input nodes**, and its
-parameter calculation uses 70.
-
-This conflicts with the written data description:
-
-```math
-50+10\times3=80.
-```
-
-The value 70 would correspond to 20 additional encoded columns rather
-than 30. The source is internally inconsistent.
-
-Using the slide's 70-node assumption, the parameter count is:
+**Dropout.** During training, zero each hidden unit independently with probability $p$ (0.5 is classic for hidden layers). Each update trains a different thinned network, which discourages units from co-adapting. With "inverted" dropout the survivors are scaled by $1/(1-p)$ during training, so nothing changes at test time, when all units are kept.
 
-```math
-(70\times20+20)
-+
-(20\times20+20)
-+
-(20\times10+10)
-+
-(10\times4+4).
-```
+**Multiple starts and averaging.** Train several networks from different initializations (or bootstrap samples, i.e. bagging) and average their predictions. The averaged ensemble has lower variance than any single member.
 
-This equals:
+**Momentum.** Keep an exponentially weighted average of past gradients and step along it:
 
 ```math
-1420+420+210+44
-=
-2094.
+\mathbf v_{r+1}=\beta\mathbf v_r+\nabla L(\theta_r),\qquad \theta_{r+1}=\theta_r-\eta\,\mathbf v_{r+1},\qquad \beta\approx0.9 .
 ```
-
-Therefore the slide's total of 2094 is arithmetically consistent with 70
-inputs, but not with the stated 50 numerical plus ten three-level
-categorical predictors under full one-hot encoding.
-
-**Source:** CSE598MTL.pdf, p. 65
 
----
+That's the EWMA from [Chapter 3](03_filters_smoothing_and_decomposition.md) applied to gradients. It damps zig-zagging across narrow valleys and speeds up travel along them. Adam adds per-parameter scaling by a second EWMA of squared gradients.
 
-## 31. Cross-entropy exercise
+**Label noise.** Mislabeled examples pull the network toward memorizing noise, and large networks can fit random labels perfectly. Remedies include early stopping, label smoothing (train toward $1-\varepsilon$ instead of 1), or cleaning labels.
 
-The page asks about the previous network using:
+| Control | Mechanism |
+|---|---|
+| early stopping | stop at the validation-loss minimum |
+| weight decay | penalize $\sum w_j^2$ |
+| dropout | randomly remove units per update |
+| multiple starts / averaging | reduce dependence on one nonconvex solution |
+| momentum | smooth the update direction |
 
-```math
-L(\theta)
-=
--
-\sum_{i=1}^{N}
-\sum_{k=1}^{K}
-y_{ik}
-\log
-\bar{g}_k
-\left(
-\mathbf{x}_i;\theta
-\right).
-```
-
-The class encoding is:
+## 9. How fast parameters add up
 
-- $y_1$: red;
-- $y_2$: orange;
-- $y_3$: yellow;
-- $y_4$: green.
+**Example.** 10,000 training instances; 50 numeric predictors; 10 categorical predictors with 3 levels each; 4 classes; hidden widths $(20,20,10)$.
 
-For a green instance:
+The categorical predictors can be encoded two ways:
 
-```math
-\mathbf{y}_i
-=
-(0,0,0,1)^\top.
-```
+- **dummy (reference) coding**, $k-1=2$ columns each: $50+10\times2=70$ inputs;
+- **full one-hot**, 3 columns each: $50+10\times3=80$ inputs.
 
-The softmax output is:
-
-```math
-\bar{\mathbf{g}}(\mathbf{o}_i)
-=
-(0.4,0.3,0.2,0.1)^\top.
-```
+With a bias in the first layer, the dummy version avoids a redundant column. Counting weights plus biases layer by layer:
 
-Only the true-class term contributes:
+| Layer | 70 inputs | 80 inputs |
+|---|---:|---:|
+| input → 20 | $70\cdot20+20=1420$ | $80\cdot20+20=1620$ |
+| 20 → 20 | 420 | 420 |
+| 20 → 10 | 210 | 210 |
+| 10 → 4 | 44 | 44 |
+| **total** | **2,094** | **2,294** |
 
-```math
-L_i
-=
--\log(0.1).
-```
+About 2,100 parameters against 10,000 examples: roughly five examples per parameter, for a network most people would call tiny. That's why the regularizers above matter.
 
-With natural logarithms:
+```python
+def n_params(widths):                       # widths = [inputs, hidden..., outputs]
+    return sum(a * b + b for a, b in zip(widths, widths[1:]))
 
-```math
--\log(0.1)
-\approx2.3026.
+print(n_params([70, 20, 20, 10, 4]), n_params([80, 20, 20, 10, 4]))   # 2094 2294
 ```
-
-The numerical approximation is added for convenience; the page's core
-answer is the symbolic value $-\log(0.1)$.
-
-**Source:** CSE598MTL.pdf, p. 65
-
----
 
-## 32. End-to-end feed-forward training workflow
+## 10. The whole loop
 
 ```mermaid
 flowchart TD
-    A[Encode and scale data] --> B[Choose network architecture]
+    A[Encode and scale data] --> B[Choose architecture]
     B --> C[Initialize small random weights]
-    C --> D[Forward pass]
-    D --> E[Linear transformations]
-    E --> F[Nonlinear hidden activations]
-    F --> G[Output function: linear, sigmoid, or softmax]
-    G --> H[Compute loss]
-    H --> I[Backpropagate derivatives]
-    I --> J[Gradient, stochastic, or minibatch update]
-    J --> K[Monitor training and validation loss]
-    K --> L{Stop or continue?}
-    L -- Continue --> D
-    L -- Stop --> M[Retain fitted network]
+    C --> D[Forward pass: linear → activation → output function]
+    D --> E[Compute loss]
+    E --> F[Backpropagate gradients]
+    F --> G[Minibatch update]
+    G --> H[Monitor training and validation loss]
+    H --> I{Validation still improving?}
+    I -- yes --> D
+    I -- no --> J[Keep best weights]
 ```
 
-This diagram is synthesized from pages 56–64.
+**Where this goes next.** CNNs share weights across positions, and [TCNs](09_temporal_convolutional_networks.md) apply that idea to time. RNNs, LSTMs and GRUs ([Chapter 8](08_rnn_lstm_gru_and_seq2seq.md)) share weights across time steps. Autoencoders ([Chapter 10](10_representation_learning.md)) and attention/transformers ([Chapter 11](11_transformers.md)) are built from the same blocks. Other extensions include line search and conjugate-gradient optimizers, graph neural networks, and GANs.
 
-**Sources:** CSE598MTL.pdf, pp. 56-64
+## 11. Common confusions
 
----
+- **Backpropagation vs gradient descent:** backprop computes gradients; gradient descent uses them.
+- **Logit vs prediction:** $\mathbf o$ is unconstrained; $\bar g(\mathbf o)$ is the probability.
+- **Sigmoid vs softmax:** one independent squash vs normalization across classes. Multilabel problems use per-class sigmoids.
+- **Training vs validation loss:** a lower training loss says nothing about generalization.
+- **Weight decay vs momentum:** one shrinks the parameters, the other smooths the steps.
 
-## 33. Main method comparison
+## 12. Questions and answers
 
-### 33.1 Output and loss selection
+<details><summary>Sum or average the loss over the batch?</summary>
 
-| Task | Output function emphasized | Loss emphasized |
-|---|---|---|
-| Unbounded regression | Linear | Squared error |
-| Bounded binary-style output | Sigmoid | Likelihood-based loss |
-| Multiclass classification | Softmax | Cross-entropy |
+Average, in practice (`reduction="mean"`). It makes the learning rate independent of batch size. With a sum, doubling the batch doubles the effective step.
+</details>
 
-### 33.2 Gradient update styles
+<details><summary>Does the log base in cross-entropy matter?</summary>
 
-| Method | Instances per update | Update behavior |
-|---|---:|---|
-| Full batch | All $N$ | Stable aggregate gradient |
-| Stochastic | One | Noisy frequent updates |
-| Minibatch | Subset | Intermediate computational and variance behavior |
+Only by a constant factor, $\log_2x=\ln x/\ln2$, which rescales the gradient like a change of learning rate. Frameworks use natural logs.
+</details>
 
-### 33.3 Overfitting controls
+<details><summary>How do I pick early-stopping patience?</summary>
 
-| Method | Mechanism in the notes |
-|---|---|
-| Early stopping | Stop near minimum validation loss |
-| Weight decay | Penalize squared weights |
-| Dropout | Randomly omit nodes during updates |
-| Multiple starts | Search different nonconvex solutions |
-| Prediction averaging | Combine fitted networks |
-| Momentum | Smooth weight changes with EWMA-like memory |
+Scale it to how noisy the validation curve is: a few epochs for smooth curves, 10–20 for noisy ones, always restoring the best checkpoint rather than the last one.
+</details>
 
-**Sources:** CSE598MTL.pdf, pp. 58 and 61-64
+<details><summary>Should biases get weight decay?</summary>
 
----
+Usually not. Biases shift the output rather than scale inputs, so penalizing them adds bias without reducing variance. The same goes for normalization-layer gains.
+</details>
 
-## 34. Common confusions
+<details><summary>Why is $\eta_r = 1/r$ a classic schedule?</summary>
 
-### Hidden activation versus output logit versus prediction
+For SGD on convex problems, steps with $\sum\eta_r=\infty$ and $\sum\eta_r^2<\infty$ (Robbins–Monro conditions) guarantee convergence, and $1/r$ satisfies both. Deep-learning practice usually prefers warm-up followed by step or cosine decay.
+</details>
 
-$\mathbf{h}_i$ is the hidden representation.
-$\mathbf{o}_i$ is the pre-output linear value.
-$\hat{\mathbf{y}}_i=\bar{g}(\mathbf{o}_i)$ is the transformed prediction.
+<details><summary>What changes when inputs and outputs are sequences?</summary>
 
-### Sigmoid versus softmax
-
-Sigmoid transforms one scalar independently. Softmax normalizes a vector
-across classes.
-
-### Cross-entropy versus maximum likelihood
-
-For the multinomial softmax model in these pages, minimizing
-cross-entropy is equivalent to maximizing the multinomial likelihood.
-
-### Backpropagation versus gradient descent
-
-Backpropagation efficiently computes derivatives. Gradient descent uses
-those derivatives to update parameters.
-
-### Stochastic versus minibatch training
-
-Stochastic uses one observation per update. Minibatch uses a subset.
-
-### Training loss versus validation loss
-
-Lower training loss does not guarantee better generalization. Page 64
-uses validation loss to decide when to stop.
-
-### Small initialization versus a linear network
-
-Small sigmoid weights make the initial behavior approximately linear, but
-the network remains nonlinear and can leave that region during training.
-
-### Weight decay versus momentum
-
-Weight decay penalizes large parameter values. Momentum smooths or
-accumulates update directions.
-
-**Sources:** CSE598MTL.pdf, pp. 56-65
+The network needs memory across time steps and weight sharing across positions, so we don't learn separate weights for $t=1$ and $t=50$. RNNs (Chapter 8), dilated convolutions (Chapter 9) and attention (Chapter 11) are three ways to get both.
+</details>
 
 ---
 
-## 35. Questions preserved for later discussion
-
-1. Which output/loss combinations were actually used in the course code?
-2. What exact theorem and assumptions support the approximation statements
-   on page 57?
-3. Does the course use averaged or summed losses over $N$?
-4. Which logarithm base was used in implementations?
-5. Did training use full-batch, stochastic, or minibatch updates?
-6. What minibatch size was used?
-7. Was the learning-rate schedule really $\eta_r=1/r$, or was that only
-   an example?
-8. What initialization distribution and scaling were used for deeper
-   networks?
-9. How was early stopping patience selected?
-10. Were biases excluded from weight decay?
-11. Was dropout rescaled during training or prediction?
-12. How was momentum parameterized?
-13. Why does the page-65 parameter example use 70 rather than 80 encoded
-    inputs?
-14. Were categorical predictors encoded with a reference category instead
-    of full one-hot encoding?
-15. How does this feed-forward setup change when the inputs and outputs are
-    temporal sequences?
-
-These questions come directly from open or inconsistent points in the
-source pages.
-
----
-
-## 36. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 56 | Linear classifier, nonlinear activations, one-hidden-layer network |
-| 57 | Multilayer equations, dimensions, approximation statements |
-| 58 | Regression/classification outputs, one-hot encoding, cross-entropy |
-| 59 | Maximum likelihood and Bernoulli MLE |
-| 60 | Multinomial likelihood and softmax cross-entropy |
-| 61 | Backpropagation, batch gradient descent, stochastic gradient descent |
-| 62 | Minibatches, derivative definition, sigmoid derivative, chain rule |
-| 63 | Training setup, initialization, local minima and stochastic updates |
-| 64 | Early stopping, weight decay, dropout, repeated starts, momentum |
-| 65 | Network extensions, parameter count and cross-entropy exercise |
-
-## Review status
-
-- Activation and forward equations: `[VERIFIED]`
-- Weight-matrix dimension prose: `[POSSIBLE TRANSPOSE INCONSISTENCY]`
-- Approximation statements: `[VERIFIED AS SLIDE WORDING]`
-- Cross-entropy and MLE relationship: `[VERIFIED]`
-- SGD/minibatch equations: `[VERIFIED]`
-- Page-62 derivative bound: `[POSSIBLE SOURCE ERROR]`
-- Page-63 SGD/local-minimum statement: `[HEURISTIC]`
-- Weight-decay equation: `[VERIFIED AT GENERIC LEVEL]`
-- Page-65 encoded input count: `[SOURCE INCONSISTENCY]`
-- Cross-entropy exercise: `[VERIFIED]`
+[← Previous: Markov Models, HMMs and EM](06_markov_models_hmm_and_em.md) · [Course map](../course_map.md) · [Next: RNNs, LSTMs and Seq2Seq →](08_rnn_lstm_gru_and_seq2seq.md)

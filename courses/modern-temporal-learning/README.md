@@ -23,6 +23,12 @@ My study notes for ASU's graduate course on learning from time-ordered data. It 
 | Deep sequence models | [7 Neural-network foundations](notes/07_neural_network_foundations.md) · [8 RNN / LSTM / GRU / seq2seq](notes/08_rnn_lstm_gru_and_seq2seq.md) · [9 TCNs](notes/09_temporal_convolutional_networks.md) · [10 Representation & contrastive learning](notes/10_representation_learning.md) · [11 Transformers](notes/11_transformers.md) |
 | Appendix | [12 Stationarity recap & differencing derivation](notes/12_handwritten_appendix.md) |
 
+## Runnable notebook
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hhsieh14/AI-courses-notes-reader/blob/main/courses/modern-temporal-learning/notebooks/mtl_companion.ipynb)
+
+[`notebooks/mtl_companion.ipynb`](notebooks/mtl_companion.ipynb): one section per chapter: AR/MA signatures and the ARIMA loop, STL on Mauna Loa CO₂, Haar denoising, PCA T²/Q monitoring, HMM forward and Viterbi, vanishing RNN gradients, TCN receptive fields, kernel PCA, NT-Xent, causal attention, and a check that EWMA with λ = 1 − θ is the best smoother. Outputs are saved, so you can read it on GitHub without running anything.
+
 ## Reference pages
 
 | Page | Use it to… |

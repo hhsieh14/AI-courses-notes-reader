@@ -47,6 +47,10 @@ These are my independent study notes, not official course materials. They don't 
 
 I used AI tools (Claude) as an editor and checker: to turn handwritten notes into clean prose and LaTeX, redraw diagrams from my sketches, check derivations and code, and find inconsistencies. The selection of material, the explanations and the understanding are mine. Where the AI review found an error in my notes, I kept the corrected version and, when the mistake is a common one, turned it into a warning for readers.
 
+## License
+
+My notes, diagrams and code are licensed under [CC BY-NC 4.0](LICENSE): share and adapt them for non-commercial use with credit. The original course materials are not covered. See the [license notice](LICENSE_NOTICE.md) for scope and suggested attribution.
+
 ## Related
 
 - [ML System Design notes](https://github.com/hhsieh14/ml-system-design-learning-notes): how models like these are designed, evaluated and deployed in production systems.

@@ -32,6 +32,18 @@ If you only have a few minutes, these pages show how the notes work:
 - **[LSTMs and vanishing gradients](courses/modern-temporal-learning/notes/08_rnn_lstm_gru_and_seq2seq.md):** the Jacobian-product argument, and exactly which part of the LSTM fixes it.
 - **[Transformers for time series](courses/modern-temporal-learning/notes/11_transformers.md):** attention from first principles, why the $\sqrt{d_k}$ scaling is needed, and when a linear baseline still wins.
 
+## Runnable notebooks
+
+Each course has a companion notebook that re-derives its key results numerically. Outputs are saved, so they read fine on GitHub; open one in Colab to change the numbers and rerun. Everything runs on a CPU in about a minute.
+
+| Course | Notebook | |
+|---|---|---|
+| CSE 575 | [cse575_companion.ipynb](courses/cse-575-statistical-machine-learning/notebooks/cse575_companion.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hhsieh14/AI-courses-notes-reader/blob/main/courses/cse-575-statistical-machine-learning/notebooks/cse575_companion.ipynb) |
+| Learning Theory | [slt_companion.ipynb](courses/statistical-learning-theory/notebooks/slt_companion.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hhsieh14/AI-courses-notes-reader/blob/main/courses/statistical-learning-theory/notebooks/slt_companion.ipynb) |
+| Temporal Learning | [mtl_companion.ipynb](courses/modern-temporal-learning/notebooks/mtl_companion.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hhsieh14/AI-courses-notes-reader/blob/main/courses/modern-temporal-learning/notebooks/mtl_companion.ipynb) |
+
+To run locally: `pip install -r requirements.txt`, then open a notebook in Jupyter.
+
 ## How each chapter is organized
 
 - **Intuition first**, then the math, then a worked example.

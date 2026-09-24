@@ -19,6 +19,12 @@ My notes from CSE 575 at Arizona State University, rewritten as a readable refer
 | 11 | [Dimensionality Reduction and PCA](docs/11_dimensionality_reduction_and_pca.md) | variance maximization = eigenvectors, PCA via SVD, explained variance |
 | 12 | [Neural Networks and Backpropagation](docs/12_neural_networks_and_backpropagation.md) | backprop in matrix form, vanishing gradients, ReLU and friends |
 
+## Runnable notebook
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/hhsieh14/AI-courses-notes-reader/blob/main/courses/cse-575-statistical-machine-learning/notebooks/cse575_companion.ipynb)
+
+[`notebooks/cse575_companion.ipynb`](notebooks/cse575_companion.ipynb): one section per chapter: gradient descent vs the normal equations, a 500-dataset bias–variance experiment, ridge vs lasso paths, SVM margins and kernels, EM monotonicity, PCA via SVD, and backprop checked against finite differences. Outputs are saved, so you can read it on GitHub without running anything.
+
 Start with the [notation page](docs/notation.md) if a symbol is unfamiliar.
 
 ## How each chapter is built

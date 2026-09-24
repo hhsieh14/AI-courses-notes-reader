@@ -1,1232 +1,277 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 4
-title: "Fourier Analysis and Wavelets"
-source_pages: "20-32"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 4. Fourier Analysis and Wavelets
 
-# Fourier Analysis and Wavelets
+A long signal (hundreds of points, several channels) is a poor direct input to a model. We want a **sparse** representation: a small set of coefficients that captures the important structure. Fourier analysis gives one, but it can't say *when* something happened. Wavelets can, because they are local in time and multi-scale. This chapter covers orthonormal bases, the Haar transform, the pyramid algorithm, how to choose a wavelet family, vanishing moments, change detection and thresholding.
 
-## 1. Chapter overview
+## 1. Why a representation?
 
-This chapter introduces wavelets as a sparse, local, multiresolution
-representation for temporal signals.
+Useful information is spread across a long trace. A good transform concentrates it: most coefficients near zero, a few large. Sparsity here means sparse **after** the transform, not zeros in the raw signal. It enables compression (keep the big coefficients), denoising (drop the small ones), and monitoring (watch a few coefficients instead of every sample).
 
-The course motivates wavelets through three limitations of a purely global
-frequency representation:
+Wavelets are used for denoising, compression (JPEG 2000, audio, video), change and anomaly detection, trend suppression, seismology and turbulence, and feature extraction. In medical imaging, how a coefficient's size changes across scales tells you what kind of feature it is: similar size across scales suggests a sharp jump, while magnitudes that decay quickly with scale suggest a brief, fleeting change.
 
-1. a long signal may contain hundreds of observations and several traces;
-2. a model often needs a compact representation rather than every raw point;
-3. Fourier components describe which frequencies occur but can hide when
-   those frequencies occur.
+## 2. Fourier versus wavelets
 
-The wavelet approach represents a signal with:
+Fourier analysis writes a signal as a sum of sinusoids, each spanning the **whole** time axis. That has two drawbacks for our purposes:
 
-- approximation or scaling coefficients for coarse structure;
-- detail or wavelet coefficients for local changes;
-- repeated decompositions at several scales.
+1. **No time localization.** If one hour of signal has a glitch in its last five minutes, *every* Fourier coefficient changes, and you can't tell when it happened.
+2. **Implicit periodicity.** The DFT treats the signal as one period of a periodic signal, so trends and mismatched endpoints leak into high frequencies.
 
-The chapter then develops orthogonal reconstruction, the Haar transform,
-the pyramid algorithm, wavelet-family properties, vanishing moments,
-change detection, and coefficient thresholding.
+Wavelets are short, oscillating functions that are **shifted** (to localize in time) and **scaled** (to localize in frequency). Mallat's (1989) discrete wavelet transform (DWT) organizes them into a multiresolution "mathematical microscope": coarse scales summarize, fine scales show detail. The standard DWT assumes length $n=2^J$. The continuous wavelet transform exists too, but on a computer it is also evaluated on discrete samples.
 
-**Sources:** CSE598MTL.pdf, pp. 20-32
+## 3. What a wavelet system gives you
 
----
+- **One generating function:** all basis functions are scaled and shifted copies of a single mother wavelet.
+- **Exact reconstruction:** all the coefficients together reproduce the signal exactly.
+- **Multiresolution:** coarse approximations plus details at every scale.
+- **Sensitivity to change:** flat stretches give near-zero detail coefficients; jumps give large ones, which is exactly what anomaly detection wants.
+- **Choice:** different families suit different signals, and all are fast to compute ($O(n)$).
 
-## 2. Learning objectives
+## 4. Signals in a basis
 
-After this chapter, the reader should be able to:
+Any signal can be written in a basis, $f(t)=\sum_kb_kg_k(t)$. For sampled data, put the basis vectors as columns of $W$:
 
-1. explain why sparse representations are useful for long temporal signals;
-2. contrast global Fourier components with local wavelet components;
-3. describe scaling and wavelet functions;
-4. represent a signal in an orthonormal basis;
-5. interpret a wavelet coefficient as a match or correlation at a
-   particular position and scale;
-6. distinguish approximation and detail coefficients;
-7. reconstruct a signal from selected coefficients;
-8. perform the basic Haar pairwise decomposition and reconstruction;
-9. explain the multiresolution pyramid algorithm;
-10. compare wavelet families using support, symmetry, smoothness, and
-    vanishing moments;
-11. explain why polynomial trends can disappear from wavelet detail
-    coefficients;
-12. use wavelet details to localize discontinuities and anomalies;
-13. distinguish hard and soft coefficient thresholding.
+```math
+\mathbf y=W\boldsymbol\beta, \qquad \hat{\boldsymbol\beta}=(W^\top W)^{-1}W^\top\mathbf y .
+```
 
-**Sources:** CSE598MTL.pdf, pp. 20-32
+For an **orthonormal** basis ($W^\top W=I$) this is just
 
----
+```math
+\hat{\boldsymbol\beta}=W^\top\mathbf y ,
+```
 
-## 3. Why temporal signals need representations
+and each coefficient is an inner product with one basis vector. A 1,000-point signal has 1,000 coefficients in a 1,000-vector orthonormal basis. The point of the wavelet basis is that most of those coefficients are small.
 
-The opening page describes time-series datasets as potentially large and
-complex:
+## 5. Scaling and wavelet functions
 
-- hundreds of observations in each trace;
-- possibly several time traces;
-- model-relevant characteristics distributed across the trace.
+A wavelet system has two kinds of basis function:
 
-The course therefore argues that feature selection or summarization is
-needed to learn relationships efficiently.
+- the **scaling ("father") function** $\phi_{j,k}$, which carries the approximation or coarse content;
+- the **wavelet ("mother") function** $\psi_{j,k}$, which carries the detail or change content,
 
-The desired representation is described as **sparse**:
+with $j$ indexing scale and $k$ position. Conventions for which direction $j$ runs differ between texts and libraries. Here level 1 is the finest detail, as in PyWavelets.
+
+![Wavelet family comparison](../assets/clean_diagrams/wavelet_family_comparison.png)
+
+*Haar, Daubechies, Symlet and Coiflet families differ in support length, smoothness, symmetry and number of vanishing moments.*
+
+## 6. Coefficients as local matches
+
+A detail coefficient is the correlation between the signal and a wavelet placed at one position and scale. It's large where the local shape resembles the wavelet and small where it doesn't. In one example the same wavelet gives $C=0.0102$ at a poorly matching location and $C=0.2247$ at a well-matching one.
+
+Shifted copies of an orthonormal wavelet filter have inner product 1 with themselves and 0 with each other, so each coefficient isolates one component. Orthonormality holds **both within and across levels**: every scaling and wavelet vector in the full decomposition is orthogonal to every other.
+
+## 7. How many coefficients?
+
+For a signal of length $2^M$ decomposed to depth $K$, the coefficients split as
+
+```math
+\underbrace{2^{M-K}}_{\text{approximation}}+\underbrace{2^{M-K}+2^{M-K+1}+\cdots+2^{M-1}}_{\text{details, levels }K,\ldots,1}=2^M .
+```
+
+**Example:** $|x|=512=2^9$ with $K=5$:
+
+| | approx | level 5 | level 4 | level 3 | level 2 | level 1 |
+|---|---:|---:|---:|---:|---:|---:|
+| # coefficients | 16 | 16 | 32 | 64 | 128 | 256 |
+
+and $16+16+32+64+128+256=512$. No redundancy: the transform is a change of basis.
+
+## 8. Reconstructing from selected coefficients
+
+All coefficients give exact reconstruction. Dropping some gives an approximation: for example, drop all the finest details (smoothing), or drop every coefficient below a threshold (compression or denoising). On a 512-point CO₂ series, thresholding at 5.0 keeps just 51 coefficients (10%) and still reproduces the trend and seasonal cycle.
+
+In a multiscale Haar view of the CO₂ series, the level-5 approximation follows the broad contour, fine details carry the rapid oscillation, and a sudden jump produces large detail coefficients at every level near the event. Coarser levels use fewer values and trace the big shape; finer levels use more values and keep detail.
+
+## 9. Edges
+
+Near the ends of a finite signal the wavelet overhangs the data, so the transform has to extend the signal somehow: by symmetric reflection, periodization or zero padding. This creates **edge artifacts**, large coefficients that are not real events, and longer wavelets (db2 versus Haar) show them more. Choose the extension mode deliberately (e.g. `mode="symmetric"` in PyWavelets) and don't flag edge coefficients as anomalies.
+
+## 10. Why scales halve: the pyramid algorithm
+
+The dyadic structure follows from sampling theory: a signal whose highest frequency is $F$ needs $2F$ samples per second (Nyquist). After a low-pass split removes the upper half of the band, half the samples suffice, so we **downsample by 2**. Repeating this on the approximation branch only gives Mallat's pyramid:
 
 ```text
-Long signal
-    -> many possible measurements
-    -> a relatively small set of informative coefficients
+S ─┬─ cA1 ─┬─ cA2 ─┬─ cA3
+   │       │       └─ cD3
+   │       └─ cD2
+   └─ cD1              (cD1 = finest detail)
 ```
 
-**Source:** CSE598MTL.pdf, p. 20
+![Wavelet pyramid](../assets/clean_diagrams/wavelet_pyramid.png)
 
----
+Each level costs half the previous one, so the whole transform is $O(n)$, faster than the FFT's $O(n\log n)$.
 
-## 4. Wavelet applications
+## 11. Haar by hand
 
-The notes list wavelets for many signal-processing tasks:
+Pairwise scaled sums and differences:
 
-- denoising;
-- compression;
-- detecting changes;
-- suppressing trends;
-- video and voice compression;
-- turbulence, seismology, and tsunami modeling;
-- scientific and engineering signals;
-- image processing;
-- feature extraction for pattern recognition.
+```math
+a_1=\frac{x_1+x_2}{\sqrt2},\quad d_1=\frac{x_1-x_2}{\sqrt2},\qquad a_2=\frac{x_3+x_4}{\sqrt2},\quad d_2=\frac{x_3-x_4}{\sqrt2},\;\ldots
+```
 
-A medical-image example on the page describes how coefficients at
-different scales can indicate different structures:
+Invert pair by pair:
 
-- similar coefficient size across scales may indicate a jump;
-- decreasing coefficients may indicate a fleeting change;
-- coarse- and medium-scale information may be combined with
-  high-scale coefficients to enhance an image.
+```math
+x_1=\frac{a_1+d_1}{\sqrt2}, \qquad x_2=\frac{a_1-d_1}{\sqrt2}.
+```
 
-The course uses this example to emphasize that different scales carry
-different kinds of information.
+Apply the same step to the approximations to go one level coarser:
 
-**Source:** CSE598MTL.pdf, p. 20
+```math
+a_1^{(2)}=\frac{a_1+a_2}{\sqrt2}=\frac{x_1+x_2+x_3+x_4}{2},\qquad d_1^{(2)}=\frac{x_1+x_2-x_3-x_4}{2},
+```
 
----
+```math
+a_1^{(3)}=\frac{x_1+\cdots+x_8}{\sqrt8},\qquad d_1^{(3)}=\frac{(x_1+\cdots+x_4)-(x_5+\cdots+x_8)}{\sqrt8}.
+```
 
-## 5. Fourier analysis versus local wavelets
+Each level summarizes twice as long an interval. The $\sqrt2$ factors keep the transform orthonormal, so energy is preserved: $\sum x_t^2=\sum(\text{all coefficients})^2$.
 
-### 5.1 Fourier representation
+**Exercise.** Given approximation coefficients $[4.9,-1.4,7.1,1.4]$, the first detail at the next level is $\frac{4.9-(-1.4)}{\sqrt2}=\frac{6.3}{\sqrt2}\approx4.45$.
 
-The Fourier slide represents a signal as a sum of sine curves.
+```python
+import pywt, numpy as np
+x = np.array([1., 3., 2., 2., 5., 7., 6., 6.])
+cA, cD = pywt.dwt(x, "haar")
+print(cA, cD)   # [2.83 2.83 8.49 8.49] [-1.41 0. -1.41 0.]  i.e. (x1±x2)/√2, ...
+print(np.allclose(pywt.idwt(cA, cD, "haar"), x))   # True: exact reconstruction
+```
 
-Each frequency component contributes across the complete time domain.
+(PyWavelets' Haar detail coefficient is $(x_1-x_2)/\sqrt2$, the same convention as above.)
+
+## 12. Choosing a wavelet family
+
+- **Support (duration).** Short support localizes better. Most practical wavelets are compactly supported; Gaussian-derivative, Mexican-hat and Morlet wavelets have infinite support (used in the continuous transform).
+- **Symmetry.** Compactly supported orthogonal wavelets can't be symmetric, **except Haar**. When symmetry matters (images, to avoid phase distortion), use near-symmetric Symlets or biorthogonal wavelets.
+- **Regularity.** Smoother wavelets represent smooth signals with fewer coefficients.
+- **Vanishing moments.** A wavelet with $K$ vanishing moments, $\int t^m\psi(t)\,dt=0$ for $m=0,\ldots,K-1$, gives **zero** detail coefficients on any polynomial of degree $<K$. $K$ vanishing moments require support of length at least $2K-1$, and Daubechies wavelets achieve that minimum.
+
+**Daubechies db$K$:** orthogonal, compact support, asymmetric, $K$ vanishing moments, smoother as $K$ grows, and defined by filter coefficients computed numerically (no closed form). For db5 the moments of degree 0–4 are about zero and degree 5 is not.
+
+## 13. Vanishing moments make changes stand out
+
+- Flat regions give near-zero details (every wavelet has at least one vanishing moment).
+- With $K$ vanishing moments, any polynomial trend of degree $<K$ also disappears from the details.
+
+So a smooth trend drops out of the detail coefficients and a discontinuity or unexpected feature produces a large, localized response.
 
 ```text
-Signal(t)
-    =
-low-frequency sine
-    +
-medium-frequency sine
-    +
-high-frequency sine
-    + ...
+smooth polynomial trend  → suppressed in details
+unexpected discontinuity → large localized detail coefficient
 ```
 
-The handwritten notes identify two practical disadvantages in this
-course context:
+**Examples:**
 
-1. the representation does not directly handle trend;
-2. the data are treated as periodic.
+- *Step (db2, five levels):* the step shows up sharply in the details, and finer levels localize it more precisely.
+- *Frequency change (db5):* the approximation keeps the broad shape, and the details light up exactly where the oscillation speeds up.
+- *Quadratic trend + noise (db3 vs db2):* db3 ($K=3>2$) removes the quadratic, so its details are pure noise; db2 ($K=2$) leaves trend residue. In general **db$K$ suppresses polynomials of degree $p<K$**.
+- *Plateau in a linear trend (db2 vs db7):* both find the plateau edges, but the short db2 pins them down more sharply.
 
-**Source:** CSE598MTL.pdf, p. 22
+![Plateau localization](../assets/clean_diagrams/plateau_wavelet_localization.png)
 
-### 5.2 Time localization problem
-
-The page-20 note gives an intuitive example:
-
-> If one hour of signal is transformed and an error occurs during only the
-> final five minutes, the transform for the complete hour is affected.
-
-The course interpretation is that Fourier analysis can reveal frequency
-content while hiding when a local event occurred.
-
-### 5.3 Wavelets as local models
-
-Wavelets are finite or time-limited functions that can be moved and
-rescaled.
-
-They are presented as an alternative to Fourier analysis when the goal
-requires both:
-
-- scale or frequency information;
-- temporal localization.
-
-**Sources:** CSE598MTL.pdf, pp. 20 and 22
-
----
-
-## 6. Discrete wavelet transform and multiresolution
-
-The discrete wavelet transform (DWT) is introduced as a
-multiresolution representation.
-
-The page attributes the efficient dyadic decomposition algorithm to
-Mallat (1989) and describes a signal length of the form:
-
-```math
-n=2^J.
-```
-
-The notes state that continuous wavelets can be useful for high-frequency
-data, but the course focuses on discrete wavelet representations.
-
-### Resolution language
-
-The slide describes resolution as an indicator of wavelet frequency and
-uses the phrase "mathematical microscope":
-
-```text
-Coarse resolution
-    -> summary structure
-
-Progressively finer resolution
-    -> increasingly local detail
-```
-
-**Source:** CSE598MTL.pdf, p. 20
-
----
-
-## 7. Core wavelet properties
-
-The course lists the following properties.
-
-### 7.1 Generated from one function
-
-A wavelet system can be generated from a single function through scaling
-and translation.
-
-### 7.2 Exact reconstruction
-
-The original signal can be reconstructed identically from the complete
-set of wavelet coefficients.
-
-This supports both:
-
-- compact representation;
-- local interpretation of signal characteristics.
-
-### 7.3 Multiresolution
-
-The system studies a signal at coarse resolution for summaries and at
-finer resolutions for details.
-
-### 7.4 Sensitivity to discontinuity and change
-
-Intervals containing constant behavior can produce zero or small
-coefficients, while local discontinuities produce larger coefficients.
-
-> **Handwritten annotation:** This sensitivity to high-frequency change
-> makes wavelets useful for anomaly detection.
-
-### 7.5 Adaptable systems
-
-Wavelet systems can be selected or developed for particular
-applications and are described as easy to calculate.
-
-**Source:** CSE598MTL.pdf, p. 21
-
----
-
-## 8. Sparse temporal representation
-
-The goal is for the coefficients to be more useful than the full signal.
-
-The slide emphasizes:
-
-- many coefficients decrease rapidly toward zero;
-- an entire signal may be summarized by relatively few coefficients;
-- a fault may be easier to detect in coefficient space;
-- orthogonal basis functions isolate separate contributions;
-- anomaly-detection methods can monitor the representation rather than
-  every raw point.
-
-### Clarification
-
-Sparsity here does not mean that the signal itself contains many zeros.
-It means that after transformation, only a small subset of coefficients
-may be needed to represent the important structure.
-
-**Source:** CSE598MTL.pdf, p. 21
-
----
-
-## 9. Basis-function representation
-
-A function can be represented using basis functions:
-
-```math
-f(t)=\sum_k b_k g_k(t).
-```
-
-For sampled data, write:
-
-- the signal as a vector $\mathbf{y}$;
-- each basis function $g_k(t)$ as a vector $\mathbf{w}_k$;
-- the basis vectors as columns of a matrix $W$.
-
-Then:
-
-```math
-\mathbf{y}=W\boldsymbol{\beta}.
-```
-
-The least-squares coefficient estimate is:
-
-```math
-\hat{\boldsymbol{\beta}}
-=
-(W^\top W)^{-1}W^\top\mathbf{y}.
-```
-
-For an orthonormal basis:
-
-```math
-W^\top W=I,
-```
-
-so:
-
-```math
-\hat{\boldsymbol{\beta}}=W^\top\mathbf{y}.
-```
-
-> **Handwritten example:** A signal with 1,000 points can be represented
-> using 1,000 orthogonal basis vectors and 1,000 corresponding
-> coefficients.
-
-**Source:** CSE598MTL.pdf, p. 21
-
----
-
-## 10. Scaling and wavelet functions
-
-The course describes a wavelet system as containing:
-
-- a scaling or approximation function $\phi$, also called the father
-  function;
-- a wavelet or detail function $\psi$, also called the mother function.
-
-Scaled and translated copies produce basis functions at several
-positions and resolutions.
-
-A conceptual notation is:
-
-```math
-\phi_{j,k}(t)
-\quad\text{and}\quad
-\psi_{j,k}(t),
-```
-
-where $j$ indexes scale or resolution and $k$ indexes location.
-
-The precise indexing convention varies across wavelet texts and also
-varies across the course slides. The notes therefore preserve the
-course's approximation/detail language instead of imposing one external
-convention.
-
-**Source:** CSE598MTL.pdf, p. 22
-
----
-
-## 11. Wavelet families
-
-The page displays continuous and discrete forms from several families:
-
-- Haar;
-- Daubechies;
-- Symlets;
-- Coiflets.
-
-The handwritten note observes that a continuous wavelet transform is
-still represented with discrete samples when calculated on a computer.
-
-The family illustrations show that wavelets differ in:
-
-- duration;
-- smoothness;
-- symmetry;
-- number of nonzero discrete filter coefficients;
-- number of vanishing moments.
-![Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics](../assets/clean_diagrams/wavelet_family_comparison.png)
-
-*Redrawn course diagram — Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics.*
-
-
-**Source:** CSE598MTL.pdf, p. 22
-
----
-
-## 12. Orthonormality
-
-The page-23 db5 example shows shifted copies of a decomposition filter.
-
-The dot-product row illustrates:
-
-- the vector has dot product $1$ with itself;
-- shifted orthogonal vectors have dot product $0$.
-
-For orthonormal basis vectors:
-
-```math
-\mathbf{w}_i^\top\mathbf{w}_j
-=
-\begin{cases}
-1, & i=j,\\
-0, & i\neq j.
-\end{cases}
-```
-
-This permits each coefficient to isolate one basis-vector contribution.
-
-**Source:** CSE598MTL.pdf, p. 23
-
----
-
-## 13. Coefficients as local matches
-
-The slide describes wavelet coefficients as measuring the correlation
-between:
-
-- the signal;
-- a wavelet at a selected location and scale.
-
-A small coefficient appears when the local signal shape does not match the
-wavelet. A larger coefficient appears when the local signal and wavelet
-align more strongly.
-
-The page illustrates coefficients approximately:
-
-```math
-C=0.0102
-```
-
-for a weak local match and:
-
-```math
-C=0.2247
-```
-
-for a stronger match.
-
-### Interpretation
-
-```text
-Move and scale the wavelet
-    -> compute its inner product with the signal
-    -> large magnitude means a stronger local pattern match
-```
-
-**Source:** CSE598MTL.pdf, p. 23
-
----
-
-## 14. Approximation and detail subspaces
-
-The slide separates:
-
-- approximation or scaling vectors at a selected level;
-- detail or wavelet vectors at that and finer levels.
-
-For a signal with $2^J$ points, the complete set of approximation and
-detail basis vectors contains $2^J$ vectors.
-
-The page uses two different level-counting conventions in adjacent
-sections. One form writes the total schematically as:
-
-```math
-2^K+
-\left(
-2^K+2^{K+1}+\cdots+2^{J-1}
-\right)
-=
-2^J.
-```
-
-A later form, for $N=2^M$, writes the selected approximation count as:
-
-```math
-2^{M-K}
-```
-
-and detail counts as:
-
-```math
-2^{M-1},2^{M-2},\ldots,2^{M-K}.
-```
-
-### Review note
-
-Both displays communicate that the approximation plus all retained detail
-subspaces span the original $2^M$-dimensional signal. Their level
-indices point in opposite directions, so the notation should not be
-combined without checking the convention used by the software.
-
-**Source:** CSE598MTL.pdf, p. 23
-
----
-
-## 15. Example coefficient counts
-
-For a signal of length:
-
-```math
-|x|=512=2^9
-```
-
-and approximation level:
-
-```math
-K=5,
-```
-
-the slide gives:
-
-```math
-2^{9-5}=16
-```
-
-approximation vectors.
-
-It then lists detail-vector counts:
-
-| Level | 5 | 4 | 3 | 2 | 1 |
-|---:|---:|---:|---:|---:|---:|
-| Number of vectors | 16 | 32 | 64 | 128 | 256 |
-
-The total is:
-
-```math
-16+16+32+64+128+256=512.
-```
-
-> **Handwritten annotation:** "Orthogonality within each level; no cross
-> level."
-
-### Review note
-
-The intended meaning appears to be that the basis vectors used across the
-decomposition are orthogonal. The exact phrase "no cross level" is
-preserved as handwriting and requires clarification before being treated
-as a formal claim.
-
-**Source:** CSE598MTL.pdf, p. 24
-
----
-
-## 16. Reconstruction from coefficients
-
-A signal can be reconstructed from its approximation and detail
-coefficients.
-
-The complete transform gives exact reconstruction. A simplified
-reconstruction can intentionally omit components by setting selected
-coefficients to zero.
-
-The slide lists two possible omissions:
-
-- all high-resolution detail coefficients in some applications;
-- coefficients whose magnitudes are below a selected threshold.
-
-The CO2 example has:
-
-- signal length $512$;
-- threshold $5.0$;
-- $51$ selected coefficients.
-
-### Interpretation
-
-```text
-All coefficients
-    -> exact reconstruction
-
-Selected large/coarse coefficients
-    -> approximate reconstruction
-
-Small coefficients set to zero
-    -> sparse or denoised representation
-```
-
-**Source:** CSE598MTL.pdf, p. 24
-
----
-
-## 17. Multiscale CO2 example
-
-The Haar example on page 25 shows:
-
-- the final reconstructed CO2 trace;
-- level-5 approximation coefficients;
-- detail coefficients at several levels.
-
-The plots demonstrate that:
-
-- the approximation captures broad contour;
-- fine-level details preserve rapid oscillations and localized changes;
-- a major jump produces large detail coefficients near the event.
-
-> **Handwritten interpretation:** Higher-level or coarser representations
-> use fewer values and follow the large contour; finer representations use
-> more values and preserve more detail.
-
-The exact "higher/lower level" wording depends on the slide's level
-convention, so the note uses **coarser** and **finer** where possible.
-
-**Source:** CSE598MTL.pdf, p. 25
-
----
-
-## 18. Edge behavior and db2 example
-
-Page 26 applies a db2 wavelet to a signal with a large end change.
-
-It displays:
-
-- the original signal;
-- scaling coefficients;
-- detail coefficients.
-
-The handwriting appears to note greater sensitivity to edge effects.
-
-### Review note
-
-Boundary handling is not explained on the page. The note preserves the
-observed edge sensitivity but does not infer which extension mode or
-padding rule was used.
-
-**Source:** CSE598MTL.pdf, p. 26
-
----
-
-## 19. Why scales change by a factor of two
-
-The slide connects dyadic wavelet scaling to the sampling theorem.
-
-If a signal's highest frequency is $F$ cycles per second, the page
-states that exact reconstruction requires:
-
-```math
-2F
-```
-
-samples per second.
-
-> **Handwritten annotation:** Sampling rate should be two times the
-> highest frequency.
-
-This motivates repeated halving or downsampling of the approximation
-stream in the wavelet pyramid.
-
-**Source:** CSE598MTL.pdf, p. 27
-
----
-
-## 20. Efficient pyramid algorithm
-
-At each stage, the current approximation is decomposed into:
-
-- a new approximation;
-- a detail component.
-
-Only the approximation branch is decomposed again.
-
-```text
-Original signal S
-├── cA1  -> decomposed again
-│   ├── cA2 -> decomposed again
-│   │   ├── cA3
-│   │   └── cD3
-│   └── cD2
-└── cD1
-```
-
-The slide notes:
-
-- the next level is computed from the previous approximation
-  coefficients;
-- this creates the multiresolution property;
-- the finest detail is referred to as level 1 in the displayed
-  convention.
-![Wavelet pyramid with repeated decomposition of the approximation branch](../assets/clean_diagrams/wavelet_pyramid.png)
-
-*Redrawn course diagram — Wavelet pyramid with repeated decomposition of the approximation branch.*
-
-
-**Source:** CSE598MTL.pdf, p. 27
-
----
-
-## 21. Haar wavelet computations
-
-For time-ordered values:
-
-```math
-x_1,x_2,x_3,x_4,\ldots,
-```
-
-the Haar transform forms pairwise averages and differences.
-
-### 21.1 First scale
-
-```math
-a_1=\frac{x_1+x_2}{\sqrt{2}},
-\qquad
-d_1=\frac{x_1-x_2}{\sqrt{2}},
-```
-
-```math
-a_2=\frac{x_3+x_4}{\sqrt{2}},
-\qquad
-d_2=\frac{x_3-x_4}{\sqrt{2}}.
-```
-
-The process continues for all adjacent pairs.
-
-### 21.2 Reconstruction
-
-```math
-x_1=\frac{a_1+d_1}{\sqrt{2}},
-```
-
-```math
-x_2=\frac{a_1-d_1}{\sqrt{2}}.
-```
-
-The same inverse relation reconstructs each pair.
-
-### 21.3 Second scale
-
-The next-scale approximation and detail are computed from the previous
-approximations:
-
-```math
-a_1^{(2)}
-=
-\frac{a_1^{(1)}+a_2^{(1)}}{\sqrt{2}}
-=
-\frac{x_1+x_2+x_3+x_4}{2},
-```
-
-```math
-d_1^{(2)}
-=
-\frac{a_1^{(1)}-a_2^{(1)}}{\sqrt{2}}
-=
-\frac{x_1+x_2-x_3-x_4}{2}.
-```
-
-### 21.4 Third scale
-
-For eight points:
-
-```math
-a_1^{(3)}
-=
-\frac{x_1+x_2+x_3+x_4+x_5+x_6+x_7+x_8}{\sqrt{8}},
-```
-
-```math
-d_1^{(3)}
-=
-\frac{x_1+x_2+x_3+x_4-x_5-x_6-x_7-x_8}{\sqrt{8}}.
-```
-
-The coefficients summarize successively larger time intervals.
-
-**Source:** CSE598MTL.pdf, p. 28
-
----
-
-## 22. Haar exercise preserved from the page
-
-The page gives approximation coefficients:
-
-```math
-[4.9,-1.4,7.1,1.4]
-```
-
-and asks for the first detail coefficient at the next higher level,
-without simplifying the final numerical expression.
-
-Using the Haar difference formula:
-
-```math
-d_1^{\text{next}}
-=
-\frac{4.9-(-1.4)}{\sqrt{2}}.
-```
-
-The handwritten work expresses the same operation through the displayed
-$\sqrt{2}$-scaled terms.
-
-**Source:** CSE598MTL.pdf, p. 28
-
----
-
-## 23. Wavelet-family design properties
-
-### 23.1 Support or duration
-
-A wavelet may have finite or infinite support.
-
-The slide states:
-
-- small support localizes signals better;
-- many popular wavelets have finite support;
-- Gaussian, Mexican-hat, and Morlet wavelets are examples with infinite
-  support.
-
-### 23.2 Symmetry
-
-The page states that orthogonal wavelets with compact support are not
-symmetric. The one exception is the Haar wavelet, which is orthogonal,
-compactly supported, and (anti)symmetric; this is why symmetric
-alternatives such as biorthogonal wavelets are used in image coding.
-
-It notes that symmetry is especially relevant for image processing.
-
-### 23.3 Regularity
-
-Regularity is related to the smoothness of the wavelet representation.
-
-### 23.4 Vanishing moments
-
-With $K$ zero or vanishing moments, polynomials up to degree $K-1$
-produce zero wavelet coefficients.
-
-The slide states:
-
-```math
-K \text{ zero moments}
-\quad\Rightarrow\quad
-\text{wavelet support at least }2K-1.
-```
-
-It identifies Daubechies wavelets as achieving the maximum number of
-vanishing moments for a given compact support under the stated
-orthonormal construction.
-
-**Source:** CSE598MTL.pdf, p. 29
-
----
-
-## 24. Daubechies wavelets
-
-The page lists the Daubechies system as:
-
-- asymmetric;
-- finite support;
-- orthogonal;
-- increasingly smooth as $K$ in db $K$ increases;
-- having $K$ vanishing moments;
-- calculated numerically rather than through an explicit elementary
-  formula.
-
-The db5 table illustrates approximately zero moments for polynomial
-degrees $0$ through $4$, followed by a nonzero degree $5$ moment.
-
-**Source:** CSE598MTL.pdf, p. 29
-
----
-
-## 25. Why vanishing moments expose change
-
-The course makes two related claims:
-
-1. constant intervals generate zero or small detail coefficients;
-2. some wavelets also generate zero coefficients for linear, quadratic,
-   or higher-order polynomial signals.
-
-Therefore a smooth polynomial background can disappear from detail
-coefficients while a rupture or discontinuity produces a large local
-response.
-
-```text
-Smooth polynomial trend
-    -> suppressed in detail coefficients
-
-Unexpected discontinuity
-    -> large localized detail coefficient
-```
-
-> **Handwritten question:** How are vanishing moments useful?
-
-> **Handwritten interpretation:** Allow the trend to pass out of the
-> detail representation so that higher-order or unexpected behavior can
-> be captured.
-
-The handwriting is conceptually consistent with the plotted examples,
-though the exact wording is partially unclear.
-
-**Sources:** CSE598MTL.pdf, pp. 29-30
-
----
-
-## 26. Wavelet-family selection
-
-The slide briefly lists basis-selection strategies:
-
-- matching pursuit, described as greedy selection from a dictionary of
-  many bases;
-- basis pursuit, described on the slide as ridge-like optimization;
-- lasso approaches.
-
-The page marks these topics as beyond the course's immediate scope.
-
-### Correction
-
-Basis pursuit is an $\ell_1$ method, not a ridge ($\ell_2$) method. It
-solves $\min_{\boldsymbol{\beta}}\|\boldsymbol{\beta}\|_1$ subject to
-$W\boldsymbol{\beta}=\mathbf{y}$ (or a noisy relaxation, basis-pursuit
-denoising), which is the constrained form of the lasso. Matching pursuit
-is the greedy counterpart that adds one dictionary atom at a time.
-
-**Source:** CSE598MTL.pdf, p. 30
-
----
-
-## 27. Step and frequency-change examples
-
-### 27.1 Step signal
-
-The db2 example at five scales shows:
-
-- raw signal;
-- approximation reconstructions;
-- detail reconstructions.
-
-The step becomes sharply visible in the detail coefficients near the
-change point.
-
-The handwritten note indicates that a higher-resolution detail localizes
-the change more precisely.
-
-### 27.2 Frequency change
-
-The db5 example switches from a slower oscillation to a faster
-oscillation.
-
-The approximation retains broad signal form, while the details show the
-change in frequency around the transition.
-
-The slide summarizes:
-
-> Change visible in details.
-
-**Source:** CSE598MTL.pdf, p. 30
-
----
-
-## 28. Polynomial trend with white noise
-
-The page applies db3 at four scales to a polynomial signal with white
-noise.
-
-It states:
-
-- the top row is the raw signal;
-- the remaining plots show detail coefficients;
-- for db3, only the noise appears in the details;
-- db3 suppresses a polynomial of degree $2$.
-
-More generally, the page states:
-
-```math
-K>p
-\quad\Rightarrow\quad
-\text{a degree-}p\text{ polynomial is suppressed by db}K.
-```
-
-The comparison between db2 and db3 illustrates that enough vanishing
-moments are required to remove the polynomial component from the details.
-
-**Source:** CSE598MTL.pdf, p. 31
-
----
-
-## 29. Localizing a plateau inside a trend
-
-The page compares db2 and db7 detail coefficients for a line containing
-a short plateau.
-
-Both wavelets detect the plateau boundaries.
-
-The slide states that the shorter db2 wavelet localizes the change better.
-
-> **Handwritten summary:**
->
-> - To localize features, use a lower-order/shorter-support db wavelet.
-> - For more vanishing moments, use a higher-order db wavelet.
-
-This captures an important design tradeoff:
-
-| Goal | Course-page tendency |
+| Goal | Choose |
 |---|---|
-| Sharper time localization | Shorter support, such as db2 |
-| Suppress higher-degree polynomial background | More vanishing moments, such as higher db $K$ |
-![db2 and db7 plateau-detail comparison](../assets/clean_diagrams/plateau_wavelet_localization.png)
+| sharp time localization | short support (Haar, db2) |
+| remove higher-degree polynomial background | more vanishing moments (higher db$K$) |
 
-*Redrawn course diagram — Short-support wavelets localize plateau boundaries more sharply than longer-support wavelets.*
+## 14. Beyond fixed bases
 
-**Source:** CSE598MTL.pdf, p. 31
+Instead of fixing one wavelet, you can pick the best representation from a large dictionary of bases:
 
----
+- **Matching pursuit:** greedy, adds the single best-matching atom at each step.
+- **Basis pursuit:** solves $\min\lVert\boldsymbol\beta\rVert_1$ subject to $W\boldsymbol\beta=\mathbf y$ (or its noisy version, basis-pursuit denoising). This is an **$\ell_1$ (lasso-type)** problem, not a ridge problem, and that is exactly what makes it sparse.
 
-## 30. Wavelet thresholding
+## 15. Thresholding
 
-Coefficient shrinkage is used to create a sparse representation.
-
-### 30.1 Hard thresholding
-
-For threshold $\lambda$:
+With threshold $\lambda$:
 
 ```math
-H_\lambda(w)
-=
-\begin{cases}
-w, & |w|>\lambda,\\
-0, & |w|\leq\lambda.
-\end{cases}
+H_\lambda(w)=\begin{cases}w,&|w|>\lambda\\0,&|w|\le\lambda\end{cases}
+\qquad\qquad
+S_\lambda(w)=\mathrm{sgn}(w)\max(|w|-\lambda,0).
 ```
 
-The slide describes this as leaving a sufficiently large coefficient
-unchanged and setting a smaller one to zero.
+| | Small coefficients | Large coefficients | Behavior |
+|---|---|---|---|
+| **Hard** | set to 0 | unchanged | discontinuous, keeps peak heights |
+| **Soft** | set to 0 | shrunk by $\lambda$ | continuous, biases large coefficients toward 0 |
 
-### 30.2 Soft thresholding
+Soft thresholding is exactly the lasso solution in an orthonormal basis ([Chapter 5, §9](05_pca_and_regularization.md)). A standard choice of $\lambda$ is the **universal threshold** $\sigma\sqrt{2\log n}$ (Donoho & Johnstone, 1994), with the noise level estimated robustly from the finest details: $\hat\sigma=\mathrm{median}(|cD_1|)/0.6745$.
 
-The slide gives:
+A scalegram (coefficient magnitude by scale and position) of a denoised signal shows the result: most coefficients are zero, and the survivors mark where the structure is.
 
-```math
-S_\lambda(w)
-=
-\mathrm{sgn}(w)
-\max(|w|-\lambda,0).
-```
+## 16. Where wavelets sit among representations
 
-Soft thresholding both:
+| Data-adaptive | Non-data-adaptive |
+|---|---|
+| SVD / PCA, piecewise polynomials, symbolic (SAX), trees, sorted coefficients | DFT, DCT, wavelets (orthonormal: Haar, Daubechies, Coiflets, Symlets; biorthogonal), PAA, random projections |
 
-- sets sufficiently small coefficients to zero;
-- shrinks retained magnitudes toward zero.
-
-### Visual intuition
-
-```text
-Hard threshold:
-small -> 0
-large -> unchanged
-
-Soft threshold:
-small -> 0
-large -> reduced by λ
-```
-
-**Source:** CSE598MTL.pdf, p. 32
-
----
-
-## 31. Denoised wavelet coefficients
-
-The scalegram example displays coefficient streams across several scales.
-
-The slide emphasizes:
-
-- sparse representations are preferable;
-- denoising sets small coefficients to zero;
-- the threshold may be based on model fit to the signal;
-- each row can represent a data stream or batch at a selected level;
-- the horizontal axis organizes coefficients across multiple scales.
-
-### Clarification
-
-The page does not give the precise threshold-selection rule for this
-example. The note therefore records the effect, not an invented
-estimation procedure.
-
-**Source:** CSE598MTL.pdf, p. 32
-
----
-
-## 32. Orthogonal polynomials and the representation hierarchy
-
-The page briefly mentions discrete Chebyshev polynomials as orthogonal
-polynomials and notes that they are not a time-frequency representation.
-
-It then shows a hierarchy of time-series representations.
-
-### Data-adaptive examples shown
-
-- sorted coefficients;
-- piecewise polynomial methods;
-- singular-value decomposition;
-- symbolic representations;
-- trees.
-
-### Non-data-adaptive examples shown
-
-- wavelets;
-- random mappings;
-- spectral methods such as the discrete Fourier transform;
-- piecewise aggregate approximation;
-- discrete cosine transform.
-
-Under wavelets, the diagram distinguishes orthonormal and biorthogonal
-families and includes examples such as Haar, Daubechies, Coiflets, and
-Symlets.
-
-### Chapter-level interpretation
-
-The diagram places wavelets within a broader design question:
-
-```text
-Choose a representation
-    -> decide whether its basis is fixed or learned/adapted
-    -> decide what local, spectral, symbolic, or low-rank structure to retain
-```
-
-**Source:** CSE598MTL.pdf, p. 32
-
----
-
-## 33. End-to-end wavelet workflow
+Chebyshev polynomials are orthogonal too, but they are a global polynomial basis, not a time–frequency representation.
 
 ```mermaid
 flowchart TD
-    A[Temporal signal] --> B[Choose wavelet family]
-    B --> C[Decompose into approximation and detail coefficients]
-    C --> D[Repeat decomposition on approximation branch]
-    D --> E[Inspect coefficients by scale and location]
-    E --> F{Task}
-    F -->|Compression or denoising| G[Threshold small coefficients]
-    F -->|Change detection| H[Monitor large localized detail coefficients]
-    F -->|Trend suppression| I[Choose enough vanishing moments]
-    G --> J[Reconstruct selected signal]
-    H --> J
-    I --> J
+    A[Signal] --> B[Choose family]
+    B --> C[Decompose into approximation + details]
+    C --> D[Repeat on approximation]
+    D --> E{Goal}
+    E -->|denoise / compress| F[Threshold small coefficients]
+    E -->|detect change| G[Monitor large local details]
+    E -->|remove trend| H[Use enough vanishing moments]
+    F --> I[Reconstruct]
+    G --> I
+    H --> I
 ```
 
-This diagram is synthesized from pages 21-32.
+## 17. Trade-offs
 
-**Sources:** CSE598MTL.pdf, pp. 21-32
-
----
-
-## 34. Key tradeoffs
-
-| Design choice | Benefit | Cost or limitation emphasized by the pages |
+| Choice | Benefit | Cost |
 |---|---|---|
-| Coarse approximation | Compact global contour | Fine local behavior is removed |
-| Fine detail | Localizes rapid change | More coefficients and possible noise |
-| Short support | Better temporal localization | Fewer vanishing moments may be available |
-| More vanishing moments | Suppresses higher-degree polynomial trends | Longer support and reduced localization |
-| Hard threshold | Preserves large coefficients exactly | Discontinuous shrinkage rule |
-| Soft threshold | Smoothly shrinks coefficients | Large coefficients are biased toward zero |
-| Fourier basis | Clear global frequencies | Weak event-time localization |
-| Wavelet basis | Local time-scale information | Family and boundary choices matter |
+| coarse approximation | compact contour | loses fine behavior |
+| fine details | localizes fast change | more coefficients, more noise |
+| short support | sharp time localization | few vanishing moments |
+| many vanishing moments | removes polynomial trends | longer support, blurrier localization |
+| hard threshold | preserves peak size | discontinuous, can ring |
+| soft threshold | smooth, stable | shrinks real features |
 
-**Sources:** CSE598MTL.pdf, pp. 20-32
+## 18. Common confusions
 
----
+- **Level numbering:** libraries differ on whether level 1 is finest or coarsest. Check the coefficient lengths.
+- **Large coefficient ≠ anomaly:** it may be a real edge, an expected transition or an edge artifact.
+- **More vanishing moments isn't always better:** it costs localization.
+- **Details aren't just noise:** they are only noise when the chosen wavelet has already removed the signal's smooth part.
 
-## 35. Common confusions
+## 19. Questions and answers
 
-### Frequency versus scale
+<details><summary>How deep should the decomposition go?</summary>
 
-The course uses scale and resolution language rather than one single
-frequency-axis convention. Coarser scale corresponds to broader temporal
-structure; finer resolution corresponds to more localized detail.
+Until the approximation is smoother than the structure you care about, and at most $\lfloor\log_2(n/(L-1))\rfloor$ levels for filter length $L$ (`pywt.dwt_max_level`). For monitoring, stop at the scale of the events you want to detect.
+</details>
 
-### Approximation level numbering
+<details><summary>How should I pick a wavelet family for anomaly detection?</summary>
 
-Some slides number the finest detail as level 1, while other equations
-index spaces in the opposite direction. Always check the software output
-and coefficient lengths.
+Short support (Haar, db2) for sharp jumps; enough vanishing moments to cancel the normal trend; try the candidates on labeled examples and keep the one whose details separate normal from abnormal best.
+</details>
 
-### A large coefficient is not automatically an anomaly
+<details><summary>When is hard thresholding better than soft?</summary>
 
-A coefficient means strong alignment with a local wavelet pattern. It may
-represent a real transition, an expected edge, or noise.
+When peak amplitudes matter, e.g. spike heights. Soft thresholding gives smoother, lower-variance reconstructions and is usually better for general denoising.
+</details>
 
-### More vanishing moments are not always better
+<details><summary>How does the size of a coefficient change with scale for a jump versus a smooth feature?</summary>
 
-More vanishing moments can suppress a more complex polynomial background,
-but the longer-support wavelet may localize a short event less precisely.
+For a jump, magnitudes decay slowly across scales (roughly $2^{j/2}$ growth in the orthonormal convention as scale coarsens); for smooth regions, fine-scale details vanish quickly. Comparing magnitudes across scales measures local regularity.
+</details>
 
-### Fourier and wavelets are not simply "global versus local frequencies"
+<details><summary>What if the signal length isn't a power of two?</summary>
 
-The course's primary contrast is that Fourier components extend across the
-whole signal, while wavelets are time-limited and translated. Both are
-basis representations, but their localization properties differ.
+Libraries handle it with the chosen extension mode, and coefficient arrays come out slightly longer. Watch for extra edge coefficients, or pad deliberately by symmetric reflection.
+</details>
 
-### Detail coefficients are not necessarily noise
+<details><summary>How are wavelet features used by later models?</summary>
 
-In the polynomial-plus-noise example, the chosen wavelet suppresses the
-polynomial so details look like noise. In other signals, details contain
-meaningful edges and rapid patterns.
-
-**Sources:** CSE598MTL.pdf, pp. 20-32
+As inputs: coefficient energies per level, thresholded coefficients, or the denoised signal. They feed classifiers, PCA (Chapter 5) and neural models, and the orthonormal lasso link in Chapter 5 ties thresholding to supervised regularization.
+</details>
 
 ---
 
-## 36. Questions preserved for later discussion
-
-1. Which boundary-extension method was used in the db2 edge example?
-2. How does the course define increasing versus decreasing "wavelet level"
-   in the software output?
-3. How should the decomposition depth $K$ be selected?
-4. How should a wavelet family be selected for anomaly detection?
-5. What threshold rule produced the 51 selected CO2 coefficients?
-6. When should hard thresholding be preferred to soft thresholding?
-7. How does coefficient magnitude change with scale for the same type of
-   discontinuity?
-8. What is the intended formal relationship between matching pursuit,
-   basis pursuit, ridge, and lasso in the page-30 bullet list?
-9. How should edge coefficients be interpreted when the signal length is
-   not a power of two?
-10. How are wavelet features eventually used by the learning models later
-    in the course?
-
-These questions arise from the source pages and remain unresolved there.
-
----
-
-## 37. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 20 | Representation motivation, applications, local wavelet models |
-| 21 | Wavelet properties, sparsity, orthonormal coefficient calculation |
-| 22 | Fourier comparison, scaling/detail functions, wavelet families |
-| 23 | Orthonormality, coefficients as local matches, subspace counts |
-| 24 | 512-point count example, reconstruction and thresholding |
-| 25 | Multiscale Haar CO2 example |
-| 26 | db2 signal and edge behavior |
-| 27 | Sampling motivation and pyramid algorithm |
-| 28 | Haar decomposition, reconstruction, multiscale equations |
-| 29 | Support, symmetry, regularity, vanishing moments, Daubechies |
-| 30 | Change sensitivity, family selection, step and frequency changes |
-| 31 | Polynomial suppression, white noise, plateau localization |
-| 32 | Hard/soft thresholds, denoising, representation hierarchy |
-
-## Review status
-
-- Main printed concepts: `[VERIFIED]`
-- Orthonormal coefficient equations: `[VERIFIED]`
-- Approximation/detail dimension counts: `[VERIFIED]` but notation varies
-- Haar equations: `[VERIFIED]`
-- Haar exercise expression: `[VERIFIED]`
-- Page-24 "no cross level" handwriting: `[NEEDS REVIEW]`
-- Page-26 edge-effect annotation: `[INTERPRETED]`
-- Page-30 vanishing-moment handwriting: `[INTERPRETED]`
-- Page-32 small handwritten hierarchy examples: `[NEEDS REVIEW]`
+[← Previous: Filters and Decomposition](03_filters_smoothing_and_decomposition.md) · [Course map](../course_map.md) · [Next: PCA and Regularization →](05_pca_and_regularization.md)

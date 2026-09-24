@@ -1,638 +1,131 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 12
-title: "Handwritten Appendix: Stationarity and Covariance Exercise"
-source_pages: "101-103"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 12. Appendix: Stationarity Recap and the Differenced Local-Level Model
 
-# Handwritten Appendix: Stationarity and Covariance Exercise
+This appendix collects two pieces of hand-worked material. The first is a one-page recap of what stationarity means and why it matters. The second is a full derivation of the claim in [Chapter 2](02_classical_time_series_models.md) that the **first difference of a local-level model is MA(1)**, including the exact MA coefficient and its link to exponential smoothing.
 
-## 1. Appendix overview
+## 1. Stationarity recap
 
-The final three PDF pages contain:
+![Stationarity recap](../assets/clean_diagrams/stationarity_recap.png)
 
-- a handwritten recap of stationarity and independence on page 101;
-- a blank page on page 102;
-- a handwritten variance/covariance exercise on page 103.
+*Strict stationarity, weak stationarity, IID and the sampling-rate intuition on one page.*
 
-Page 101 reinforces concepts introduced in Chapter 2. Page 103 returns to
-the local-level or integrated model:
+**The idea in one sentence:** a series is stationary if shifting it forward or backward in time doesn't change its distribution.
 
-```math
-x_t=\mu_t+e_t,
-\qquad
-\mu_t=\mu_{t-1}+\delta_t,
-```
+**Why it matters:** if the process generating data now is the same one that will generate data later, then what we learn from the past applies to the future. The claim is about the *distribution*, not the values; a stationary series still fluctuates.
 
-and studies the first difference:
+**Ways to get (or approximate) stationarity:**
+
+- **IID:** independent and identically distributed. The strongest, simplest case, with no temporal dependence at all.
+- **Weak stationarity:** constant mean, constant variance, and $\mathrm{Cov}(X_t,X_{t+k})$ depending only on the lag $k$, not on $t$. Dependence is allowed, as long as it's the same at every point in time.
+
+**Independence vs uncorrelated.** $X_1$ and $X_2$ are independent if $P(X_1\in A,X_2\in B)=P(X_1\in A)\,P(X_2\in B)$ for **all** sets $A,B$. That implies zero covariance (when the moments exist), but not the other way around: $X\sim N(0,1)$ and $X^2$ are uncorrelated yet completely dependent.
+
+**Sampling rate.** In the stirred-tank model (Chapter 2, §3) the lag-1 correlation is $\rho=e^{-\Delta t/T}$. Sampling faster (smaller $\Delta t$) **increases** the correlation between neighbors, since the system has less time to change between samples.
+
+## 2. The model
+
+The local-level model has a latent level that follows a random walk, observed with noise:
 
 ```math
-d_t=x_t-x_{t-1}.
+x_t=\mu_t+e_t,\qquad \mu_t=\mu_{t-1}+\delta_t ,
 ```
 
-The covariance derivation on page 103 contains several internally
-inconsistent substitutions. This appendix therefore separates:
+with assumptions:
 
-1. what is visibly written in the source;
-2. uncertainties and inconsistencies;
-3. a clearly labeled algebraic consistency check.
+- $e_t$ i.i.d., mean 0, variance $\sigma_e^2$ (observation noise);
+- $\delta_t$ i.i.d., mean 0, variance $\sigma_\delta^2$ (level innovations);
+- the two noise sequences are independent of each other.
 
-**Sources:** CSE598MTL.pdf, pp. 101-103
+$x_t$ is **not** stationary: $\mathrm{Var}(\mu_t)$ grows linearly with $t$. The question is what the first difference looks like.
 
----
-
-## 2. Handwritten stationarity recap
-![Full handwritten stationarity page](../assets/clean_diagrams/stationarity_recap.png)
-
-*Redrawn appendix diagram — Strict stationarity, weak stationarity, IID assumptions, and sampling-rate intuition.*
-
-The page begins:
-
-> **Handwritten note:** Two series will have the same distribution when
-> one series is shifted forward or backward.
-
-This restates time-shift invariance as the intuition behind stationarity.
-
-**Source:** CSE598MTL.pdf, p. 101
-
----
-
-## 3. Why stationarity matters
-
-The page asks:
-
-> Why important?
-
-It answers approximately:
-
-> The data generated right now has the same distribution as future
-> generated data.
-
-### Source-faithful interpretation
-
-A stationary assumption allows observations from the current or past
-period to inform the future because the generating distribution is
-assumed not to change under a time shift.
-
-The note does not claim that the actual observed values are identical.
-It concerns the distribution that generates them.
-
-**Source:** CSE598MTL.pdf, p. 101
-
----
-
-## 4. Cases used to approximate stationarity
-
-The page writes:
-
-> Cases: we can approximate stationarity of two time series.
-
-It then lists two cases.
-
-### 4.1 IID case
-
-> Independent, have same distribution.
-
-This is the strongest simplified case shown on the page:
-
-- observations share the same distribution;
-- observations are independent.
-
-### 4.2 Weak stationarity
-
-> Covariance between random variables only depends on time difference.
-
-In notation:
+## 3. The first difference
 
 ```math
-\mathrm{Cov}(X_t,X_{t+k})
+d_t=x_t-x_{t-1}=(\mu_t-\mu_{t-1})+e_t-e_{t-1}=\delta_t+e_t-e_{t-1}.
 ```
 
-depends on lag $k$, rather than on the absolute time $t$.
+The level has disappeared. What's left is a finite combination of noise terms, which is stationary.
 
-The page does not restate the constant-mean and constant-variance
-conditions here, but those conditions appeared earlier on page 5.
+![First-difference covariance](../assets/clean_diagrams/first_difference_covariance.png)
 
-**Sources:** CSE598MTL.pdf, pp. 5 and 101
+*Consecutive differences share exactly one noise term, $e_t$, with opposite signs.*
 
----
-
-## 5. Independence definition
-
-The page gives the set-based definition:
+**Variance.** The three terms are independent, so their variances add:
 
 ```math
-P(X_1\in A,\ X_2\in B)
-=
-P(X_1\in A)
-P(X_2\in B)
+\mathrm{Var}(d_t)=\sigma_\delta^2+\sigma_e^2+\sigma_e^2=\sigma_\delta^2+2\sigma_e^2 .
 ```
 
-for any sets $A$ and $B$.
+(The cross-covariance $\mathrm{Cov}(\delta_t,e_t-e_{t-1})$ is 0 by independence.)
 
-This is a full independence statement, not merely zero covariance.
+**Lag 1.** $d_{t+1}=\delta_{t+1}+e_{t+1}-e_t$. The only variable shared with $d_t=\delta_t+e_t-e_{t-1}$ is $e_t$, appearing as $+e_t$ in $d_t$ and $-e_t$ in $d_{t+1}$:
 
-### Reminder from the earlier chapter
-
-The course previously distinguishes:
-
-```text
-independence
-    -> factorization of joint probabilities
-
-uncorrelated
-    -> covariance equals zero
+```math
+\mathrm{Cov}(d_t,d_{t+1})=\mathrm{Cov}(e_t,-e_t)=-\sigma_e^2 .
 ```
 
-Independence generally implies zero covariance when the relevant moments
-exist, but zero covariance alone does not establish independence.
+**Lag $k\ge2$.** $d_t$ involves $\{\delta_t,e_t,e_{t-1}\}$ and $d_{t+k}$ involves $\{\delta_{t+k},e_{t+k},e_{t+k-1}\}$. For $k\ge2$ these sets don't overlap, so the covariance is 0.
 
-**Sources:** CSE598MTL.pdf, pp. 5 and 101
+**Autocorrelation:**
+
+```math
+\rho_1=-\frac{\sigma_e^2}{\sigma_\delta^2+2\sigma_e^2},\qquad \rho_k=0\;\;(k\ge2).
+```
+
+An ACF that is nonzero at lag 1 and zero after is exactly the signature of an **MA(1)** process, so $x_t$ is **IMA(1,1)**.
+
+> [!WARNING]
+> **Two easy slips in this derivation**
+>
+> 1. Writing $\mathrm{Cov}(e_t,e_{t-1})=E[e_te_{t-1}]=E[e_t^2]=\sigma_e^2$. Under independence, $E[e_te_{t-1}]=E[e_t]E[e_{t-1}]=0$. The slip makes $\mathrm{Var}(e_t-e_{t-1})$ come out as 0 instead of $2\sigma_e^2$.
+> 2. Expanding $E[d_td_{t+k}]$ for general $k$ and then replacing lagged products by same-time squares. Which terms match depends on $k$, so do $k=1$ and $k\ge2$ separately.
+
+**Sanity checks:**
+
+- $\sigma_\delta^2=0$ (a constant level): $\rho_1=-\tfrac12$, the ACF of differenced white noise, the classic over-differencing signature from Chapter 2.
+- $\sigma_e^2=0$ (a pure random walk): $\rho_1=0$, since the differences are just $\delta_t$, i.e. white noise.
+- In general $-\tfrac12\le\rho_1\le0$.
+
+A simulation with $\sigma_\delta=1,\sigma_e=2$ (400,000 steps) gives $\mathrm{Var}(d_t)=8.998$ (theory 9), $\hat\rho_1=-0.447$ (theory $-4/9=-0.444$) and $\hat\rho_2=0.003$ (theory 0).
+
+```python
+import numpy as np
+rng = np.random.default_rng(1)
+n, s_d, s_e = 400_000, 1.0, 2.0
+x = np.cumsum(rng.normal(0, s_d, n)) + rng.normal(0, s_e, n)
+d = np.diff(x)
+r = lambda k: np.corrcoef(d[:-k], d[k:])[0, 1]
+print(d.var(), r(1), r(2))     # ≈ 9.0, -0.447, 0.003
+```
+
+## 4. Finding the MA coefficient, and why EWMA is optimal here
+
+Write the differenced series as $d_t=\epsilon_t-\theta\epsilon_{t-1}$ with white noise $\epsilon_t$. The MA(1) autocorrelation is $\rho_1=-\theta/(1+\theta^2)$. Setting it equal to the result above, with signal-to-noise ratio $q=\sigma_\delta^2/\sigma_e^2$:
+
+```math
+\frac{\theta}{1+\theta^2}=\frac{1}{q+2}
+\;\Longrightarrow\;
+\theta^2-(q+2)\theta+1=0
+\;\Longrightarrow\;
+\theta=\frac{(q+2)-\sqrt{q^2+4q}}{2},
+```
+
+taking the root with $|\theta|<1$ (the invertible one). For $q=\tfrac14$ (the simulation above), $\theta\approx0.610$.
+
+This connects three chapters:
+
+- The IMA(1,1) one-step forecast is exactly an **EWMA** with smoothing weight $\lambda=1-\theta$ ([Chapter 3](03_filters_smoothing_and_decomposition.md)). So EWMA is the optimal linear forecaster for a noisy random-walk level.
+- **Noisy data** (small $q$) gives $\theta$ near 1 and a small $\lambda$: average over a long history.
+- **Fast-moving level** (large $q$) gives $\theta$ near 0 and $\lambda$ near 1: trust the latest observation.
+
+The same trade-off is what the Kalman filter's steady-state gain encodes.
+
+## 5. Common confusions
+
+- **Stationary ≠ constant:** the distribution is stable; the values still move.
+- **IID ⊂ weakly stationary:** weak stationarity allows dependence, IID doesn't.
+- **Independent ⇒ uncorrelated, not the converse.** In the derivation above this is exactly what sets $E[e_te_{t-1}]=0$.
+- **$d_t$ vs $\delta_t$:** the observed difference includes the level innovation **plus** a difference of observation noises. Only when $\sigma_e=0$ are they equal.
 
 ---
 
-## 6. Intermediate stirred-tank model
-
-The page labels the tank example:
-
-> Intermediate model.
-
-The sketch contains:
-
-- inflow concentration $w_t$;
-- flow rate $f$;
-- tank volume $V$;
-- output concentration $x_t$.
-
-The handwritten observation says approximately:
-
-> By observing from the example, sampling rate increases, correlation
-> increases.
-
-This repeats the page-6 result that observations sampled at shorter
-intervals relative to the tank time constant are more strongly
-correlated.
-
-For the earlier model:
-
-```math
-\rho=e^{-\Delta t/T}.
-```
-
-A higher sampling rate means a smaller $\Delta t$, which makes
-$\rho$ larger.
-
-**Sources:** CSE598MTL.pdf, pp. 6 and 101
-
----
-
-## 7. Page 102
-
-Page 102 is blank and contains no academic content.
-
-**Source:** CSE598MTL.pdf, p. 102
-
----
-
-## 8. Covariance exercise: source setup
-![Full handwritten covariance exercise](../assets/clean_diagrams/first_difference_covariance.png)
-
-*Redrawn appendix diagram — First differencing separates process innovations and observation-noise covariance.*
-
-The page is labeled:
-
-> Exercise 2
-
-and appears to seek an autocorrelation-like ratio:
-
-```math
-\frac{
-\mathrm{Cov}(d_t,d_{t+k})
-}{
-\mathrm{Var}(d_t)
-}.
-```
-
-The exact lag notation in the highlighted heading is small, but
-$d_{t+k}$ is used in the later expansion.
-
-**Source:** CSE598MTL.pdf, p. 103
-
----
-
-## 9. Local-level model and first difference
-
-The derivation starts from the local-level structure used earlier:
-
-```math
-x_t=\mu_t+e_t,
-```
-
-```math
-\mu_t=\mu_{t-1}+\delta_t.
-```
-
-The first difference is expanded:
-
-```math
-\begin{aligned}
-d_t
-&=
-x_t-x_{t-1}\\
-&=
-\mu_t+e_t-\mu_{t-1}-e_{t-1}\\
-&=
-\delta_t+e_t-e_{t-1}.
-\end{aligned}
-```
-
-This part of the page is clear.
-
-**Sources:** CSE598MTL.pdf, pp. 9 and 103
-
----
-
-## 10. Source variance decomposition
-
-The page writes the variance decomposition:
-
-```math
-\mathrm{Var}(d_t)
-=
-\mathrm{Var}(\delta_t)
-+
-\mathrm{Var}(e_t-e_{t-1})
-+
-2\mathrm{Cov}
-\left(
-\delta_t,
-e_t-e_{t-1}
-\right).
-```
-
-It then expands:
-
-```math
-\mathrm{Cov}
-\left(
-\delta_t,
-e_t-e_{t-1}
-\right)
-=
-E[
-\delta_t(e_t-e_{t-1})
-]
--
-E[\delta_t]E[e_t-e_{t-1}].
-```
-
-The handwriting marks this cross-covariance as zero because
-$\delta_t$, $e_t$, and $e_{t-1}$ are treated as independent.
-
-**Source:** CSE598MTL.pdf, p. 103
-
----
-
-## 11. Source calculation for the error difference
-
-The page next writes:
-
-```math
-\mathrm{Var}(e_t-e_{t-1})
-=
-\mathrm{Var}(e_t)
-+
-\mathrm{Var}(e_{t-1})
--
-2\mathrm{Cov}(e_t,e_{t-1}).
-```
-
-It then appears to substitute:
-
-```math
-\mathrm{Cov}(e_t,e_{t-1})
-=
-E[e_te_{t-1}]
-=
-E[e_t^2]
-=
-\sigma_e^2,
-```
-
-and consequently writes a zero variance for
-$e_t-e_{t-1}$.
-
-### Internal inconsistency
-
-This substitution conflicts with the earlier independence statement.
-Under independence and zero means:
-
-```math
-E[e_te_{t-1}]=0,
-```
-
-not:
-
-```math
-E[e_t^2].
-```
-
-The source calculation is therefore preserved but not adopted as a valid
-result.
-
-**Source:** CSE598MTL.pdf, p. 103
-
----
-
-## 12. Source covariance expansion
-
-The page expands:
-
-```math
-E[d_td_{t+k}]
-=
-E[
-(\delta_t+e_t-e_{t-1})
-(\delta_{t+k}+e_{t+k}-e_{t+k-1})
-].
-```
-
-Several cross terms are written and removed using zero expectations or
-independence.
-
-The working then appears to produce an expression resembling:
-
-```math
-\sigma_\delta^2-2\sigma_e^2,
-```
-
-while the final line uses a numerator that appears to be:
-
-```math
-\sigma_\delta^2.
-```
-
-The lag $k$ is not fixed when the derivation converts lagged products to
-same-time squared terms.
-
-**Source:** CSE598MTL.pdf, p. 103
-
----
-
-## 13. Final fraction written on the page
-
-The final line appears to state:
-
-```math
-\frac{
-\mathrm{Cov}(d_t,d_{t+k})
-}{
-\mathrm{Var}(d_t)
-}
-=
-\frac{
-\sigma_\delta^2
-}{
-\sigma_\delta^2+4\sigma_e^2
-}.
-```
-
-### Internal consistency problems
-
-This result does not follow from the preceding displayed assumptions and
-working:
-
-1. the body appears to use a different numerator;
-2. the body earlier appears to reduce
-   $\mathrm{Var}(e_t-e_{t-1})$ to zero;
-3. the denominator later contains $4\sigma_e^2$;
-4. the lag $k$ is not specified when lagged terms are replaced by
-   same-time squares;
-5. independence is invoked and then contradicted.
-
-The final fraction is therefore recorded as **source transcription
-requiring correction**, not as a verified formula.
-
-**Source:** CSE598MTL.pdf, p. 103
-
----
-
-## 14. Added algebraic consistency check
-
-> **Clarification - not transcribed from the handwritten page**
-
-Assume the model written on the page and the standard assumptions it
-appears to intend:
-
-```math
-E[\delta_t]=0,
-\qquad
-E[e_t]=0,
-```
-
-```math
-\mathrm{Var}(\delta_t)=\sigma_\delta^2,
-\qquad
-\mathrm{Var}(e_t)=\sigma_e^2,
-```
-
-with:
-
-- $\delta_t$ independent across time;
-- $e_t$ independent across time;
-- the $\delta$ and $e$ processes mutually independent.
-
-Because:
-
-```math
-d_t=\delta_t+e_t-e_{t-1},
-```
-
-the variance is:
-
-```math
-\begin{aligned}
-\mathrm{Var}(d_t)
-&=
-\mathrm{Var}(\delta_t)
-+
-\mathrm{Var}(e_t)
-+
-\mathrm{Var}(e_{t-1})\\
-&=
-\sigma_\delta^2+2\sigma_e^2.
-\end{aligned}
-```
-
-At lag one:
-
-```math
-d_{t+1}
-=
-\delta_{t+1}
-+
-e_{t+1}
--
-e_t.
-```
-
-The only shared random variable is $e_t$, with opposite signs:
-
-```math
-\mathrm{Cov}(d_t,d_{t+1})
-=
--\sigma_e^2.
-```
-
-For:
-
-```math
-k\geq2,
-```
-
-the two differences share no noise term under the stated assumptions:
-
-```math
-\mathrm{Cov}(d_t,d_{t+k})=0.
-```
-
-Therefore:
-
-```math
-\rho_1
-=
--
-\frac{
-\sigma_e^2
-}{
-\sigma_\delta^2+2\sigma_e^2
-},
-```
-
-and:
-
-```math
-\rho_k=0,
-\qquad
-k\geq2.
-```
-
-This produces an MA(1)-type autocovariance pattern for the differenced
-series.
-
-**Sources for model setup:** CSE598MTL.pdf, pp. 9 and 103  
-**Status of calculation:** Added algebraic consistency check
-
----
-
-## 15. Connection to the integrated model
-
-Chapter 2 introduced:
-
-```math
-x_t=\mu_t+e_t,
-```
-
-```math
-\mu_t=\mu_{t-1}+\delta_t.
-```
-
-The first difference:
-
-```math
-d_t=x_t-x_{t-1}
-```
-
-removes the evolving level and leaves a short-memory process formed from:
-
-- the level innovation $\delta_t$;
-- the current observation error $e_t$;
-- the previous observation error $-e_{t-1}$.
-
-The page-103 exercise appears intended to show that differencing creates a
-stationary short-memory series even when the original level series is
-nonstationary.
-
-**Sources:** CSE598MTL.pdf, pp. 9 and 103
-
----
-
-## 16. Common confusions
-
-### Stationary does not mean constant
-
-A stationary process can fluctuate. Its distributional properties remain
-stable under time shifts.
-
-### IID is stronger than weak stationarity
-
-IID requires independence and a common distribution. Weak stationarity
-constrains mean, variance, and lag covariance but permits temporal
-dependence.
-
-### Independent is not the same as uncorrelated
-
-The page-103 derivation illustrates why these assumptions must be used
-consistently.
-
-### First difference versus level innovation
-
-```math
-d_t
-```
-
-is the observed first difference. It contains both the level innovation
-$\delta_t$ and differences of observation errors.
-
-### Source derivation versus corrected clarification
-
-The highlighted page-103 fraction is part of the source record. The
-lag-one calculation in Section 14 is an added consistency check and must
-not be presented as though it were written on the page.
-
-**Sources:** CSE598MTL.pdf, pp. 101 and 103
-
----
-
-## 17. Questions preserved for later discussion
-
-1. Was page 103 intended to calculate lag-one autocorrelation only, or a
-   general lag $k$ autocorrelation?
-2. Were $e_t$ and $e_{t-1}$ intended to be independent?
-3. Is the covariance substitution
-   $E[e_te_{t-1}]=E[e_t^2]$ a transcription mistake made during class?
-4. Why does the final denominator contain $4\sigma_e^2$?
-5. Was the numerator intended to be
-   $-\sigma_e^2$, $\sigma_\delta^2$, or
-   $\sigma_\delta^2-2\sigma_e^2$?
-6. Was the exercise intended to derive the MA(1) autocorrelation of the
-   differenced local-level model?
-7. Did the instructor correct this exercise verbally after the handwritten
-   derivation?
-8. What exact lag notation is written in the highlighted heading?
-
-These questions cannot be resolved from the PDF alone.
-
----
-
-## 18. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 101 | Time-shift stationarity intuition, IID, weak stationarity, independence and tank-model reminder |
-| 102 | Blank page |
-| 103 | Local-level first difference and handwritten covariance/autocorrelation exercise |
-
-## Review status
-
-- Page-101 stationarity wording: `[VERIFIED]`
-- Page-101 reason for importance: `[VERIFIED WITH LIGHT GRAMMATICAL RECONSTRUCTION]`
-- Independence formula: `[VERIFIED]`
-- Stirred-tank reminder: `[VERIFIED]`
-- Page-103 first-difference expansion: `[VERIFIED]`
-- Page-103 variance/covariance working: `[SOURCE INCONSISTENT]`
-- Page-103 final correlation fraction: `[VISIBLE BUT NOT DERIVED CONSISTENTLY]`
-- Section-14 corrected algebra: `[ADDED CLARIFICATION]`
+[← Previous: Transformers](11_transformers.md) · [Course map](../course_map.md) · [Reference: Equations →](../reference/equations.md)

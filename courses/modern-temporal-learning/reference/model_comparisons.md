@@ -1,173 +1,124 @@
 # Model Comparisons
 
-## AR versus MA
+Side-by-side tables for the choices that come up most often. Each links to the chapter with the details.
 
-| Dimension | AR $p$ | MA $q$ |
+## Picking a forecasting model
+
+| Situation | Start with | Why |
 |---|---|---|
-| Direct inputs | Previous observations | Current and previous disturbances |
-| Disturbance effect | Propagates through future values | Directly persists for only $q$ periods |
-| ACF behavior emphasized in course | Gradual decay | Cutoff beyond lag $q$ |
-| Order-identification cue | PACF used to identify $p$ | ACF cutoff used to identify $q$ |
-| Example in notes | Stirred tank / tanks in series | Finite disturbance propagation |
+| short series, one variable, clear trend/season | ETS / Holt–Winters, SARIMA ([Ch 2–3](../notes/02_classical_time_series_models.md)) | few parameters, strong baselines, prediction intervals |
+| known external drivers | SARIMAX / transfer function ([Ch 3](../notes/03_filters_smoothing_and_decomposition.md)) | explicit input → output dynamics |
+| hidden regimes | HMM ([Ch 6](../notes/06_markov_models_hmm_and_em.md)) | discrete states with interpretable transitions |
+| many related series, nonlinear, lots of data | TCN or LSTM ([Ch 8–9](../notes/08_rnn_lstm_gru_and_seq2seq.md)) | shared weights across series, learned features |
+| very long context, irregular timestamps, huge data | transformer ([Ch 11](../notes/11_transformers.md)) | direct long-range links, flexible inputs |
+| always | a naive / seasonal-naive and a linear baseline | if you can't beat these, the fancy model isn't helping |
 
-**Sources:** CSE598MTL.pdf, pp. 6-8 and 11
+## Classical models
 
-## ARIMA versus SARIMAX
-
-| Dimension | ARIMA | SARIMAX |
+| | AR($p$) | MA($q$) |
 |---|---|---|
-| Regular AR terms | Yes | Yes |
-| Regular differencing | Yes | Yes |
-| Regular MA terms | Yes | Yes |
-| Seasonal terms | Not in basic form | Yes |
-| Exogenous predictors | Not in basic form | Yes |
-| Example in notes | Tank-model forecasting | Monthly CO2 trend and cycle |
+| built from | past observations | current and past shocks |
+| a shock's effect | decays geometrically, forever | lasts exactly $q$ steps |
+| ACF | tails off | cuts off after $q$ |
+| PACF | cuts off after $p$ | tails off |
+| physical example | stirred tank, tanks in series | a disturbance with a finite effect |
 
-**Sources:** CSE598MTL.pdf, pp. 11-13
-
-## IID versus white noise
-
-| Dimension | IID | White noise as defined in notes |
+| | ARIMA | SARIMAX |
 |---|---|---|
-| Identical marginal distributions | Yes | Not explicitly required by the note |
-| Independence | Yes | Not required |
-| No temporal correlation | Yes | Yes |
-| Normality | Not required by IID itself | Explicitly not required |
-| Role in chapter | Stationary extreme | Desired residual behavior |
+| regular AR / differencing / MA | ✓ | ✓ |
+| seasonal AR / differencing / MA | – | ✓ |
+| exogenous regressors | – | ✓ |
+| example | tank-level forecasting | Mauna Loa CO₂ (trend + annual cycle) |
 
-**Source:** CSE598MTL.pdf, p. 5
-
-## One-step versus long-horizon prediction
-
-| Dimension | One-step prediction | Long-horizon recursive prediction |
-|---|---|---|
-| Recent true values available | Typically yes | Not for every future step |
-| Error accumulation | Limited | Can compound |
-| Course illustration | Close training fit | Weaker 20-point test prediction |
-
-**Source:** CSE598MTL.pdf, p. 7
-
-## RNN versus TCN
-
-| Dimension | RNN | TCN |
-|---|---|---|
-| Temporal mechanism | Recurrent hidden state | Causal convolution |
-| Position computation | Sequential through hidden states | Parallel within each layer |
-| Context control | Learned state memory | Explicit receptive field |
-| Long-context design | LSTM/GRU gates and BPTT | Dilation, width, depth |
-| Course regularization | Dropout, state handling | Dropout, residual blocks |
-
-**Sources:** CSE598MTL.pdf, pp. 68-82
-
-## Ordinary versus dilated causal convolution
-
-| Dimension | Ordinary causal | Dilated causal |
-|---|---|---|
-| Tap spacing | Consecutive | $d$ time steps |
-| Long receptive field | More layers or larger filters | Increasing dilation |
-| Equation index | $x_{t-i}$ | $x_{t-di}$ |
-| Course purpose | Preserve causality | Efficient long-history coverage |
-
-**Sources:** CSE598MTL.pdf, pp. 79-81
-
-## Recurrent connection versus residual connection
-
-| Dimension | Recurrent | Residual |
-|---|---|---|
-| Skips across | Time | Network depth |
-| Carries | Hidden state | Earlier representation |
-| Main purpose in notes | Temporal memory | Deep-network training and identity path |
-| Used by | RNN/LSTM/GRU | TCN residual block |
-
-**Sources:** CSE598MTL.pdf, pp. 68-82
-
-## PCA versus kernel PCA versus autoencoder
-
-| Dimension | PCA | Kernel PCA | Autoencoder |
+| | IID | White noise | Weakly stationary |
 |---|---|---|---|
-| Representation mapping | Linear | Implicit nonlinear feature space | Learned neural mapping |
-| Objective | Variance | Variance in kernel space | Reconstruction |
-| Explicit decoder | No | No | Yes during training |
-| Temporal architecture | No | No | RNN/LSTM possible |
-| Main limitation in notes | Linear/time-order agnostic | Kernel choice | Reconstruction may not help downstream task |
+| constant mean & variance | ✓ | ✓ | ✓ |
+| uncorrelated across time | ✓ | ✓ | not required |
+| independent | ✓ | not required | not required |
+| identical distributions | ✓ | not required (only first two moments) | not required |
+| role | simplest case | what good residuals look like | what AR/MA models describe |
 
-**Sources:** CSE598MTL.pdf, pp. 83-86
-
-## Autoencoder versus contrastive learning
-
-| Dimension | Autoencoder | Contrastive learning |
+| | One-step prediction | Recursive multi-step |
 |---|---|---|
-| Target | Original input | Positive instance/view |
-| Main loss | Reconstruction distance | Pairwise similarity classification |
-| Invariance | Emerges indirectly | Defined by augmentations |
-| Representation retained | Bottleneck | Encoder output before head |
-| Evaluation concern | Reconstruction/downstream mismatch | Pair-definition/downstream mismatch |
+| uses | the latest *observed* value | its own earlier predictions |
+| errors | don't accumulate | compound; the forecast reverts to the mean |
+| a model can look | excellent | much worse at 20 steps |
 
-**Sources:** CSE598MTL.pdf, pp. 85-90
+## Hidden-state models
 
-## Encoder representation versus projection head
-
-| Dimension | Encoder $h$ | Head output $z$ |
-|---|---|---|
-| Intended downstream reuse | Yes | Usually no |
-| Loss applied directly | Not necessarily | Yes |
-| Information role | Preserve broadly useful features | Satisfy contrastive invariance |
-| Course example | 2048-dimensional representation | Variable lower dimension |
-
-**Sources:** CSE598MTL.pdf, pp. 88-90
-
-## Small versus large temperature
-
-| Dimension | Small $\tau$ | Large $\tau$ |
-|---|---|---|
-| Softmax shape | Sharp | Flat |
-| Largest similarity probability | Near one | Closer to others |
-| Negative separation pressure | Concentrated on hardest comparisons | More evenly distributed |
-| Limiting intuition | One-hot-like | Uniform-like |
-
-**Source:** CSE598MTL.pdf, p. 89
-
-## RNN versus transformer
-
-| Dimension | RNN/LSTM/GRU | Transformer |
-|---|---|---|
-| Sequence interaction | Recurrent state | Attention |
-| Training across positions | Sequential | Parallel within layer |
-| Order representation | Recurrence | Positional encoding |
-| Long-range connection | Through many steps | Direct query-key relation |
-| Main long-sequence challenge | Gradient/state memory | Attention computation |
-
-**Sources:** CSE598MTL.pdf, pp. 68-100
-
-## Encoder self-attention versus masked decoder attention versus cross-attention
-
-| Type | Queries | Keys and values | Allowed positions |
+| | Markov chain | HMM | GMM |
 |---|---|---|---|
-| Encoder self-attention | Encoder | Encoder | All input positions |
-| Decoder masked self-attention | Decoder | Decoder | Current prefix only |
-| Encoder-decoder attention | Decoder | Encoder | All encoded input positions |
+| states observed? | yes | no | no (component labels) |
+| links between time steps | transitions | transitions | none, each draw independent |
+| learning | count transitions | Baum–Welch (EM) | EM |
+| inference | – | forward–backward, Viterbi | responsibilities |
 
-**Sources:** CSE598MTL.pdf, pp. 93 and 96-97
-
-## Training versus inference decoding
-
-| Dimension | Training | Inference |
+| | Per-step argmax of $\gamma_t$ | Viterbi |
 |---|---|---|
-| Decoder input | Known shifted target | Previous generated output |
-| Parallel target computation | Yes | No |
-| Masking | Prevent future target access | Future tokens do not exist |
-| Course term | Teacher forcing | Test mode |
+| maximizes | expected number of correct states | probability of the whole path |
+| output always a valid path? | no | yes |
 
-**Source:** CSE598MTL.pdf, p. 98
+## Sequence networks
 
-## Self-attention versus TCN
+| | RNN | LSTM | GRU | TCN | Transformer |
+|---|---|---|---|---|---|
+| time mechanism | recurrent state | state + gated cell | gated state | causal dilated convs | attention + positions |
+| parallel over time | no | no | no | yes | yes |
+| path between distant steps | $O(T)$ | $O(T)$, additive cell path | $O(T)$, gated | $O(\log T)$ | $O(1)$ |
+| memory length | fades | long | long | exactly $R$ | whole window |
+| cost per layer | $O(Td^2)$ | $4\times$ RNN | $3\times$ RNN | $O(Tkd^2)$ | $O(T^2d+Td^2)$ |
+| streaming inference | cheap | cheap | cheap | window recompute | KV cache, grows with $T$ |
 
-| Dimension | Self-attention | TCN |
+| | Stateless training | Stateful training |
 |---|---|---|
-| Context selection | Learned pairwise weights | Fixed receptive-field connectivity |
-| Long context | Direct global attention | Dilation and depth |
-| Position order | Positional encoding | Causal convolution structure |
-| Parallel computation | Yes within layer | Yes within layer |
-| Long-sequence cost | Dense attention can be high | Controlled by convolution design |
+| $\mathbf h_0$ at a batch | zeros | last state of the matching row in the previous batch |
+| shuffling | fine | not allowed |
+| reset | every batch | end of each epoch |
 
-**Sources:** CSE598MTL.pdf, pp. 79-100
+| | Ordinary causal conv | Dilated causal conv |
+|---|---|---|
+| taps | consecutive | spaced $d$ apart |
+| receptive field | $1+L(k-1)$, linear | $1+(k-1)\sum d_\ell$, exponential with doubling $d$ |
+
+| | Recurrent connection | Residual connection |
+|---|---|---|
+| skips across | time | layers |
+| carries | hidden state | the layer's input, added to its output |
+| used by | RNN / LSTM / GRU | TCN blocks, transformers, ResNets |
+
+## Representation learning
+
+| | PCA | Kernel PCA | Autoencoder | Contrastive |
+|---|---|---|---|---|
+| mapping | linear | nonlinear via kernel | learned | learned |
+| objective | variance | variance in feature space | reconstruction | pick the positive |
+| invariances | none by design | none | none by design | set by the pair rule |
+| keep for downstream | scores | scores | bottleneck $\mathbf h$ | encoder $\mathbf h$ (drop the head) |
+| main risk | misses nonlinearity | bandwidth, $O(N^2)$ memory | reconstructs irrelevant detail | pair rule removes useful info, false negatives |
+
+| | Small temperature $\tau$ | Large $\tau$ |
+|---|---|---|
+| softmax | sharp, near one-hot | flat, near uniform |
+| focus | hardest negatives | all negatives about equally |
+| risk | punishes false negatives | weak learning signal |
+
+## Attention
+
+| Layer | Queries | Keys / values | Visible positions |
+|---|---|---|---|
+| encoder self-attention | encoder | encoder | all inputs |
+| decoder masked self-attention | decoder | decoder | positions $\le i$ |
+| cross-attention | decoder | final encoder output | all inputs |
+
+| | Training | Inference |
+|---|---|---|
+| decoder input | true targets, shifted right (teacher forcing) | the model's own outputs |
+| parallel over output positions | yes (the mask enforces causality) | no |
+| mistakes | never fed back | can compound |
+
+| | Self-attention | TCN |
+|---|---|---|
+| context selection | learned, content-dependent weights | fixed connectivity pattern |
+| order | positional encoding | built into the causal structure |
+| long-sequence cost | quadratic | linear |
+| data needed | more | less |

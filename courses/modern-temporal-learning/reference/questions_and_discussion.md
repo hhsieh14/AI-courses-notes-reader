@@ -1,308 +1,242 @@
-# Questions and Discussion
+# Self-Test Questions
 
-This file consolidates unresolved questions preserved from the source notes.
-They are intentionally not resolved without additional course material,
-implementation code, instructor clarification, or outside research.
+Questions for checking your understanding, chapter by chapter. Try each one before opening the answer. Every chapter also ends with its own practical Q&A; these questions are more conceptual, and several are common interview questions.
 
-## Temporal Data and Temporal Learning
+## 1. Temporal data
 
-1. When should a raw sequence be used instead of engineered features?
-2. Should temporal segments be mutually exclusive or overlapping?
-3. When does a symbolic representation discard too much numerical detail?
-4. How should landmarks be selected when no natural event boundary exists?
-5. How can we distinguish a short anomalous interval from a persistent
-   distributional change?
-6. Which distances remain meaningful when sequences have unequal length
-   or shifted timing?
+<details><summary>Why is random K-fold cross-validation wrong for most forecasting problems?</summary>
 
-These questions are motivated by the slides and annotations but are not
-fully answered on pages 2-4.
+It trains on the future to predict the past, and overlapping windows put near-duplicate rows on both sides of the split. The error estimate comes out optimistic. Use expanding or sliding windows with a gap ([Ch 8, §2](../notes/08_rnn_lstm_gru_and_seq2seq.md)).
+</details>
 
-**Chapter source:** `../notes/01_temporal_data_and_learning.md`
+<details><summary>Give an example of a feature that leaks the future.</summary>
 
-## Stationarity and Classical Time-Series Models
+A centered moving average (it uses $x_{t+1},\ldots$), a series standardized with statistics from the whole dataset, or a "days until failure" field. Each is fine for analysis but not available at prediction time.
+</details>
 
-1. Why does the note describe integrated moving average as a first
-   practical choice?
-2. How should the order of differencing be selected without removing too
-   much structure?
-3. How far can an AR model forecast before recursive error dominates?
-4. When should a visible ACF pattern be attributed to trend rather than
-   an AR or MA term?
-5. How should the seasonal period be estimated when it is not known?
-6. Why do the handwritten notes associate PACF with a cycle on page 13?
-7. What formal test, if any, was intended for stationarity in this course?
-8. How should candidate models be compared when several leave
-   approximately white residuals?
+<details><summary>Why can Euclidean distance mislead when comparing two sequences?</summary>
 
-The source pages raise these issues but do not fully resolve them.
+A small time shift of the same shape produces a large pointwise distance. Dynamic time warping aligns the sequences first. Distances on features or learned embeddings compare shapes rather than positions.
+</details>
 
-**Chapter source:** `../notes/02_classical_time_series_models.md`
+## 2. Stationarity and ARIMA
 
-## Filters, Smoothing, Decomposition, and Transfer Functions
+<details><summary>A series has an ACF that decays very slowly and stays high out to large lags. What does that suggest?</summary>
 
-1. How should the effective memory of EWMA be quantified from $\lambda$?
-2. Why is EWMA the minimum-MSE predictor for the stated IMA $(1,1)$
-   model?
-3. How should $y_0$ be selected for a short series?
-4. When should MSE, MAE, or MAPE be preferred?
-5. How should additive versus multiplicative seasonality be diagnosed?
-6. How are Holt-Winters parameters estimated in the software used in the
-   course?
-7. How should STL window sizes be selected beyond the qualitative rules
-   given on page 18?
-8. How robust is STL to prolonged anomalies?
-9. Which Prophet terms were actually used in the course implementation?
-10. How should transfer-function lag orders be selected in practice?
+Non-stationarity: a trend or unit root. Difference it (or detrend it) and look at the ACF again before choosing AR/MA orders.
+</details>
 
-These questions are motivated by the source pages but are not fully
-answered there.
+<details><summary>The PACF cuts off after lag 2 and the ACF tails off. Which model?</summary>
 
-**Chapter source:** `../notes/03_filters_smoothing_and_decomposition.md`
+AR(2).
+</details>
 
-## Fourier Analysis and Wavelets
+<details><summary>Why does the lag-1 ACF of an over-differenced series tend toward −0.5?</summary>
 
-1. Which boundary-extension method was used in the db2 edge example?
-2. How does the course define increasing versus decreasing "wavelet level"
-   in the software output?
-3. How should the decomposition depth $K$ be selected?
-4. How should a wavelet family be selected for anomaly detection?
-5. What threshold rule produced the 51 selected CO2 coefficients?
-6. When should hard thresholding be preferred to soft thresholding?
-7. How does coefficient magnitude change with scale for the same type of
-   discontinuity?
-8. What is the intended formal relationship between matching pursuit,
-   basis pursuit, ridge, and lasso in the page-30 bullet list?
-9. How should edge coefficients be interpreted when the signal length is
-   not a power of two?
-10. How are wavelet features eventually used by the learning models later
-    in the course?
+Differencing white noise gives $e_t-e_{t-1}$, whose lag-1 autocorrelation is $-\sigma^2/(2\sigma^2)=-0.5$. Differencing a series that was already stationary injects exactly this structure.
+</details>
 
-These questions arise from the source pages and remain unresolved there.
+<details><summary>Residuals pass the Ljung–Box test, but the model is still biased. How is that possible?</summary>
 
-**Chapter source:** `../notes/04_wavelets.md`
+Ljung–Box checks for autocorrelation, not for the mean. A constant offset has no autocorrelation. Check the residual mean and plot separately.
+</details>
 
-## PCA, Bias-Variance, and Regularization
+<details><summary>What does the "I" in ARIMA do, and why is it separate from AR?</summary>
 
-1. What row/column construction was used when applying PCA to the temporal
-   traces on page 33?
-2. Were predictors standardized in every PCA example?
-3. How were the class labels in the page-36 score plots generated?
-4. Which distance or statistic was used for actual PCA anomaly detection?
-5. What exact threshold distribution was intended for $T^2$?
-6. Why is the direction of greatest variance useful when the target may
-   depend on a low-variance direction?
-7. Was page 39 intended to fit 99 of 999 predictors?
-8. How was $\lambda\approx4$ chosen in the ridge example?
-9. Did the course use cross-validation for ridge and lasso?
-10. Is page 42 displaying fitted values while labeling them as
-    coefficient estimates?
-11. How is $\sigma$ estimated for the wavelet threshold
-    $C=\sigma\sqrt{2\log N}$?
-12. When should wavelet coefficients be thresholded before versus during
-    supervised model fitting?
+It differences the series $d$ times before fitting ARMA. That's equivalent to an AR polynomial with a unit root, $(1-B)^d$, factored out because that root makes the process non-stationary.
+</details>
 
-These questions are supported by ambiguities or open points in the source
-pages.
+## 3. Filters and decomposition
 
-**Chapter source:** `../notes/05_pca_and_regularization.md`
+<details><summary>What is the effective memory of an EWMA with weight λ on the newest point?</summary>
 
-## Markov Chains, Hidden Markov Models, and EM
+The weights $\lambda(1-\lambda)^k$ have mean lag $(1-\lambda)/\lambda$. For example, $\lambda=0.1$ averages over roughly the last 10 points.
+</details>
 
-1. Which exact recurrent-state definition was intended on page 51?
-2. What smoothing or prior was intended to prevent zero-probability HMM
-   estimates for short sequences?
-3. Which HMM applications in the handwritten list were emphasized by the
-   professor?
-4. Did the course implement scaling or log-space calculations for long
-   forward-backward sequences?
-5. How was the number of hidden states $Q$ selected?
-6. How were Gaussian-emission covariance structures selected?
-7. Which definition of “optimal state sequence” was used in assignments?
-8. Did the Baum-Welch implementation use multiple random initializations?
-9. How was $K$ selected for Gaussian mixtures?
-10. Did the Gaussian-mixture implementation permit singular covariance
-    matrices?
-11. What convergence threshold was used for likelihood or parameters?
-12. Does the strict likelihood inequality on page 50 allow equal
-    likelihood at convergence?
+<details><summary>Why does a simple EWMA lag behind a linear trend, and what fixes it?</summary>
 
-These questions arise from the source pages and are not fully resolved
-there.
+It estimates a level, so on a slope $\beta_1$ it trails by $\beta_1(1-\lambda)/\lambda$. Holt's method adds a trend state; double exponential smoothing corrects the bias.
+</details>
 
-**Chapter source:** `../notes/06_markov_models_hmm_and_em.md`
+<details><summary>When is EWMA the optimal forecaster?</summary>
 
-## Neural-Network Foundations and Training
+When the series is IMA(1,1), e.g. a random-walk level plus noise, with $\lambda=1-\theta$. See the derivation in [Ch 12](../notes/12_handwritten_appendix.md).
+</details>
 
-1. Which output/loss combinations were actually used in the course code?
-2. What exact theorem and assumptions support the approximation statements
-   on page 57?
-3. Does the course use averaged or summed losses over $N$?
-4. Which logarithm base was used in implementations?
-5. Did training use full-batch, stochastic, or minibatch updates?
-6. What minibatch size was used?
-7. Was the learning-rate schedule really $\eta_r=1/r$, or was that only
-   an example?
-8. What initialization distribution and scaling were used for deeper
-   networks?
-9. How was early stopping patience selected?
-10. Were biases excluded from weight decay?
-11. Was dropout rescaled during training or prediction?
-12. How was momentum parameterized?
-13. Why does the page-65 parameter example use 70 rather than 80 encoded
-    inputs?
-14. Were categorical predictors encoded with a reference category instead
-    of full one-hot encoding?
-15. How does this feed-forward setup change when the inputs and outputs are
-    temporal sequences?
+<details><summary>Additive or multiplicative seasonality: how do you tell?</summary>
 
-These questions come directly from open or inconsistent points in the
-source pages.
+If the seasonal swing grows with the level, it's multiplicative. Taking logs turns it additive.
+</details>
 
-**Chapter source:** `../notes/07_neural_network_foundations.md`
+## 4. Fourier and wavelets
 
-## RNNs, Stateful Training, LSTMs, GRUs, and Encoder-Decoder Models
+<details><summary>What can wavelets tell you that the Fourier transform can't?</summary>
 
-1. What formal answer was intended for the page-66 permutation and
-   uniqueness question?
-2. Which direct versus recursive multi-horizon strategy was implemented?
-3. What exact blocked-validation method was used in assignments?
-4. Was a gap placed between temporal training and test blocks?
-5. Did the RNN tensor use fixed $T$, padding, masking, or variable
-   sequence lengths?
-6. Which activation function was used in the basic RNN examples?
-7. What truncation length was used for BPTT?
-8. How was exploding-gradient behavior handled?
-9. Were gradients clipped?
-10. How were long-sequence windows constructed at the dataset boundaries?
-11. Which framework's definition of `stateful=True` is represented on
-    page 73?
-12. Were states detached from the gradient graph between batches?
-13. Were LSTM and GRU gates implemented with concatenated matrices or
-    separate input/recurrent matrices?
-14. Which activation function is denoted by $\phi$ in the LSTM and GRU
-    candidate equations?
-15. How were encoder and decoder states initialized?
-16. Did the page-78 handwritten weighted-state idea correspond to an
-    implemented attention model?
+*When* a frequency is present. Fourier basis functions extend over all time, so a short burst is spread across the whole spectrum. Wavelets are localized in time and scale.
+</details>
 
-These questions come from open or framework-dependent points in the source
-pages.
+<details><summary>Why do wavelets with more vanishing moments make changes easier to spot?</summary>
 
-**Chapter source:** `../notes/08_rnn_lstm_gru_and_seq2seq.md`
+A wavelet with $p$ vanishing moments is orthogonal to polynomials of degree $<p$, so smooth stretches give near-zero detail coefficients and only breaks produce large ones.
+</details>
 
-## Temporal Convolutional Networks
+<details><summary>Why does the pyramid algorithm halve the length at each level?</summary>
 
-1. Which exact TCN paper or implementation supplied the architecture
-   figures?
-2. What padding convention was used at the beginning of each sequence?
-3. Does the model trim padded outputs before calculating loss?
-4. Which filter-width convention should replace the conflicting uses of
-   $K$ on page 79?
-5. Is the page-80 printed formula $R=L+K-1$ a typo for
-   $R=1+L(K-1)$?
-6. What receptive-field formula was used for stacked dilation blocks?
-7. Did dilation reset at the beginning of each residual block?
-8. What channel counts were used in each block?
-9. Was weight normalization used in the course implementation?
-10. What dropout rate was used?
-11. Were predictions for $H>1$ generated recursively or in parallel in
-    assignments?
-12. Were gradients or activations affected by long left-padding regions?
-13. Which Sequential MNIST and P-MNIST numerical results were considered
-    most important?
-14. Under what datasets did the course observe TCN performance better than
-    RNN or LSTM?
-15. How should receptive field be selected relative to the actual
-    dependency length in the data?
+Each level splits the signal into a low-pass (approximation) half-band and a high-pass (detail) half-band. Each half needs only half the samples (downsampling by 2), so the total number of coefficients stays equal to the signal length.
+</details>
 
-These questions arise from source ambiguities or omitted implementation
-details.
+## 5. PCA and regularization
 
-**Chapter source:** `../notes/09_temporal_convolutional_networks.md`
+<details><summary>Why standardize before PCA?</summary>
 
-## Temporal Representation and Contrastive Learning
+PCA maximizes variance, so a variable measured in larger units dominates the first component. Standardizing (PCA on the correlation matrix) puts variables on an equal footing, unless the units are already comparable and their scale is meaningful.
+</details>
 
-1. What downstream metric was used to compare PCA, LSTM, and other
-   temporal representations?
-2. What exact generative/discriminative probability factorization was
-   intended on page 83?
-3. Were kernel matrices centered before kernel PCA?
-4. How was the kernel bandwidth selected?
-5. Was the autoencoder bottleneck deterministic?
-6. How were variable-length temporal sequences reconstructed?
-7. Was anomaly detection based on latent distance, reconstruction error,
-   or both?
-8. How was local anomaly timing recovered from one global embedding?
-9. Which transformations were valid positive-pair augmentations for the
-   course's time-series datasets?
-10. How were cyclic processes handled under the slowness assumption?
-11. Were false negatives present when different series had the same
-    underlying state?
-12. Which encoder and projection-head dimensions were used?
-13. What temperature value was used?
-14. Did the loss use all other augmented instances as negatives?
-15. Were representations normalized before cosine similarity?
-16. Why did the projection head improve the retained encoder
-    representation?
-17. Was mutual information estimated explicitly?
-18. Should the page-91 anomaly score use class-1 probability rather than
-    class-0 probability?
-19. How were artificial time series generated for the anomaly classifier?
+<details><summary>What are Hotelling's T² and the Q (SPE) statistic, and why use both?</summary>
 
-These questions follow directly from omitted details or ambiguities in the
-source pages.
+$T^2$ measures unusual variation *inside* the PC subspace (a Mahalanobis distance on the scores). $Q$ measures the residual distance *off* the subspace. A new kind of fault often shows up only in $Q$.
+</details>
 
-**Chapter source:** `../notes/10_representation_learning.md`
+<details><summary>Why does lasso give exact zeros while ridge doesn't?</summary>
 
-## Transformers and Temporal Applications
+The L1 ball has corners on the axes, so the loss contours usually first touch it at a corner. The L2 ball is round, so the solution only shrinks toward zero. In an orthonormal basis lasso is soft thresholding, which sets small coefficients exactly to 0.
+</details>
 
-1. Which exact transformer variant was implemented in the course?
-2. Was attention normalized by $\sqrt{d_k}$ in all code examples?
-3. How were query, key, and value dimensions divided across heads?
-4. Does page 94 use $d_k=d_v=d_{\text{model}}/H$, or different
-   dimensions?
-5. Were encoder and decoder weights shared anywhere besides embeddings?
-6. Was layer normalization applied before or after each sublayer?
-7. What masking value was used before softmax?
-8. Did decoder cross-attention use every encoder block or only the final
-   block?
-9. How was sequence termination handled for numerical time-series output?
-10. Was teacher forcing used with a schedule or always applied?
-11. Which positional encoding—fixed sinusoidal, learned, or timestamp
-    encoding—was used for time series?
-12. Were embeddings tied in the course implementation?
-13. How was inference caching handled?
-14. Did the time-series transformer use an encoder-only, decoder-only, or
-    encoder-decoder architecture?
-15. Which low-rank attention approximation was intended on page 100?
-16. What multiresolution hierarchy was used for long time series?
-17. How were missing values and irregular timestamps represented?
-18. Which BERT pretraining details were included only as historical
-    context versus used in assignments?
+<details><summary>Which directions does ridge shrink most?</summary>
 
-These questions arise from implementation details or notation not fully
-specified in the source pages.
+Those with small singular values. The fitted value along direction $m$ is scaled by $d_m^2/(d_m^2+\lambda)$, so low-variance directions, where estimates are noisiest, get shrunk the most.
+</details>
 
-**Chapter source:** `../notes/11_transformers.md`
+## 6. Markov models, HMMs and EM
 
-## Handwritten Appendix: Stationarity and Covariance Exercise
+<details><summary>Why is the forward algorithm O(Q²T) instead of O(Q^T)?</summary>
 
-1. Was page 103 intended to calculate lag-one autocorrelation only, or a
-   general lag $k$ autocorrelation?
-2. Were $e_t$ and $e_{t-1}$ intended to be independent?
-3. Is the covariance substitution
-   $E[e_te_{t-1}]=E[e_t^2]$ a transcription mistake made during class?
-4. Why does the final denominator contain $4\sigma_e^2$?
-5. Was the numerator intended to be
-   $-\sigma_e^2$, $\sigma_\delta^2$, or
-   $\sigma_\delta^2-2\sigma_e^2$?
-6. Was the exercise intended to derive the MA(1) autocorrelation of the
-   differenced local-level model?
-7. Did the instructor correct this exercise verbally after the handwritten
-   derivation?
-8. What exact lag notation is written in the highlighted heading?
+$\alpha_t(j)$ summarizes every path that ends in $j$ at time $t$. The Markov property means the future only needs that summary, so each step combines $Q$ states into $Q$ states.
+</details>
 
-These questions cannot be resolved from the PDF alone.
+<details><summary>When can the sequence of per-step most-likely states be an impossible path?</summary>
 
-**Chapter source:** `../notes/12_handwritten_appendix.md`
+Whenever it uses a transition with $a_{ij}=0$. Per-step decoding optimizes each position separately; Viterbi optimizes the path as a whole.
+</details>
+
+<details><summary>Does EM always increase the likelihood?</summary>
+
+It never decreases it. It may stay flat at convergence, and it finds a local optimum only.
+</details>
+
+<details><summary>How does a GMM with shared spherical covariance relate to K-means?</summary>
+
+As the shared variance goes to 0, the responsibilities become hard 0/1 assignments to the nearest mean, and EM becomes K-means.
+</details>
+
+## 7. Neural-network foundations
+
+<details><summary>Show that minimizing cross-entropy is maximum likelihood.</summary>
+
+With one-hot $\mathbf y_i$, $P(\mathbf y_i)=\prod_kp_{ik}^{y_{ik}}$, so $-\log L=-\sum_i\sum_ky_{ik}\log p_{ik}$, which is the cross-entropy.
+</details>
+
+<details><summary>Why can't all weights be initialized to the same value?</summary>
+
+All hidden units would compute the same output and get the same gradient, and they would stay identical forever. Random initialization breaks the symmetry.
+</details>
+
+<details><summary>How many parameters are in a 70→20→20→10→4 network?</summary>
+
+$1420+420+210+44=2094$ (weights plus biases).
+</details>
+
+## 8. RNNs, LSTMs, GRUs
+
+<details><summary>Why do RNN gradients vanish or explode?</summary>
+
+The gradient from step $k$ to step $t$ is a product of $t-k$ Jacobians $\mathrm{diag}(\phi')U$. Its size scales like $(\gamma\|U\|)^{t-k}$, which shrinks or grows geometrically.
+</details>
+
+<details><summary>Which part of the LSTM fixes vanishing gradients, and how?</summary>
+
+The additive cell update $\mathbf c_t=\mathbf f_t\odot\mathbf c_{t-1}+\mathbf i_t\odot\tilde{\mathbf c}_t$. Along it, $\partial\mathbf c_t/\partial\mathbf c_{t-1}\approx\mathrm{diag}(\mathbf f_t)$, with no weight matrix and no squashing, so with $f\approx1$ the gradient passes through largely unchanged.
+</details>
+
+<details><summary>What does "stateful" change, and what does it not change?</summary>
+
+It changes where each batch's initial hidden state comes from (the previous batch instead of zeros). It doesn't change the weights or how they're updated. It does require unshuffled, aligned batches and detaching the state between batches.
+</details>
+
+<details><summary>What problem did attention originally solve?</summary>
+
+The encoder–decoder bottleneck: squeezing a whole input sequence into one fixed vector. Attention lets each decoder step build its own weighted summary of all encoder states.
+</details>
+
+## 9. TCNs
+
+<details><summary>What's the receptive field of a TCN with kernel size 3 and dilations 1, 2, 4, 8 (one conv per layer)?</summary>
+
+$1+(3-1)(1+2+4+8)=31$.
+</details>
+
+<details><summary>How does dilation differ from stride?</summary>
+
+Dilation spaces out the filter's *inputs* and keeps an output at every time step. Stride skips *outputs* and shortens the sequence.
+</details>
+
+<details><summary>Why is a TCN faster to train than an RNN on long sequences?</summary>
+
+All time positions in a layer are computed in parallel. An RNN has to finish step $t-1$ before starting step $t$.
+</details>
+
+## 10. Representation learning
+
+<details><summary>Why can't the Gaussian-kernel feature map be written out?</summary>
+
+Its expansion contains monomials of every degree, so the feature space is infinite-dimensional. Only the kernel (inner product) can be computed.
+</details>
+
+<details><summary>Is a linear autoencoder the same as PCA?</summary>
+
+It spans the same optimal subspace, but its code is an arbitrary invertible transform of the PC scores, not the orthonormal, variance-ordered components.
+</details>
+
+<details><summary>Why is the projection head thrown away after contrastive pretraining?</summary>
+
+The loss makes the head's output invariant to the augmentations, which throws information away. The encoder output before the head keeps more, and probes on it do better.
+</details>
+
+<details><summary>What does lowering the temperature do in NT-Xent?</summary>
+
+It sharpens the softmax, so the loss concentrates on the hardest negatives. That gives stronger separation, but false negatives (true positives treated as negatives) are punished harder.
+</details>
+
+<details><summary>In the real-vs-artificial anomaly detector, which probability is the anomaly score?</summary>
+
+The probability of the *artificial* class. A high probability of "real" means the series looks normal.
+</details>
+
+## 11. Transformers
+
+<details><summary>Why scale dot products by √d_k?</summary>
+
+With unit-variance components, $\mathbf q^\top\mathbf k$ has variance $d_k$. Unscaled scores saturate the softmax and kill its gradients. Scaling restores unit variance.
+</details>
+
+<details><summary>Is self-attention aware of order?</summary>
+
+No. It's permutation-equivariant. Order comes only from positional (or timestamp) encodings added to the inputs.
+</details>
+
+<details><summary>Why can the decoder be trained in parallel but not run in parallel?</summary>
+
+During training the whole true target sequence is known (teacher forcing) and the causal mask hides the future. At inference each output depends on the previous generated one.
+</details>
+
+<details><summary>What's the memory cost of full attention on a 10,000-step series, and two ways to reduce it?</summary>
+
+$10^8$ scores per head per layer. Patching (shorter token sequence) and sparse or low-rank attention reduce it.
+</details>
+
+## 12. Appendix
+
+<details><summary>For x_t = μ_t + e_t with a random-walk μ_t, what is the lag-1 autocorrelation of the first difference?</summary>
+
+$\rho_1=-\sigma_e^2/(\sigma_\delta^2+2\sigma_e^2)$, and $\rho_k=0$ for $k\ge2$, i.e. MA(1).
+</details>

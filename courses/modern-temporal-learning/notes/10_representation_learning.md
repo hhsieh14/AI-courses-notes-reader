@@ -1,1488 +1,276 @@
----
-course: "ASU CSE 598 Modern Temporal Learning"
-chapter: 10
-title: "Temporal Representation and Contrastive Learning"
-source_pages: "83-91"
-status: "strong-draft"
-release: "v0.2.1"
-math_style: "github-native"
----
+# 10. Temporal Representation and Contrastive Learning
 
-# Temporal Representation and Contrastive Learning
-
-## 1. Chapter overview
-
-This chapter studies how to convert a long or high-dimensional temporal
-object into a smaller representation that remains useful for later tasks.
-
-The pages progress through:
-
-1. temporal representation learning as a general problem;
-2. PCA as a simple linear representation;
-3. kernel PCA as a nonlinear extension using inner products;
-4. autoencoders and temporal autoencoders;
-5. self-supervised and contrastive learning;
-6. positive/negative pair construction;
-7. encoder and projection-head design;
-8. contrastive softmax-style losses and temperature;
-9. mutual-information motivation;
-10. artificial contrasts for anomaly detection.
-
-A central difficulty noted repeatedly is evaluation:
-
-> A representation may reconstruct the input well while still being poor
-> for a downstream task.
+A time series with thousands of points often carries only a few dozen numbers' worth of information. This chapter is about learning that compact **representation**: an embedding $\mathbf h$ that's small, and useful for clustering, anomaly detection, classification or forecasting. It goes from linear to learned to self-supervised:
 
 ```text
-Raw temporal sequence x
-    -> encoder or transformation
-    -> representation h or z
-    -> clustering, anomaly detection, classification, or forecasting
+PCA → kernel PCA → autoencoder / temporal autoencoder → contrastive learning
+raw series x → encoder → representation h → downstream task
 ```
 
-**Sources:** CSE598MTL.pdf, pp. 83-91
+One problem runs through the whole chapter: **there's no single metric for a good representation.** A representation can reconstruct its input perfectly and still be useless for the task you care about.
 
----
+## 1. Why learn representations?
 
-## 2. Learning objectives
+Temporal data are redundant: idle periods, stable operating conditions, and sampling much faster than the system actually changes. Temporal representation learning (TRL) maps each series to a low-dimensional vector (thousands of points → tens of numbers) so we can:
 
-After this chapter, the reader should be able to:
+- cluster series without computing distances in a huge raw space;
+- flag anomalous series;
+- compress;
+- feed encoder–decoder models and downstream supervised tasks, often with few labels.
 
-1. explain why temporal data may contain substantial redundancy;
-2. define a learned low-dimensional representation or embedding;
-3. distinguish generative and discriminative representation-learning
-   perspectives at the level presented in the notes;
-4. describe PCA scores as a simple representation;
-5. explain the kernel trick used by kernel PCA;
-6. write the common polynomial, RBF, and hyperbolic-tangent kernels shown
-   on the page;
-7. describe an autoencoder's encoder, bottleneck, decoder, and
-   reconstruction loss;
-8. explain how a temporal autoencoder uses RNN or LSTM components;
-9. identify weaknesses of reconstruction loss as a representation metric;
-10. distinguish supervised, self-supervised, and contrastive learning;
-11. define similar and dissimilar pairs;
-12. describe temporal positive-pair construction using nearby segments,
-    perturbations, or multiple sensors;
-13. distinguish an encoder representation $h$ from a projection-head
-    output $z$;
-14. describe the minibatch contrastive task and cosine similarity;
-15. interpret the temperature parameter in a softmax-style contrastive
-    loss;
-16. explain why the projection head may be discarded after pretraining;
-17. describe the mutual-information motivation shown in the notes;
-18. explain the artificial-contrast anomaly-detection procedure and
-    identify the label/score ambiguity on page 91.
+**Evaluating representations.** Supervised models have ROC, accuracy and loss. Representations are judged **indirectly**: train a simple model (a linear probe or k-NN) on $\mathbf h$ for a downstream task, or measure clustering quality. The answer depends on the task, the probe, the number of labels and $\dim\mathbf h$, so compare representations under the *same* protocol.
 
-**Sources:** CSE598MTL.pdf, pp. 83-91
+**Two perspectives:**
 
----
+- **Generative:** $\mathbf z$ is good if it can regenerate the data, i.e. model $p(\mathbf x\mid\mathbf z)$. Autoencoders take this view.
+- **Discriminative:** $\mathbf z$ is good if it can tell things apart: predict a label, or tell which examples belong together. Contrastive learning takes this view.
 
-## 3. Why learn temporal representations?
+## 2. PCA as a representation
 
-The opening page says time series often contain redundant information due
-to:
+Treat each series $\mathbf x_i\in\mathbb R^T$ as one vector. Project it onto the top covariance eigenvectors ([Chapter 5](05_pca_and_regularization.md)):
 
-- idle periods;
-- stable environments;
-- measurement frequency much greater than the system dynamics.
+```math
+z_{im}=\mathbf v_m^\top\mathbf x_i,\qquad \mathbf z_i=(z_{i1},\ldots,z_{iK}),\qquad K\ll T .
+```
 
-Temporal representation learning (TRL) maps a time series into a
-lower-dimensional vector space or embedding.
+The scores are **latent variables**: a few hidden factors that explain most of the variation. PCA is the natural baseline, and any fancier method (LSTM autoencoder, contrastive encoder) should be compared against it under the same downstream evaluation.
 
-The objective may reduce:
+## 3. Kernel PCA
+
+PCA is linear. To capture nonlinear structure, map the data into a bigger feature space $\phi(\mathbf x)$ (e.g. all degree-2 products) and do PCA **there**. Doing that explicitly is expensive, and the kernel trick avoids it.
+
+**Step 1: PCA only needs inner products.** For centered $X\in\mathbb R^{N\times M}$, $X^\top X$ ($M\times M$) and the Gram matrix $XX^\top$ ($N\times N$) have the **same nonzero eigenvalues**. If $X^\top X\mathbf v=\lambda\mathbf v$ then $XX^\top(X\mathbf v)=\lambda(X\mathbf v)$. The entries of $XX^\top$ are inner products $\mathbf x_i^\top\mathbf x_j$, so PCA can be done from those alone.
+
+**Step 2: replace inner products by a kernel.** $K(\mathbf x_i,\mathbf x_j)=\phi(\mathbf x_i)^\top\phi(\mathbf x_j)$ computes the inner product in feature space without ever building $\phi$. Eigendecompose the **centered** kernel matrix $\tilde K=K-\mathbf 1_NK-K\mathbf 1_N+\mathbf 1_NK\mathbf 1_N$ (where $\mathbf 1_N$ is the matrix with every entry $1/N$). The kernel-PC scores are the eigenvectors scaled by $\sqrt{\lambda}$.
+
+| Kernel | $K(\mathbf x_i,\mathbf x_j)$ | Hyperparameters |
+|---|---|---|
+| polynomial | $(1+\mathbf x_i^\top\mathbf x_j)^d$ | degree $d$ |
+| Gaussian / RBF | $\exp(-\gamma\|\mathbf x_i-\mathbf x_j\|^2)=\exp\!\big(-\|\mathbf x_i-\mathbf x_j\|^2/2\sigma^2\big)$ | $\gamma=1/(2\sigma^2)$ |
+| tanh (sigmoid) | $\tanh(\beta\,\mathbf x_i^\top\mathbf x_j-\delta)$ | $\beta,\delta$ (not always positive semidefinite) |
+
+**How big is the feature space?** With 50 inputs, degree 2 gives 50 linear terms, 50 squares and $\binom{50}{2}=1225$ cross products: **1,325 features** (1,326 with the constant). The kernel computes the inner product with one 50-dimensional dot product. The Gaussian kernel is the extreme case: its Taylor expansion contains monomials of **every** degree, so its feature space is **infinite-dimensional**, and it can only be used through the kernel. The same kernel trick powers SVMs ([CSE 575, Chapter 8](../../cse-575-statistical-machine-learning/docs/08_support_vector_machines_and_kernels.md)).
+
+## 4. Autoencoders
+
+An autoencoder learns to reproduce its input through a **bottleneck**:
+
+```math
+\mathbf h_i=\phi(W_1\mathbf x_i+\mathbf b_1),\qquad
+\hat{\mathbf x}_i=g(W_2\mathbf h_i+\mathbf b_2),\qquad
+\dim\mathbf h_i<\dim\mathbf x_i,\qquad
+L=\sum_i\|\mathbf x_i-\hat{\mathbf x}_i\|_2^2 .
+```
+
+Because the bottleneck is narrow, the network can't just copy. It has to find a compact code.
+
+**Linear autoencoders and PCA.** With identity activations and no biases, $\hat{\mathbf x}=W_2W_1\mathbf x$ is a rank-$K$ linear map. The minimum squared error is achieved when $W_2W_1$ projects onto the top-$K$ principal subspace (Baldi & Hornik, 1989), so the optimal linear autoencoder **spans the same subspace as PCA**. But $W_1$ is only determined up to an invertible $K\times K$ transform: the learned code is a rotated and scaled version of the PC scores, not the orthonormal, variance-ordered components themselves. Nonlinear activations and depth are what take autoencoders beyond PCA.
+
+### Temporal autoencoders
+
+To respect time, build the encoder and decoder from RNN/LSTM layers ([Chapter 8](08_rnn_lstm_gru_and_seq2seq.md)):
 
 ```text
-thousands of time points
-    -> tens of representation values
-    or fewer
+stacked LSTM encoder → final hidden state h (the representation) → stacked LSTM decoder → reconstructed series
 ```
 
-The representation can support:
+The loss is MSE/SSE/MAE between the series and its reconstruction.
 
-- clustering time series without relying directly on distances in very
-  high-dimensional raw space;
-- detecting anomalous series;
-- data compression;
-- encoder-decoder models;
-- downstream supervised tasks.
+![Temporal autoencoder](../assets/clean_diagrams/temporal_autoencoder.png)
 
-**Source:** CSE598MTL.pdf, p. 83
+*Train the encoder–bottleneck–decoder, then discard the decoder and reuse $\mathbf h$ downstream.*
 
----
+**Using it:** train the full model, **discard the decoder**, compute $\mathbf h_i$ for every series (old and new), and cluster, classify or measure distances. For anomaly detection, train on normal reference data only, then flag new series whose $\mathbf h$ is far from the reference embeddings, or whose reconstruction error is high.
 
-## 4. Representation quality is difficult to measure
+**Example: ECG beats.** Heartbeats sampled at hundreds of Hz are segmented and aligned into about 300-point vectors, one per beat. A temporal autoencoder with a 2-D bottleneck maps each beat to a point, and in the scatter plot the beat types fall into visibly separate groups, with no labels used in training.
 
-The page contrasts representation learning with ordinary supervised
-learning.
+### Limitations
 
-For supervised models, performance can often be measured with metrics
-such as:
+- **Reconstruction error is a blunt metric in high dimensions.** MSE, MAE and other distances can rank the same reconstructions differently, and a small error spread over 300 points can hide a large error at the one point that matters.
+- **Good reconstruction ≠ useful features.** The code spends capacity on whatever dominates the squared error (baseline wander, noise), which may be irrelevant downstream. Rare anomalies barely move the average loss.
+- **Localized anomalies in long series.** One global embedding blurs a short anomalous interval. Slide a window, score each window's reconstruction error, and report *where* the error spikes.
 
-- ROC;
-- accuracy;
-- prediction loss.
+## 5. Self-supervised and contrastive learning
 
-For representations, success criteria may instead depend on less direct
-outcomes such as clustering quality or downstream performance.
+**Self-supervised** learning invents a supervised task (a *pretext task*) from unlabeled data, so the targets come from the data itself. **Contrastive** learning is the most successful family. Instead of reconstructing $\mathbf x$, it learns an embedding in which:
 
-> **Handwritten annotation:** It is difficult to measure the performance
-> of representation learning.
+- **similar** (positive) pairs are close;
+- **dissimilar** (negative) pairs are far apart.
 
-### Clarification
+Pretraining this way and then fine-tuning or probing with a few labels often beats training the supervised model from scratch, especially when labels are scarce. That's an empirical pattern, not a guarantee.
 
-A representation can be evaluated indirectly by asking whether it helps
-a later task, but that result depends on:
+**Defining "similar" is both the strength and the weakness.** The representation becomes **invariant** to whatever transformation you declare harmless. That's great when the downstream task really should ignore it, and harmful when it shouldn't. Color-invariance helps object recognition and ruins a ripe-vs-unripe fruit classifier.
 
-- the later task;
-- the model fitted on the representation;
-- the amount of labeled data;
-- the representation dimension.
+### Making pairs
 
-The source raises this issue without defining one universal metric.
+| Domain | Positive pairs | Negatives |
+|---|---|---|
+| images | two augmentations of one image: crop, color jitter, grayscale, blur, rotation, noise; a patch and its full image | other images in the batch |
+| multimodal | image and audio of the same clip, each through its own encoder (CLIP applies the same idea to image–text) | mismatched pairs |
+| time series | nearby / overlapping segments of one series; small jitter, scaling or noise; two sensors observing the same event | segments from other series, or far away in time |
 
-**Source:** CSE598MTL.pdf, p. 83
+![Temporal contrastive pipeline](../assets/clean_diagrams/contrastive_temporal_pipeline.png)
 
----
+*Positive and negative temporal pairs, a shared encoder, a projection head and the contrastive loss.*
 
-## 5. Generative and discriminative perspectives
+For time series the default is the **slowness assumption**: nearby segments share the same underlying state. It fails in two ways:
 
-Suppose:
+- **fast regime changes:** adjacent segments can straddle a transition;
+- **cycles:** segments a day, or a period, apart can be the *same* state, so calling them negatives teaches the model to separate identical things (**false negatives**). Choose negatives with the known periodicity in mind.
+
+### Architecture: encoder, head, loss
 
 ```math
-\mathbf{z}
+\mathbf h_i=f(\mathbf x_i)\;\;(\text{encoder, e.g. a ResNet or TCN}),\qquad
+\mathbf z_i=g(\mathbf h_i)\;\;(\text{projection head: small MLP}),
 ```
 
-is learned to represent:
+and the loss is applied to $\mathbf z$. In SimCLR (Chen et al., 2020), each minibatch of $K$ examples is augmented twice to give $2K$ views. For a positive pair $(i,j)$ the other $2K-2$ views are negatives, and the task is **"given view $i$, pick its partner $j$ out of the batch"**. That's a $(2K-1)$-way softmax classification, the **NT-Xent / InfoNCE** loss:
 
 ```math
-\mathbf{x}.
+\ell_{i,j}=-\log\frac{\exp\big(\mathrm{sim}(\mathbf z_i,\mathbf z_j)/\tau\big)}{\sum_{k=1}^{2K}\mathbf 1_{[k\ne i]}\exp\big(\mathrm{sim}(\mathbf z_i,\mathbf z_k)/\tau\big)},\qquad
+\mathrm{sim}(\mathbf u,\mathbf v)=\frac{\mathbf u^\top\mathbf v}{\|\mathbf u\|\|\mathbf v\|}.
 ```
 
-### Generative perspective
+Cosine similarity compares directions only, so the model can't cheat by inflating norms. The indicator stops $i$ from matching itself. The batch loss averages $\ell_{i,j}$ over all $2K$ ordered positive pairs.
 
-The page states that a generative method models the original object from
-the representation.
+```python
+import numpy as np
 
-If $\mathbf{z}$ can generate or reconstruct $\mathbf{x}$, it may be a
-useful representation.
+def nt_xent(z, tau=0.5):
+    """z: (2K, d) projections; rows 2k and 2k+1 are two views of instance k."""
+    z = z / np.linalg.norm(z, axis=1, keepdims=True)      # cosine similarity
+    sim = z @ z.T / tau
+    np.fill_diagonal(sim, -np.inf)                        # 1[k != i]: never match yourself
+    pos = np.arange(len(z)) ^ 1                           # partner index: 0<->1, 2<->3, ...
+    log_prob = sim[np.arange(len(z)), pos] - np.log(np.exp(sim).sum(axis=1))
+    return -log_prob.mean()
 
-### Discriminative perspective
+rng = np.random.default_rng(0)
+base = rng.normal(size=(4, 8))
+views = np.repeat(base, 2, axis=0) + 0.05 * rng.normal(size=(8, 8))   # matched pairs
+print(round(nt_xent(views), 3), round(nt_xent(rng.normal(size=(8, 8))), 3))   # 0.621 2.158
+```
 
-A discriminative method learns a representation based on its usefulness
-for predicting a target or distinguishing examples.
+Matched views give a low loss. Random vectors give about $\log(2K-1)=\log7\approx1.95$, i.e. chance.
 
-### Source notation review
+### Temperature
 
-The probability notation in the two bullets is very small and compressed.
-The conceptual distinction above is clear, but the exact conditional
-probability factorization is not transcribed because it cannot be
-verified reliably from the page.
+$\tau$ controls how sharp the softmax is. For similarities $(2.3,1.6,-1.2)$:
 
-**Source:** CSE598MTL.pdf, p. 83
+| $\tau$ | 0.1 | 0.5 | 1 | 10 |
+|---|---|---|---|---|
+| probabilities | (0.999, 0.001, 0.000) | (0.80, 0.20, 0.00) | (0.66, 0.33, 0.02) | (0.38, 0.35, 0.27) |
 
----
+- **Small $\tau$** approaches a hard argmax. The loss concentrates on the **hardest negatives**, which gives strong separation but is sensitive to false negatives.
+- **Large $\tau$** approaches uniform. Every negative counts about equally and the signal is weak.
 
-## 6. PCA as a simple representation
+Typical values are 0.05–0.5. Temperature changes the *shape of the loss*; the learning rate changes the *size of the step*. They're different knobs.
 
-The page returns to PCA as a basic representation-learning method.
+### Why the projection head, and why throw it away?
 
-For a time-series instance $\mathbf{x}_i$, principal-component scores
-are:
+The loss forces $\mathbf z$ to be invariant to the augmentations, so color, orientation and so on are removed from $\mathbf z$. If the loss acted directly on $\mathbf h$, that information would be stripped from $\mathbf h$ too, even if a later task needs it. With a head $g$ in between, **$g$ absorbs the invariance** and $\mathbf h$ keeps more. SimCLR's ablation showed exactly this: with a 2048-dimensional ResNet-50 representation $\mathbf h$, linear-probe accuracy on $\mathbf h$ was best with a **nonlinear** head, next with a linear head, and worst with none. So after pretraining we **discard $g$ and keep the encoder** $f$.
+
+![Projection-head comparison](../assets/clean_diagrams/projection_head_design.png)
+
+*The head shapes the contrastive objective. The representation before it is what gets reused.*
+
+### Other losses and design choices
+
+**Margin triplet loss.** For anchor $\mathbf u$, positive $\mathbf v^+$ and negative $\mathbf v^-$ (unit vectors):
 
 ```math
-z_{im}
-=
-\mathbf{v}_m^\top\mathbf{x}_i,
+\ell=\max\big(0,\;\mathbf u^\top\mathbf v^- -\mathbf u^\top\mathbf v^+ + m\big),\qquad
+\nabla_{\mathbf u}\ell=\mathbf v^- -\mathbf v^+\;\text{ when the margin is violated}.
 ```
 
-where:
+Gradient descent moves $\mathbf u$ toward $\mathbf v^+$ and away from $\mathbf v^-$. Unlike NT-Xent it looks at one negative at a time, with no softmax weighting, so it needs **hard-negative mining** to work well.
+
+**Batch design matters as much as the loss.** The batch decides which pairs are positive, which are negative, how hard the discrimination is and which invariances get learned. Larger batches mean more negatives and usually better representations (SimCLR used batches of thousands); memory banks and momentum encoders (MoCo) get many negatives without huge batches.
+
+In the SimCLR paper, a linear probe on a 4×-wide ResNet-50 reached about 76.5% top-1 on ImageNet, matching a fully supervised standard ResNet-50. That result made contrastive pretraining a mainstream approach. It's most useful where labels are expensive: medical signals, industrial sensors.
+
+### The mutual-information view
+
+Contrastive learning can be read as maximizing the **mutual information** between two views' representations:
 
 ```math
-\mathbf{v}_1,\mathbf{v}_2,\ldots
+I(X;Y)=H(X)-H(X\mid Y)=H(Y)-H(Y\mid X)=H(X)+H(Y)-H(X,Y)\;\ge0,\qquad H(X)=-\sum_xp(x)\log p(x).
 ```
 
-are covariance eigenvectors.
+MI measures how much knowing one variable reduces uncertainty about the other. The InfoNCE loss with $N$ candidates gives a lower bound, $I(\mathbf z_i;\mathbf z_j)\ge\log N-\mathcal L_{\text{InfoNCE}}$ (van den Oord et al., 2018), which is another reason large batches help. The bound is loose, though, and tighter MI estimates don't always give better features. The MI story is a useful lens, not the full explanation.
 
-Retain:
+## 6. Artificial contrasts for anomaly detection
 
-```math
-z_{i1},z_{i2},\ldots,z_{iK},
-\qquad K\ll T,
-```
+A related trick turns unsupervised anomaly detection into classification:
 
-as the representation.
+1. Generate **artificial** series from a reference distribution: shuffle time points, sample each feature independently, or sample uniformly over the data's range.
+2. Label the real series $y=0$ and the artificial ones $y=1$.
+3. Train any classifier to tell them apart.
+4. Score a new series by **$P(y=1\mid\mathbf x)=1-P(y=0\mid\mathbf x)$**.
 
-The page calls these scores:
+Why it works: with balanced classes, the classifier estimates $P(y=0\mid\mathbf x)=\dfrac{p_{\text{real}}(\mathbf x)}{p_{\text{real}}(\mathbf x)+p_{\text{ref}}(\mathbf x)}$. A **high** real-class probability means $\mathbf x$ looks like normal data. Anomalies are where real data are rare relative to the reference, so the anomaly score is the artificial-class probability, or equivalently one minus the real-class probability. The choice of reference matters: it should differ from real data only in the structure you care about (shuffling time, for example, destroys only temporal dependence).
 
-- fundamental variables;
-- hidden variables;
-- latent variables.
-
-The representation may contain far fewer scores than the original number
-of time positions.
-
-**Source:** CSE598MTL.pdf, p. 83
-
-### Handwritten evaluation note
-
-The handwriting mentions comparing methods such as PCA and LSTM-based
-representations and asks how a selected representation should be judged.
-
-This reinforces the chapter's downstream-evaluation problem.
-
-**Source:** CSE598MTL.pdf, p. 83
-
----
-
-## 7. Kernel PCA motivation
-
-Ordinary PCA is linear in the original input variables.
-
-Kernel PCA expands the inputs into a larger feature space:
-
-```math
-\phi(\mathbf{x}_i),
-```
-
-possibly containing polynomial or other nonlinear features.
-
-A linear method in the transformed features can represent a nonlinear
-relationship in the original variables.
-
-The page's handwritten summary is:
-
-```text
-1. map or upscale to a higher-dimensional feature space
-2. apply PCA there
-```
-
-**Source:** CSE598MTL.pdf, p. 84
-
----
-
-## 8. Kernel PCA through inner products
-
-The page assumes the data are scaled to:
-
-- zero mean;
-- unit standard deviation.
-
-Ordinary PCA may use the covariance-like matrix:
-
-```math
-S=X^\top X,
-```
-
-where:
-
-```math
-X\in\mathbb{R}^{N\times M}.
-```
-
-The slide notes that the nonzero eigenvalues of:
-
-```math
-X^\top X
-```
-
-and:
-
-```math
-XX^\top
-```
-
-are the same, although the matrices have different dimensions and
-therefore different numbers of zero eigenvalues.
-
-The elements of $XX^\top$ are instance-to-instance inner products.
-
-Therefore PCA calculations can be reformulated using only inner products
-between instances.
-
-**Source:** CSE598MTL.pdf, p. 84
-
----
-
-## 9. Kernel trick
-
-A kernel function is defined as:
-
-```math
-K(\mathbf{x}_i,\mathbf{x}_j)
-=
-\phi(\mathbf{x}_i)^\top
-\phi(\mathbf{x}_j).
-```
-
-It calculates an inner product in the transformed feature space without
-explicitly constructing every transformed feature.
-
-The page emphasizes:
-
-- no need to calculate transformed vectors explicitly;
-- only transformed-space inner products are needed;
-- kernel PCA scores can then be used as a representation.
-
-**Source:** CSE598MTL.pdf, p. 84
-
----
-
-## 10. Kernel functions shown in the notes
-
-### 10.1 Polynomial kernel
-
-For degree $d$:
-
-```math
-K(\mathbf{x}_i,\mathbf{x}_j)
-=
-\left(
-1+\mathbf{x}_i^\top\mathbf{x}_j
-\right)^d.
-```
-
-### 10.2 Gaussian or radial-basis kernel
-
-```math
-K(\mathbf{x}_i,\mathbf{x}_j)
-=
-\exp
-\left(
--\gamma
-\|\mathbf{x}_i-\mathbf{x}_j\|^2
-\right).
-```
-
-The page also writes:
-
-```math
-K(\mathbf{x}_i,\mathbf{x}_j)
-=
-\exp
-\left(
--
-\frac{
-\|\mathbf{x}_i-\mathbf{x}_j\|^2
-}{
-2\sigma^2
-}
-\right).
-```
-
-### 10.3 Hyperbolic-tangent kernel
-
-```math
-K(\mathbf{x}_i,\mathbf{x}_j)
-=
-\tanh
-\left(
-\beta\mathbf{x}_i^\top\mathbf{x}_j-\delta
-\right).
-```
-
-The slide lists hyperparameters including:
-
-- $d$;
-- $\gamma$ or $\sigma^2$;
-- $\beta$;
-- $\delta$.
-
-**Source:** CSE598MTL.pdf, p. 84
-
----
-
-## 11. Polynomial feature-count example
-
-The page states that with:
-
-- 50 inputs;
-- a degree-2 polynomial expansion;
-
-the transformed space contains:
-
-```math
-1325
-```
-
-terms.
-
-The kernel function makes computation in such enlarged spaces feasible
-without explicitly listing all terms.
-
-The slide then asks how many polynomial terms correspond to a Gaussian
-kernel.
-
-This is preserved as an open conceptual question. The page does not state
-a numerical answer.
-
-**Source:** CSE598MTL.pdf, p. 84
-
----
-
-## 12. Autoencoders
-
-An autoencoder is designed to reproduce its input at the output.
-
-It contains:
-
-- an encoder;
-- a bottleneck layer;
-- a decoder;
-- a reconstructed output.
-
-For instance $\mathbf{x}_i$, the bottleneck representation is:
-
-```math
-\mathbf{h}_i,
-```
-
-with:
-
-```math
-\dim(\mathbf{h}_i)
-<
-\dim(\mathbf{x}_i).
-```
-
-A common loss is the sum of squared reconstruction errors:
-
-```math
-L
-=
-\mathrm{SSE}
-=
-\sum_{i=1}^{N}
-\|
-\mathbf{x}_i-\hat{\mathbf{x}}_i
-\|_2^2.
-```
-
-The network is trained to minimize this loss.
-
-**Source:** CSE598MTL.pdf, p. 85
-
----
-
-## 13. One-hidden-layer autoencoder
-
-The encoder is:
-
-```math
-\mathbf{h}_i
-=
-\phi
-\left(
-W_1\mathbf{x}_i+\mathbf{b}_1
-\right).
-```
-
-The decoder is:
-
-```math
-\hat{\mathbf{x}}_i
-=
-g
-\left(
-W_2\mathbf{h}_i+\mathbf{b}_2
-\right).
-```
-
-If:
-
-- $\phi$ and $g$ are identity functions;
-- $\mathbf{b}_1=\mathbf{b}_2=\mathbf{0}$;
-
-then:
-
-```math
-\hat{\mathbf{x}}_i
-=
-W_2W_1\mathbf{x}_i.
-```
-
-The objective learns a low-dimensional linear representation from which
-the decoder reconstructs the input.
-
-The page marks this case as having been seen previously in relation to
-linear dimensional reduction.
-
-### Source-faithful caution
-
-The page suggests a relationship to PCA, but it does not state all
-constraints required for an exact equivalence. The note therefore calls
-it a **linear dimensional-reduction relationship**, rather than silently
-claiming every linear autoencoder solution equals PCA.
-
-**Source:** CSE598MTL.pdf, p. 85
-
----
-
-## 14. Temporal autoencoders
-
-To capture temporal relationships, the page proposes using:
-
-- RNNs;
-- LSTMs.
-
-A temporal autoencoder may use:
-
-```text
-stacked recurrent encoder
-    -> low-dimensional bottleneck state
-    -> stacked recurrent decoder
-    -> reconstructed time series
-```
-
-The final hidden state of the last encoder layer is used as the
-low-dimensional representation.
-
-The loss may be:
-
-- MSE;
-- SSE;
-- MAE;
-
-between the original and reconstructed time series.
-![Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation](../assets/clean_diagrams/temporal_autoencoder.png)
-
-*Redrawn course diagram — Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation.*
-
-
-**Source:** CSE598MTL.pdf, p. 86
-
----
-
-## 15. Using a trained temporal encoder
-
-For a downstream task:
-
-1. train the complete encoder-decoder model;
-2. discard the decoder;
-3. retain the encoder;
-4. calculate $\mathbf{h}_i$ for current or new time series;
-5. use the embeddings for clustering, anomaly detection, or another task.
-
-For anomaly detection, the page suggests:
-
-- train on reference or usual data;
-- represent a new unusual series;
-- monitor its distance from the reference representations.
-
-Other measures besides distance can also be applied to
-$\mathbf{h}_i$.
-
-**Source:** CSE598MTL.pdf, p. 86
-
----
-
-## 16. ECG autoencoder example
-
-The example contains:
-
-- ECG heart beats;
-- hundreds of measurements per second;
-- approximately 300 attributes;
-- segmented and aligned heart beats;
-- a two-dimensional learned representation;
-- one point per heartbeat instance.
-
-The two-dimensional scatter plot visually separates several groups of
-beats.
-
-The page uses this as an example of a temporal autoencoder embedding that
-can be inspected in low-dimensional space.
-
-**Source:** CSE598MTL.pdf, p. 86
-
----
-
-## 17. Autoencoder concerns
-
-The page lists two concerns.
-
-### 17.1 Reconstruction loss in high dimensions
-
-MSE, SSE, or MAE may be difficult to interpret across many output
-dimensions.
-
-> **Handwritten annotation:** Different distance measures may produce
-> different conclusions.
-
-### 17.2 Downstream usefulness
-
-Embeddings that reconstruct reference instances well may not translate
-effectively to downstream tasks.
-
-The handwriting adds that a reconstruction objective may not be sensitive
-enough to rare anomalies.
-
-### Long-series anomaly question
-
-The page asks how to detect an anomaly occurring only during one interval
-of a long time series.
-
-The handwriting appears to suggest splitting the series or monitoring
-local reconstruction error, but the exact method is not fully legible.
-
-**Source:** CSE598MTL.pdf, p. 86
-
----
-
-## 18. Self-supervised learning
-
-The page says self-supervised learning has been used more recently for
-representation learning.
-
-It:
-
-- does not use externally supplied labels;
-- creates a discriminative learning problem from the data itself.
-
-The handwritten note appears to summarize this as creating an artificial
-label or task from unlabeled data.
-
-Contrastive learning is presented as a widely successful
-self-supervised method.
-
-The page asks:
-
-> How?
-
-Its answer is:
-
-> Careful design of pretext tasks.
-
-**Source:** CSE598MTL.pdf, p. 87
-
----
-
-## 19. Pretraining and downstream tasks
-
-The page states that in some cases:
-
-- pretraining with contrastive learning;
-- followed by a downstream supervised task;
-
-performs better than training the supervised model directly.
-
-This is presented as an empirical possibility, not as a guarantee for
-every dataset.
-
-**Source:** CSE598MTL.pdf, p. 87
-
----
-
-## 20. Contrastive-learning goal
-
-Contrastive learning begins with a high-dimensional input space
-$\mathcal{X}$, such as:
-
-- audio;
-- images;
-- videos;
-- text;
-- tensors.
-
-It does not require ordinary class labels.
-
-Instead, it creates pairs and trains a representation so that:
-
-- similar instances are near;
-- dissimilar instances are far.
-
-The definition of “similar” and “dissimilar” is both:
-
-- the main advantage;
-- a major disadvantage.
-
-The result depends on domain assumptions and pair-construction choices.
-
-**Source:** CSE598MTL.pdf, p. 87
-
----
-
-## 21. Image-pair examples
-
-The page lists ways to create a similar pair from one image:
-
-- brightness change;
-- color distortion;
-- crop;
-- padding;
-- noise;
-- blur;
-- rotation.
-
-Other pairing strategies include:
-
-- a patch and its full image;
-- the same object measured by two sensors;
-- different objects as dissimilar pairs.
-
-The page displays common image augmentations, including crops, grayscale,
-blur, and color changes.
-
-### Handwritten caution
-
-The handwriting notes that the learned representation becomes invariant
-to whichever transformations are declared similar.
-
-This is useful only when those transformations should truly be ignored by
-the downstream task.
-
-**Source:** CSE598MTL.pdf, p. 87
-
----
-
-## 22. Multimodal contrastive pairs
-
-The page-88 figure illustrates two modalities, such as:
-
-- image;
-- audio.
-
-Each modality has its own encoder.
-
-Representations associated with the same source are treated as positive
-pairs, while mismatched sources are negative pairs.
-![Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss](../assets/clean_diagrams/contrastive_temporal_pipeline.png)
-
-*Redrawn course diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.*
-
-
-**Source:** CSE598MTL.pdf, p. 88
-
----
-
-## 23. Temporal positive and negative pairs
-
-For time series, the page suggests:
-
-- contiguous or nearby segments as similar pairs;
-- distant segments as dissimilar pairs;
-- a small amount of noise as a similar transformation.
-
-This is called the **slowness assumption**:
-
-> Nearby temporal segments are more likely to have similar underlying
-> representations.
-
-The page also shows a local-versus-global view in which segments from the
-same long time series are treated as similar.
-
-### Handwritten caution
-
-The handwriting warns that “far apart” does not always mean dissimilar.
-For cyclical or repeated temporal behavior, distant segments may represent
-the same state.
-
-The pair rule therefore depends on the system and sampling design.
-
-**Source:** CSE598MTL.pdf, p. 88
-
----
-
-## 24. Contrastive-learning architecture
-
-The page identifies three components:
-
-1. encoder;
-2. head;
-3. loss function.
-
-The encoder learns the representation:
-
-```math
-\mathbf{h}_i
-=
-f(\mathbf{x}_i).
-```
-
-The head transforms it:
-
-```math
-\mathbf{z}_i
-=
-g(\mathbf{h}_i).
-```
-
-The head is usually:
-
-- lower-dimensional than $\mathbf{h}_i$;
-- a small neural network, possibly with one hidden layer.
-
-The contrastive loss is applied to the head output
-$\mathbf{z}_i$, not necessarily directly to
-$\mathbf{h}_i$.
-
-**Source:** CSE598MTL.pdf, p. 88
-
----
-
-## 25. Contrastive model and augmentations
-
-The page gives an example encoder:
-
-```math
-\mathbf{h}_i
-=
-\mathrm{ResNet}(\mathbf{x}_i).
-```
-
-The projection head is:
-
-```math
-\mathbf{z}_i
-=
-g(\mathbf{h}_i),
-```
-
-where $g$ may be:
-
-- identity;
-- linear;
-- nonlinear.
-
-For a minibatch of $K$ original instances:
-
-```math
-\{\mathbf{x}_k\},
-```
-
-augment each instance to obtain:
-
-```math
-2K
-```
-
-transformed instances.
-
-Two augmentations from the same original instance form a positive pair.
-
-For one positive pair:
-
-```math
-(\mathbf{x}_i,\mathbf{x}_j),
-```
-
-the other transformed instances in the minibatch are treated as
-negatives.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 26. Contrastive prediction task
-
-The slide describes the task as:
-
-> Given $\mathbf{x}_i$, identify its matching
-> $\mathbf{x}_j$ in the minibatch.
-
-The loss operates on positive and negative pairs and compares distances
-or similarities between their projection-head outputs.
-
-Training should:
-
-- increase similarity for positive pairs;
-- decrease similarity for negative pairs.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 27. Cosine similarity
-
-One similarity measure shown is:
-
-```math
-\mathrm{sim}(\mathbf{u},\mathbf{v})
-=
-\frac{
-\mathbf{u}^\top\mathbf{v}
-}{
-\|\mathbf{u}\|\|\mathbf{v}\|
-}.
-```
-
-This is cosine similarity.
-
-It depends on the direction of the representation vectors rather than
-their raw magnitudes.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 28. Softmax-style contrastive loss
-
-For anchor $i$ and its positive partner $j$, the page gives a
-softmax-style loss of the form:
-
-```math
-\ell_i
-=
--\log
-\frac{
-\exp
-\left(
-\mathrm{sim}(\mathbf{z}_i,\mathbf{z}_j)/\tau
-\right)
-}{
-\sum_{k}
-\mathbf{1}_{[k\neq i]}
-\exp
-\left(
-\mathrm{sim}(\mathbf{z}_i,\mathbf{z}_k)/\tau
-\right)
-}.
-```
-
-The denominator compares the positive partner with other minibatch
-instances.
-
-The indicator excludes the anchor from matching itself.
-
-The page describes the task as similar to a softmax choice in which the
-model must select the correct positive representation.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 29. Temperature
-
-The parameter:
-
-```math
-\tau
-```
-
-is the temperature.
-
-The page says it regularizes or controls the softmax.
-
-The plotted example uses logits approximately:
-
-```math
-[2.3,1.6,-1.2].
-```
-
-### Smaller temperature
-
-A small $\tau$ sharpens the distribution:
-
-- the largest similarity receives probability close to one;
-- smaller similarities receive probabilities close to zero.
-
-### Larger temperature
-
-A large $\tau$ flattens the distribution:
-
-- output probabilities become more similar;
-- in the large-temperature limit they approach a uniform distribution.
-
-The handwritten notes express these limiting behaviors.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 30. Training and downstream use
-
-The minibatch losses are summed to obtain the training loss.
-
-Weights are updated to:
-
-- reduce contrastive loss;
-- improve representation quality.
-
-After training:
-
-- discard the projection head;
-- retain the encoder;
-- use $\mathbf{h}_i$ for downstream tasks.
-
-The page presents the projection head as a training device rather than
-the final representation necessarily consumed by later models.
-
-**Source:** CSE598MTL.pdf, p. 89
-
----
-
-## 31. Contrastive-learning accuracy table
-
-Page 90 reproduces results from a contrastive-learning paper using
-ResNet-style architectures.
-
-The table compares methods and reports:
-
-- architecture;
-- parameter count;
-- top-1 accuracy;
-- top-5 accuracy.
-
-Highlighted SimCLR rows show strong results relative to several other
-self-supervised methods.
-
-### Source-faithful limitation
-
-The complete experimental protocol and every table citation cannot be
-reconstructed from this page alone. The chapter preserves the page's
-main lesson:
-
-> Contrastive pretraining can produce representations that perform well
-> under later supervised evaluation.
-
-**Source:** CSE598MTL.pdf, p. 90
-
----
-
-## 32. Why use a projection head?
-
-The page asks how to interpret the loss when:
-
-```math
-\mathbf{z}_i
-=
-g(\mathbf{h}_i).
-```
-
-Because the contrastive objective encourages invariance, applying it
-directly to $\mathbf{h}_i$ might remove information such as:
-
-- rotation;
-- color;
-- another augmentation detail.
-
-That information may still be useful in a future task.
-
-The course's interpretation is:
-
-- the projection head $\mathbf{z}$ can absorb the invariance demanded
-  by the contrastive loss;
-- the encoder representation $\mathbf{h}$ may preserve more
-  information for downstream use.
-
-The handwritten notes emphasize that $\mathbf{h}$ is especially
-important because $\mathbf{z}$ is discarded after pretraining.
-
-**Source:** CSE598MTL.pdf, p. 90
-
----
-
-## 33. Projection-head comparison
-
-The page shows linear evaluation of representations produced with
-different projection-head dimensions and types.
-
-The figure caption states that the encoder representation before the
-projection head is:
-
-```math
-2048
-```
-
-dimensional.
-
-It compares:
-
-- no projection;
-- linear projection;
-- nonlinear projection.
-![Projection-head comparison from the course page](../assets/clean_diagrams/projection_head_design.png)
-
-*Redrawn course diagram — Projection heads shape the contrastive objective while the encoder representation is retained downstream.*
-
-The page's conclusion is that the projection-head choice can affect
-downstream representation quality.
-
-**Source:** CSE598MTL.pdf, p. 90
-
----
-
-## 34. Margin triplet loss
-
-An alternative loss shown is a margin triplet form:
-
-```math
-\max
-\left(
-\mathbf{u}^\top\mathbf{v}^{-}
--
-\mathbf{u}^\top\mathbf{v}^{+}
-+
-m,
-0
-\right),
-```
-
-where:
-
-- $\mathbf{u}$: anchor;
-- $\mathbf{v}^{+}$: positive;
-- $\mathbf{v}^{-}$: negative;
-- $m$: margin hyperparameter.
-
-When the margin is violated, the displayed gradient direction is:
-
-```math
-\mathbf{v}^{-}-\mathbf{v}^{+}.
-```
-
-The page notes that this loss does not relatively weight all negative
-examples in the same softmax-like way.
-
-**Source:** CSE598MTL.pdf, p. 90
-
----
-
-## 35. Minibatch design matters
-
-The page states that loss-function designs have evolved over several
-years and continue to change.
-
-It also emphasizes:
-
-> Minibatch design—how instances are augmented and paired—is important as
-> loss-function design.
-
-This follows because the batch determines:
-
-- which examples are positives;
-- which examples are negatives;
-- how difficult the discrimination task is;
-- what invariances are learned.
-
-**Source:** CSE598MTL.pdf, p. 90
-
----
-
-## 36. Labeled-data motivation
-
-The page states that contrastive learning has been used successfully in
-domains where labeled data are scarce.
-
-It may allow tasks to be automated with less human labeling effort.
-
-Research continues on the individual components of contrastive learning,
-including pair construction, architecture, loss, and evaluation.
-
-**Source:** CSE598MTL.pdf, p. 91
-
----
-
-## 37. Mutual-information motivation
-
-The page describes an ongoing relationship between contrastive learning
-and maximizing mutual information between latent representations.
-
-For random variables $X$ and $Y$:
-
-```math
-I(X;Y)\geq0.
-```
-
-The identities shown are:
-
-```math
-I(X;Y)
-=
-H(X)-H(X\mid Y),
-```
-
-```math
-I(X;Y)
-=
-H(Y)-H(Y\mid X),
-```
-
-```math
-I(X;Y)
-=
-H(X)+H(Y)-H(X,Y).
-```
-
-Entropy is written:
-
-```math
-H(X)
-=
--
-\sum_x
-p(x)\log p(x).
-```
-
-### Interpretation
-
-Mutual information measures how much knowing one variable reduces
-uncertainty about the other.
-
-The page presents this as a conceptual relationship under active
-research, not as a complete derivation of the contrastive loss.
-
-**Source:** CSE598MTL.pdf, p. 91
-
----
-
-## 38. Artificial contrasts for anomaly detection
-
-The final section presents a related procedure.
-
-### Step 1: create artificial series
-
-Generate artificial time series that resemble the real data in selected
-ways.
-
-### Step 2: assign labels
-
-The slide states:
-
-```math
-y=0
-```
-
-for actual series and:
-
-```math
-y=1
-```
-
-for artificial series.
-
-### Step 3: train a supervised classifier
-
-Train a model to distinguish the two classes.
-
-### Step 4: score a test series
-
-The slide states:
-
-> Compute the class-probability estimate of class 0 as a measure of
-> anomaly.
-
-**Source:** CSE598MTL.pdf, p. 91
-
-### Important source inconsistency
-
-Given the displayed labels:
-
-```text
-class 0 = actual
-class 1 = artificial
-```
-
-a high class-0 probability would naturally indicate similarity to actual
-training data, which is more directly a normality score than an anomaly
-score.
-
-Possible intended anomaly scores could include:
-
-- class-1 probability;
-- $1-P(y=0\mid x)$;
-- a reversed label definition.
-
-The source does not resolve this. The chapter preserves the slide wording
-and logs the scoring direction as an internal inconsistency.
-
----
-
-## 39. End-to-end representation-learning workflow
+## 7. Choosing a method
 
 ```mermaid
 flowchart TD
-    A[Raw temporal sequence] --> B{Representation approach}
-    B --> C[PCA or kernel PCA]
-    B --> D[Autoencoder]
+    A[Raw temporal sequence] --> B{Approach}
+    B --> C[PCA / kernel PCA]
+    B --> D[Temporal autoencoder]
     B --> E[Contrastive learning]
-
-    C --> F[Low-dimensional scores]
-    D --> G[Encoder bottleneck h]
-    E --> H[Encoder representation h]
-    H --> I[Projection head z]
-    I --> J[Contrastive loss]
-
-    F --> K[Downstream task]
-    G --> K
-    H --> K
-
-    K --> L[Clustering]
-    K --> M[Classification]
-    K --> N[Anomaly detection]
-    K --> O[Forecasting or other supervised task]
+    C --> F[Scores z]
+    D --> G[Bottleneck h]
+    E --> H[Encoder output h]
+    H --> I[Projection head z → loss, then discarded]
+    F & G & H --> K[Downstream: clustering, classification, anomaly detection, forecasting]
 ```
 
-This diagram is synthesized from pages 83-91.
+| | PCA | Kernel PCA | Autoencoder | Contrastive |
+|---|---|---|---|---|
+| mapping | linear | nonlinear via kernel | learned neural | learned neural |
+| objective | preserve variance | variance in feature space | reconstruct $\mathbf x$ | pick the positive among negatives |
+| temporal structure | none (a vector) | none | RNN/LSTM/TCN encoder | encoder + temporal pairs |
+| invariances | none by design | none | none by design | exactly those in the pair rule |
+| main risk | misses nonlinearity | kernel and bandwidth choice, $O(N^2)$ | reconstructs irrelevant detail | pair rule discards useful info; false negatives |
 
-**Sources:** CSE598MTL.pdf, pp. 83-91
+## 8. Common confusions
 
----
+- **Low reconstruction error vs useful representation:** not the same thing.
+- **Kernel PCA vs explicit features:** only inner products are computed, and for RBF the features can't even be listed.
+- **Self-supervised ≠ no targets:** targets are generated from the data.
+- **Positive pair ≠ same class:** it's whatever the pair rule says.
+- **$\mathbf h$ vs $\mathbf z$:** keep the encoder output, discard the head output.
+- **Temperature vs learning rate:** loss sharpness vs step size.
+- **Nearby ≠ similar, far ≠ different:** check for regime changes and cycles.
 
-## 40. Major comparisons
+## 9. Questions and answers
 
-### 40.1 PCA versus kernel PCA versus autoencoder
+<details><summary>How do I choose the kernel bandwidth for kernel PCA?</summary>
 
-| Dimension | PCA | Kernel PCA | Autoencoder |
-|---|---|---|---|
-| Mapping | Linear | Nonlinear through kernel feature space | Learned neural encoder |
-| Objective | Preserve variance | Preserve variance in kernel space | Reconstruct input |
-| Explicit transformed features | Yes for ordinary predictors | Not required | Hidden activations |
-| Decoder | No | No | Yes during training |
-| Temporal modeling | Not explicit | Not explicit | RNN/LSTM possible |
+Start with the median heuristic, $\sigma=$ median pairwise distance, then tune on the downstream metric. Too small a $\sigma$ makes every point its own cluster; too large makes the kernel nearly linear.
+</details>
 
-### 40.2 Reconstruction learning versus contrastive learning
+<details><summary>How do I pick the temperature and batch size?</summary>
 
-| Dimension | Autoencoder | Contrastive |
-|---|---|---|
-| Training target | Original input | Positive partner among negatives |
-| Main loss | MSE/SSE/MAE | Similarity-based contrastive loss |
-| Desired invariance | Not explicitly defined | Defined by positive-pair construction |
-| Downstream representation | Bottleneck $h$ | Encoder $h$, often before head |
-| Main concern in notes | Reconstruction may not help downstream task | Pair rules may discard useful information |
+$\tau\in[0.05,0.5]$ with the largest batch that fits. Check with a linear probe on a small labeled set: probe accuracy is the metric, not the contrastive loss value.
+</details>
 
-### 40.3 Supervised versus self-supervised versus contrastive
+<details><summary>What augmentations are safe for time series?</summary>
 
-| Method | Human labels | Training signal |
-|---|---:|---|
-| Supervised | Required | Target labels |
-| Self-supervised | Not externally supplied | Pretext task created from data |
-| Contrastive | Not ordinary class labels | Similar and dissimilar pairs |
+Jitter (small noise), scaling, window cropping and slicing, and mild time warping are usually safe. Permuting segments or flipping time are only safe if order truly doesn't matter for the task. Validate each augmentation by checking the probe accuracy with and without it.
+</details>
 
-### 40.4 Local temporal pairs versus distant pairs
+<details><summary>How do I handle cyclic series where distant segments are the same state?</summary>
 
-| Pair type | Course assumption | Risk |
-|---|---|---|
-| Nearby/contiguous segments | Similar under slowness assumption | Rapid state changes can violate assumption |
-| Distant segments | Dissimilar | Cycles can make distant segments similar |
-| Noisy transformation | Similar | Noise level may alter semantic state |
-| Different sensors, same event | Similar | Sensor views may not align perfectly |
+Don't use "far apart" as the negative rule. Draw negatives from other series, or exclude segments at multiples of the known period, or use a method with no negatives at all (BYOL, SimSiam, VICReg).
+</details>
 
-### 40.5 Encoder representation versus projection-head output
+<details><summary>Should I normalize representations before cosine similarity?</summary>
 
-| Dimension | $h$ | $z=g(h)$ |
-|---|---|---|
-| Produced by | Encoder | Projection head |
-| Contrastive loss applied directly | Not always | Yes in the page's architecture |
-| Retained downstream | Yes | Usually discarded |
-| Intended role | General representation | Training-specific contrastive space |
-
-**Sources:** CSE598MTL.pdf, pp. 83-91
+Cosine similarity normalizes by definition. For downstream k-NN or clustering on $\mathbf h$, L2-normalizing usually helps too, because the training geometry was angular.
+</details>
 
 ---
 
-## 41. Common confusions
-
-### Low reconstruction error versus useful representation
-
-An autoencoder can reconstruct details irrelevant to the later task.
-Reconstruction quality is not sufficient evidence of downstream value.
-
-### Kernel PCA versus explicitly generating polynomial features
-
-Kernel PCA computes transformed-space inner products without necessarily
-constructing every transformed feature.
-
-### Self-supervised does not mean no targets
-
-The targets are created from the data through a pretext task rather than
-provided as human class labels.
-
-### Positive pair does not mean same ordinary class label
-
-A positive pair is defined by the chosen contrastive rule, such as two
-augmentations of one instance.
-
-### Augmentation invariance can remove useful information
-
-Color or rotation invariance may help one task and hurt another.
-
-### Encoder versus head
-
-The encoder produces the representation intended for reuse. The head is
-often optimized specifically for the contrastive objective.
-
-### Temperature versus learning rate
-
-Temperature changes softmax sharpness inside the contrastive loss.
-Learning rate controls parameter-update size.
-
-### Nearby segments are not always semantically similar
-
-The slowness assumption depends on temporal dynamics and periodicity.
-
-### Mutual information is not itself the complete training algorithm
-
-The page presents it as a theoretical relationship under study.
-
-### Class-0 probability on page 91
-
-Under the displayed labels, class-0 probability appears to measure
-actual-data similarity rather than anomaly directly.
-
-**Sources:** CSE598MTL.pdf, pp. 83-91
-
----
-
-## 42. Questions preserved for later discussion
-
-1. What downstream metric was used to compare PCA, LSTM, and other
-   temporal representations?
-2. What exact generative/discriminative probability factorization was
-   intended on page 83?
-3. Were kernel matrices centered before kernel PCA?
-4. How was the kernel bandwidth selected?
-5. Was the autoencoder bottleneck deterministic?
-6. How were variable-length temporal sequences reconstructed?
-7. Was anomaly detection based on latent distance, reconstruction error,
-   or both?
-8. How was local anomaly timing recovered from one global embedding?
-9. Which transformations were valid positive-pair augmentations for the
-   course's time-series datasets?
-10. How were cyclic processes handled under the slowness assumption?
-11. Were false negatives present when different series had the same
-    underlying state?
-12. Which encoder and projection-head dimensions were used?
-13. What temperature value was used?
-14. Did the loss use all other augmented instances as negatives?
-15. Were representations normalized before cosine similarity?
-16. Why did the projection head improve the retained encoder
-    representation?
-17. Was mutual information estimated explicitly?
-18. Should the page-91 anomaly score use class-1 probability rather than
-    class-0 probability?
-19. How were artificial time series generated for the anomaly classifier?
-
-These questions follow directly from omitted details or ambiguities in the
-source pages.
-
----
-
-## 43. Source map
-
-| PDF page | Material reconstructed |
-|---:|---|
-| 83 | Temporal representation motivation, evaluation difficulty, generative/discriminative views, PCA scores |
-| 84 | Kernel PCA, inner products, kernel trick and common kernels |
-| 85 | Autoencoder architecture, bottleneck, reconstruction loss and linear case |
-| 86 | Temporal autoencoder, ECG example, downstream use and limitations |
-| 87 | Self-supervised learning, contrastive-learning goal and image augmentations |
-| 88 | Multimodal pairs, temporal slowness assumption, encoder/head/loss design |
-| 89 | Minibatch contrastive model, cosine similarity, softmax loss and temperature |
-| 90 | Accuracy examples, projection head, triplet margin loss and minibatch design |
-| 91 | Labeled-data motivation, mutual information and artificial contrasts |
-
-## Review status
-
-- TRL motivation and PCA representation: `[VERIFIED]`
-- Page-83 probability-factorization notation: `[NEEDS REVIEW]`
-- Kernel PCA equations: `[VERIFIED]`
-- Linear-autoencoder/PCA relationship: `[PRESERVED WITH CAVEAT]`
-- Temporal-autoencoder workflow: `[VERIFIED]`
-- Page-86 local-anomaly handwriting: `[NEEDS REVIEW]`
-- Contrastive pair definitions: `[VERIFIED]`
-- Slowness-assumption handwriting: `[INTERPRETED]`
-- Contrastive loss and temperature: `[VERIFIED]`
-- Projection-head interpretation: `[VERIFIED]`
-- Mutual-information identities: `[VERIFIED]`
-- Page-91 anomaly-score direction: `[SOURCE INCONSISTENCY]`
+[← Previous: Temporal Convolutional Networks](09_temporal_convolutional_networks.md) · [Course map](../course_map.md) · [Next: Transformers →](11_transformers.md)

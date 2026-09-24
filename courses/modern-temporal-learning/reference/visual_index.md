@@ -1,165 +1,117 @@
 # Visual Index
 
-This page is generated from the final chapter files.
+Every diagram in the notes, grouped by chapter. Click a chapter title to read the diagram in context.
 
-Redrawn diagrams provide stable, reader-friendly explanations in the same
-style used throughout the repository. Source figures are retained only when
-they preserve exact results, handwriting, taxonomies, or details that should
-not be simplified.
+## [2. Stationarity and Classical Time-Series Models](../notes/02_classical_time_series_models.md)
 
-## Fourier Analysis and Wavelets
+![Stationarity patterns](../assets/clean_diagrams/stationarity_patterns.png)
 
-[Open chapter](../notes/04_wavelets.md)
+**Strict (strong) stationarity:**
 
-![Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics](../assets/clean_diagrams/wavelet_family_comparison.png)
+![AR and MA memory](../assets/clean_diagrams/ar_ma_memory.png)
 
-*Redrawn course diagram — Qualitative comparison of Haar, Daubechies, Symlet, and Coiflet scaling and wavelet characteristics.*
+![ARIMA refinement loop](../assets/clean_diagrams/arima_refinement_loop.png)
 
+## [4. Fourier Analysis and Wavelets](../notes/04_wavelets.md)
 
-![Wavelet pyramid with repeated decomposition of the approximation branch](../assets/clean_diagrams/wavelet_pyramid.png)
+![Wavelet family comparison](../assets/clean_diagrams/wavelet_family_comparison.png)
 
-*Redrawn course diagram — Wavelet pyramid with repeated decomposition of the approximation branch.*
+*Haar, Daubechies, Symlet and Coiflet families differ in support length, smoothness, symmetry and number of vanishing moments.*
 
+![Wavelet pyramid](../assets/clean_diagrams/wavelet_pyramid.png)
 
-![db2 and db7 plateau-detail comparison](../assets/clean_diagrams/plateau_wavelet_localization.png)
+![Plateau localization](../assets/clean_diagrams/plateau_wavelet_localization.png)
 
-*Redrawn course diagram — Short-support wavelets localize plateau boundaries more sharply than longer-support wavelets.*
+## [5. PCA, Bias–Variance, and Regularization](../notes/05_pca_and_regularization.md)
 
+![PCA as a rotation](../assets/clean_diagrams/pca_coordinate_rotation.png)
 
-## PCA, Bias-Variance, and Regularization
+*PCA rotates the axes to line up with the directions of greatest spread.*
 
-[Open chapter](../notes/05_pca_and_regularization.md)
+![Mahalanobis geometry](../assets/clean_diagrams/mahalanobis_geometry.png)
 
-![Correlated data and PCA directions from the course page](../assets/clean_diagrams/pca_coordinate_rotation.png)
+![Ridge and lasso paths](../assets/clean_diagrams/ridge_lasso_paths.png)
 
-*Redrawn course diagram — PCA rotates correlated observations onto orthogonal directions ordered by variance.*
+## [6. Markov Chains, Hidden Markov Models, and EM](../notes/06_markov_models_hmm_and_em.md)
 
+![Hidden and observed sequences](../assets/clean_diagrams/hmm_hidden_observed_sequences.png)
 
-![Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions](../assets/clean_diagrams/mahalanobis_geometry.png)
+*A piecewise-constant hidden state generates noisy observations.*
 
-*Redrawn course diagram — Euclidean circles versus covariance-aligned Mahalanobis ellipses and the stronger penalty along low-variance directions.*
+![Soft versus hard assignment](../assets/clean_diagrams/em_soft_vs_hard_assignments.png)
 
+## [7. Neural-Network Foundations and Training](../notes/07_neural_network_foundations.md)
 
-![Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero](../assets/clean_diagrams/ridge_lasso_paths.png)
+![Width and depth](../assets/clean_diagrams/feedforward_depth_width.png)
 
-*Redrawn course diagram — Schematic coefficient paths showing smooth ridge shrinkage and lasso coefficients reaching exact zero.*
+*Width is the number of units in a layer; depth is the number of successive transformations.*
 
+## [8. RNNs, LSTMs, GRUs and Encoder–Decoder Models](../notes/08_rnn_lstm_gru_and_seq2seq.md)
 
-## Markov Chains, Hidden Markov Models, and EM
+![Temporal cross-validation](../assets/clean_diagrams/temporal_cross_validation.png)
 
-[Open chapter](../notes/06_markov_models_hmm_and_em.md)
+*Random, expanding-window and sliding-window validation.*
 
-![Hidden-state and observed-sequence example from the course page](../assets/clean_diagrams/hmm_hidden_observed_sequences.png)
+![Basic and stacked RNNs](../assets/clean_diagrams/rnn_basic_and_stacked.png)
 
-*Redrawn course diagram — A piecewise latent state sequence generates noisy observations through the emission model.*
+*Left: the recurrence unrolled through time. Right: a stacked RNN, where state flows in time within each layer and upward between layers.*
 
+![LSTM cell](../assets/clean_diagrams/lstm_memory_gates.png)
 
-![Soft responsibilities preserve uncertainty, while K-means makes one hard assignment](../assets/clean_diagrams/em_soft_vs_hard_assignments.png)
+*The cell-state line along the top is only scaled by $\mathbf f_t$ and added to. The tanh is applied only on the branch that produces $\mathbf h_t$.*
 
-*Redrawn course diagram — Soft responsibilities preserve uncertainty, while K-means makes one hard assignment.*
+![Encoder–decoder](../assets/clean_diagrams/encoder_decoder_sequence_forecast.png)
 
+*Top: translation ("I am tired" → "Estoy cansado/a"). Bottom: the same structure for forecasting, a history window in and all $H$ horizon values out.*
 
-## Neural-Network Foundations and Training
+## [9. Temporal Convolutional Networks](../notes/09_temporal_convolutional_networks.md)
 
-[Open chapter](../notes/07_neural_network_foundations.md)
+![TCN overview](../assets/clean_diagrams/tcn_overview.png)
 
-![Multilayer feed-forward network from the course page](../assets/clean_diagrams/feedforward_depth_width.png)
+*Causal paths only point forward in time; dilation doubles the spacing at each layer; blocks are wrapped in residual connections.*
 
-*Redrawn course diagram — Network width counts units within a layer, while depth counts successive transformations.*
+## [10. Temporal Representation and Contrastive Learning](../notes/10_representation_learning.md)
 
+![Temporal autoencoder](../assets/clean_diagrams/temporal_autoencoder.png)
 
-## RNNs, Stateful Training, LSTMs, GRUs, and Encoder-Decoder Models
+*Train the encoder–bottleneck–decoder, then discard the decoder and reuse $\mathbf h$ downstream.*
 
-[Open chapter](../notes/08_rnn_lstm_gru_and_seq2seq.md)
+![Temporal contrastive pipeline](../assets/clean_diagrams/contrastive_temporal_pipeline.png)
 
-![Random, expanding-window, and sliding-window temporal validation](../assets/clean_diagrams/temporal_cross_validation.png)
+*Positive and negative temporal pairs, a shared encoder, a projection head and the contrastive loss.*
 
-*Redrawn course diagram — Random, expanding-window, and sliding-window temporal validation.*
+![Projection-head comparison](../assets/clean_diagrams/projection_head_design.png)
 
+*The head shapes the contrastive objective. The representation before it is what gets reused.*
 
-![Basic and stacked RNN architectures from the course page](../assets/clean_diagrams/rnn_basic_and_stacked.png)
+## [11. Transformers and Temporal Applications](../notes/11_transformers.md)
 
-*Redrawn course diagram — Stacked RNNs combine recurrent state propagation through time with vertical depth.*
+![Transformer overview](../assets/clean_diagrams/transformer_overview.png)
 
+*Encoder stack (left) and decoder stack (right). Every decoder block cross-attends to the output of the final encoder block.*
 
-![LSTM cell diagrams from the course page](../assets/clean_diagrams/lstm_memory_gates.png)
+![Multi-head attention](../assets/clean_diagrams/multihead_attention.png)
 
-*Redrawn course diagram — Forget, input, candidate, and output gates regulate the LSTM cell-state pathway.*
+*Left: attention from "it" in the example sentence. Right: $H$ parallel query/key/value projections, concatenated and projected by $W_O$.*
 
+![Residual learning block](../assets/clean_diagrams/residual_learning_block.png)
 
-![Encoder-decoder sequence and forecast diagrams from the course page](../assets/clean_diagrams/encoder_decoder_sequence_forecast.png)
+*A residual block outputs $\mathcal F(\mathbf x)+\mathbf x$.*
 
-*Redrawn course diagram — Encoder-decoder models map an input sequence to a target sequence or forecast horizon.*
+![Decoder and generation](../assets/clean_diagrams/transformer_decoder_generation.png)
 
+*Masked self-attention, cross-attention to the encoder and autoregressive generation.*
 
-## Temporal Convolutional Networks
+![Time-series transformer taxonomy](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
 
-[Open chapter](../notes/09_temporal_convolutional_networks.md)
+*Time-series transformers vary by positional encoding, attention module and architecture, and are applied to forecasting, anomaly detection and classification.*
 
-![TCN causality, exponentially increasing dilation, and residual-block structure](../assets/clean_diagrams/tcn_overview.png)
+## [12. Appendix: Stationarity Recap and the Differenced Local-Level Model](../notes/12_handwritten_appendix.md)
 
-*Redrawn course diagram — TCN causality, exponentially increasing dilation, and residual-block structure.*
+![Stationarity recap](../assets/clean_diagrams/stationarity_recap.png)
 
+*Strict stationarity, weak stationarity, IID and the sampling-rate intuition on one page.*
 
-## Temporal Representation and Contrastive Learning
+![First-difference covariance](../assets/clean_diagrams/first_difference_covariance.png)
 
-[Open chapter](../notes/10_representation_learning.md)
-
-![Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation](../assets/clean_diagrams/temporal_autoencoder.png)
-
-*Redrawn course diagram — Temporal encoder-bottleneck-decoder architecture and downstream reuse of the learned representation.*
-
-
-![Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss](../assets/clean_diagrams/contrastive_temporal_pipeline.png)
-
-*Redrawn course diagram — Temporal positive and negative pair construction, shared encoder, projection head, and contrastive loss.*
-
-
-![Projection-head comparison from the course page](../assets/clean_diagrams/projection_head_design.png)
-
-*Redrawn course diagram — Projection heads shape the contrastive objective while the encoder representation is retained downstream.*
-
-
-## Transformers and Temporal Applications
-
-[Open chapter](../notes/11_transformers.md)
-
-![Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization](../assets/clean_diagrams/transformer_overview.png)
-
-*Redrawn course diagram — Simplified transformer encoder-decoder stack with self-attention, masked attention, cross-attention, feed-forward layers, and residual normalization.*
-
-
-![Sentence-level attention interpretation and parallel multi-head query-key-value projections](../assets/clean_diagrams/multihead_attention.png)
-
-*Redrawn course diagram — Sentence-level attention interpretation and parallel multi-head query-key-value projections.*
-
-
-![Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation](../assets/clean_diagrams/transformer_decoder_generation.png)
-
-*Redrawn course diagram — Transformer decoder block with masked self-attention, encoder-decoder attention, and autoregressive generation.*
-
-
-![Residual learning block from the course page](../assets/clean_diagrams/residual_learning_block.png)
-
-*Redrawn course diagram — A residual block adds the learned correction $F(x)$ to the identity path $x$.*
-
-
-![Taxonomy of transformer methods for time-series modeling](../assets/clean_diagrams/time_series_transformer_taxonomy.png)
-
-*Redrawn course diagram — Time-series transformers vary in representation, attention, architecture, and application.*
-
-
-## Handwritten Appendix: Stationarity and Covariance Exercise
-
-[Open chapter](../notes/12_handwritten_appendix.md)
-
-![Full handwritten stationarity page](../assets/clean_diagrams/stationarity_recap.png)
-
-*Redrawn appendix diagram — Strict stationarity, weak stationarity, IID assumptions, and sampling-rate intuition.*
-
-
-![Full handwritten covariance exercise](../assets/clean_diagrams/first_difference_covariance.png)
-
-*Redrawn appendix diagram — First differencing separates process innovations and observation-noise covariance.*
-
-
+*Consecutive differences share exactly one noise term, $e_t$, with opposite signs.*
